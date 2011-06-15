@@ -28,7 +28,10 @@ colCountLast<-function(x,val) {
 	return(length(which(x[,dim(x)[2]]==val)))
 }
 
-
+setMaxK<-function(popVector,nTrees=1,taxaPerParam=5) {
+  maxK<-max(1,floor(sum(popVector)/(nTrees*taxaPerParam))) 
+  return(maxK)
+}
 
 popinterval<-function(collapseMatrix,complete=FALSE) {
 	#collapse matrix has populations as rows and each generation going back in time as columns
@@ -224,7 +227,7 @@ completeIntervals<-function(popIntervalsList) {
 }
 
 
-generateIntervals<-function(popVector,maxK=max(1,floor(sum(popVector)/5))) {
+generateIntervals<-function(popVector,maxK) {
 	#popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
 	#maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
 	nPop <- length(popVector)
@@ -253,7 +256,7 @@ kCollapseMatrix<-function(collapseMatrix) {
 
 #the basic idea here is that at each population in each time interval there is a n0multiplier. These can all be set to the same value, allowed to vary, or assigned in clumps (i.e., pops 1, 3, and 6 have the same n0multiplier value)
 #this generates all such mappings, subject to staying within the maximum number of free parameters
-generateN0multiplierIndividuals<-function(popVector,popIntervalsList=generateIntervals(popVector),maxK=max(1,floor(sum(popVector)/5))) {
+generateN0multiplierIndividuals<-function(popVector,popIntervalsList=generateIntervals(popVector,maxK),maxK) {
 	n0multiplierIndividualsList<-list()
 	for (i in 1:length(popIntervalsList)) {
 		n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
@@ -283,7 +286,7 @@ kN0multiplierMap<-function(n0multiplierMap) {
 
 #now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters (times, n0multipliers, migration rates) under our chosen max
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you can't fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
-generateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=generateN0multiplierIndividuals(popVector), maxK=max(1,floor(sum(popVector)/5))) {
+generateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=generateN0multiplierIndividuals(popVector,popIntervalsList=generateIntervals(popVector,maxK),maxK), maxK) {
 	migrationIndividualsList<-list()
 	for (i in 1:length(n0multiplierIndividualsList)) {
 		collapseMatrix<-n0multiplierIndividualsList[[i]]$collapseMatrix
