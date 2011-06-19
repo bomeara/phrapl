@@ -286,9 +286,12 @@ kN0multiplierMap<-function(n0multiplierMap) {
 
 #now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters (times, n0multipliers, migration rates) under our chosen max
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you can't fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
-generateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=generateN0multiplierIndividuals(popVector,popIntervalsList=generateIntervals(popVector,maxK),maxK), maxK) {
+generateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=generateN0multiplierIndividuals(popVector,popIntervalsList=generateIntervals(popVector,maxK),maxK), maxK, verbose=FALSE) {
 	migrationIndividualsList<-list()
 	for (i in 1:length(n0multiplierIndividualsList)) {
+    if (verbose==TRUE) {
+      print(paste("doing ",i,"/",length(n0multiplierIndividualsList)))
+    }
 		collapseMatrix<-n0multiplierIndividualsList[[i]]$collapseMatrix
     n0multiplierMap<-n0multiplierIndividualsList[[i]]$n0multiplierMap
 		numFinalPops<-dim(collapseMatrix)[1]
