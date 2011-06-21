@@ -95,7 +95,7 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
     #do values at present
     initialN0multipler<-""
     for (i in 1:nPop) {
-     initialN0multipler<-paste(initialN0multipler,"-n",i,n0multiplierParameters[n0multiplierMap[i,1] ],sep=" ")
+     initialN0multipler<-paste(initialN0multipler,"-n",i,sprintf("%f",n0multiplierParameters[n0multiplierMap[i,1] ]),sep=" ")
     }
  
     initialMigration<-"-ma"
@@ -105,7 +105,7 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
           initialMigration<-paste(initialMigration, "x", sep=" ") 
        }
        else {
-         initialMigration<-paste(initialMigration, migrationParameters[migrationArray[i,j,1] ],sep=" ")
+         initialMigration<-paste(initialMigration, sprintf("%f",migrationParameters[migrationArray[i,j,1] ]),sep=" ")
        }
       }
     }
@@ -116,7 +116,7 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
       initialCollapse<-""
       popsToCollapse<-which(collapseMatrix[,1]==1)
       for (i in 2:length(popsToCollapse)) {
-        initialCollapse<-paste(initialCollapse, "-ej", collapseParameters[1], popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+        initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[1]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
       }
       msString<-paste(msString,initialCollapse,sep=" ")
     }
@@ -128,14 +128,14 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
         n0multiplierPositions<-which(!is.na(n0multiplierMap[,generation]))
         for (n0multiplierPosIndex in 1:length(n0multiplierPositions)) {
           n0multiplierPos<-n0multiplierPositions[n0multiplierPosIndex]
-          msString<-paste(msString,"-en",collapseTime,n0multiplierPos,n0multiplierParameters[n0multiplierMap[n0multiplierPos,generation] ],sep=" ")
+          msString<-paste(msString,"-en",sprintf("%f",collapseTime),sprintf("%f",n0multiplierPos),sprintf("%f",n0multiplierParameters[n0multiplierMap[n0multiplierPos,generation] ]),sep=" ")
         }
 
         for (fromPos in 1:nPop) {
           for (toPos in 1:nPop) {
             migrationArrayValue<-migrationArray[fromPos,toPos,generation]
            if (!is.na(migrationArrayValue) ) {
-            msString<-paste(msString,"-em",collapseTime,fromPos,toPos,migrationParameters[migrationArrayValue],sep=" ")              
+            msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",migrationParameters[migrationArrayValue]),sep=" ")              
            }
           }
         }
@@ -146,7 +146,7 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
         initialCollapse<-""
         popsToCollapse<-which(collapseMatrix[,generation]==1)
         for (i in 2:length(popsToCollapse)) {
-          initialCollapse<-paste(initialCollapse, "-ej", collapseParameters[generation], popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+          initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[generation]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
         }
         msString<-paste(msString,initialCollapse,sep=" ")
     }
@@ -331,13 +331,13 @@ generateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=gen
 
 loadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms") {
   msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
-  geneTrees<-system(paste(msLocation,msCallInfo$nsam,msCallInfo$nreps,msCallInfo$opts," | grep ';'"),intern=TRUE)
+  geneTrees<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';'"),intern=TRUE)
   return(geneTrees)
 }
 
 saveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",file="sim.tre") {
   msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
-  returnCode<-system(paste(msLocation,msCallInfo$nsam,msCallInfo$nreps,msCallInfo$opts," | grep ';' >",file),intern=FALSE)
+  returnCode<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' >",file),intern=FALSE)
   return(returnCode)
 }
 
