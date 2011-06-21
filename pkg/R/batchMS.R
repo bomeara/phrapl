@@ -341,6 +341,17 @@ saveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
   return(returnCode)
 }
 
+pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE) {
+  msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
+  unresolvedFlag<-"-u"
+  if (unresolvedTest==FALSE) {
+    unresolvedFlag<-""
+  }
+  outputVector<-system(paste(msLocation,msCallInfo$nsam,msCallInfo$nreps,msCallInfo$opts," | grep ';' | perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" "),intern=TRUE)
+  return(outputVector)
+}
+
+
 createAssignment<-function(popVector,file="assign.txt") {
   alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
   assignFrame<-data.frame()
