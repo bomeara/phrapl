@@ -347,7 +347,7 @@ pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
   if (unresolvedTest==FALSE) {
     unresolvedFlag<-""
   }
-  outputVector<-system(paste(msLocation,msCallInfo$nsam,msCallInfo$nreps,msCallInfo$opts," | grep ';' | perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" "),intern=TRUE)
+  outputVector<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' | perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" "),intern=TRUE)
   return(outputVector)
 }
 
