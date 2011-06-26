@@ -1,4 +1,5 @@
 library(partitions)
+library(ape)
 
 colMax<-function(x,na.rm=TRUE) {
 	maxVal=rep(NA,dim(x)[2])
@@ -352,6 +353,7 @@ pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 }
 
 
+
 createAssignment<-function(popVector,file="assign.txt") {
   alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
   assignFrame<-data.frame()
@@ -370,6 +372,45 @@ createAssignment<-function(popVector,file="assign.txt") {
   }
   write.table(assignFrame,file=file,quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
 }
+
+createAssignment.df<-function(popVector) {
+  alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
+  assignFrame<-data.frame()
+  indivTotal<-0
+  for(popIndex in 1:length(popVector)) {
+    popLabel<-alphabet[popIndex]
+    for(indivIndex in 1:popVector[popIndex]) {
+      indivTotal<-indivTotal+1
+      if(indivTotal==1) {
+        assignFrame<-data.frame(popLabel,indivTotal) 
+      }
+      else {
+       assignFrame<-rbind(assignFrame,data.frame(popLabel, indivTotal))
+      }
+    }
+  }
+  return(assignFrame)
+}
+
+taxaToRetain<-function(assignFrame,nsamplesDesired,minPerPop) {
+  samplesGood<-FALSE
+  toRetain<-c()
+  while (samplesGood!=TRUE) {
+    toRetain<-sample(dim(assignFrame)[1],nsamplesDesired,replace=FALSE)
+    retainedPops<-(assignFrame[,1])[toRetain]
+    samplesGood<-FALSE
+    if (nlevels(retainedPops)==nlevels(assignFrame[,1])) {
+      samplesGood<-TRUE
+      for (i in 1:nlevels(assignFrame[,1])){
+        if (length(which(retainedPops==(levels(assignFrame[,1]))[i]))<minPerPop) {
+          samplesGood<-FALSE
+        }
+      }
+    }
+  }
+  return(toRetain)
+}
+
 
 convertOutputVectorToLikelihood<-function(outputVector,nTrees) {
   outputVector<-as.numeric(outputVector)
