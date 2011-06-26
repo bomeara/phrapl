@@ -392,11 +392,16 @@ createAssignment.df<-function(popVector) {
   return(assignFrame)
 }
 
-taxaToRetain<-function(assignFrame,nsamplesDesired,minPerPop) {
+taxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000) {
   samplesGood<-FALSE
   toRetain<-c()
+  attempts<-0
   while (samplesGood!=TRUE) {
-    toRetain<-sample(dim(assignFrame)[1],nsamplesDesired,replace=FALSE)
+    if (attempts>attemptsCutoff) {
+      stop(paste("No random sample met the criteria after",attempts,"attempts"))
+    }
+    attempts<-attempts+1
+    toRetain<-sample(dim(assignFrame)[1],nIndividualsDesired,replace=FALSE)
     retainedPops<-(assignFrame[,1])[toRetain]
     samplesGood<-FALSE
     if (nlevels(retainedPops)==nlevels(assignFrame[,1])) {
@@ -408,7 +413,21 @@ taxaToRetain<-function(assignFrame,nsamplesDesired,minPerPop) {
       }
     }
   }
-  return(toRetain)
+  return(toRetain[sort.list(toRetain)])
+}
+
+taxaToDrop<-function(assignFrame,taxaRetained) {
+  allTaxa<-c(1:dim(assignFrame)[1])
+  taxaToDrop<-allTaxa[-taxaRetained]
+  return(taxaToDrop)
+}
+
+prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,minPerPop=1) {
+   for (rep in 1:nSamplesDesired) {
+     delTaxa<-taxaToDrop(assignFrame,taxaToRetain(assignFrame,nIndividualsDesired,minPerPop))
+     physamp<-drop.tip(phy,delTaxa)
+     write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
+   }
 }
 
 
