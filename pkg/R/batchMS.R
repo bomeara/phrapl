@@ -424,12 +424,26 @@ taxaToDrop<-function(assignFrame,taxaRetained) {
 
 prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,minPerPop=1) {
    for (rep in 1:nSamplesDesired) {
-     delTaxa<-taxaToDrop(assignFrame,taxaToRetain(assignFrame,nIndividualsDesired,minPerPop))
+     keepTaxa<-taxaToRetain(assignFrame,nIndividualsDesired,minPerPop)
+     delTaxa<-taxaToDrop(assignFrame,keepTaxa)
      physamp<-drop.tip(phy,delTaxa)
      write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
+    write.table(prunedAssignFrame(assignFrame,keepTaxa),file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
    }
 }
 
+prunedPopVector<-function(assignFrame,taxaRetained) {
+  assignFrameLabels<-assignFrame[taxaRetained,1]
+  popVector<-rep(NA,nlevels(assignFrameLabels))
+  for (i in 1:nlevels(assignFrameLabels)) {
+    popVector[i]<-length(which(assignFrameLabels==levels(assignFrameLabels)[i])) 
+  }
+  return(popVector)
+}
+
+prunedAssignFrame<-function(assignFrame,taxaRetained) {
+  return(assignFrame[taxaRetained,])
+}
 
 convertOutputVectorToLikelihood<-function(outputVector,nTrees) {
   outputVector<-as.numeric(outputVector)
@@ -438,4 +452,22 @@ convertOutputVectorToLikelihood<-function(outputVector,nTrees) {
   outputVector<-log(outputVector)
   lnL<-sum(outputVector)
   return(lnL)
+}
+
+#Uses ln lik
+combineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.popVector) {
+  originalSize<-sum(orig.popVector)
+  originalNumberTrees<-howmanytrees(originalSize)
+  prunedNumberTrees<-howmanytrees(nIndividualsDesired)
+  sumLnL<-sum(likelihoodVector)
+  meanLnL<-mean(likelihoodVector)
+  medianLnL<-median(likelihoodVector)
+  #prob(big tree)=prob(small tree)*(#small trees / #big trees)
+  #ln(prob(big tree) = ln( prob(small tree)*(#small trees / #big trees) )
+  #ln(prob(big tree) = ln( prob(small tree) ) + ln (#small trees)  - ln (#big trees)
+  rescaledLikelihoodVector<-likelihoodVector + log(prunedNumberTrees) - log(originalNumberTrees)
+  rescaledSumLnL<-sum(rescaledLikelihoodVector)
+  rescaledMeanLnL<-mean(rescaledLikelihoodVector)
+  rescaledMedianLnL<-median(rescaledLikelihoodVector)
+  return(list(sumLnL,meanLnL,medianLnL,rescaledSumLnL,rescaledMeanLnL,rescaledMedianLnL))
 }
