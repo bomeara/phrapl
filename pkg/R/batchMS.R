@@ -437,7 +437,7 @@ prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,m
      for (tree in 1:length(phy)) {
         physamp[[tree]]<-drop.tip(phy[[tree]],delTaxa)
         for (tipIndex in 1:length(physamp[[tree]]$tip.label)) {
-          (physamp[[tree]]$tip.label)[tipIndex]<-as.character(which(prunedAF[,2]==physamp[[tree]]$tip.label)[tipIndex])
+          ((physamp[[tree]]$tip.label)[tipIndex])<-as.character(which(prunedAF[,2]==((physamp[[tree]]$tip.label)[tipIndex])))
         }
      }
       prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
