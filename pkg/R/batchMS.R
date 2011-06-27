@@ -423,8 +423,10 @@ taxaToDrop<-function(assignFrame,taxaRetained) {
 }
 
 prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,minPerPop=1) {
+  retainedTaxaList<-list()
    for (rep in 1:nSamplesDesired) {
      keepTaxa<-taxaToRetain(assignFrame,nIndividualsDesired,minPerPop)
+     retainedTaxaList<-append(retainedTaxaList,keepTaxa)
      physamp<-phy
      delTaxa<-taxaToDrop(assignFrame,keepTaxa)
      for (tree in 1:length(phy)) {
@@ -433,6 +435,7 @@ prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,m
      write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
      write.table(prunedAssignFrame(assignFrame,keepTaxa),file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
    }
+  return(retainedTaxaList)
 }
 
 prunedPopVector<-function(assignFrame,taxaRetained) {
