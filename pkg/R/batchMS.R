@@ -431,13 +431,18 @@ prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,m
    for (rep in 1:nSamplesDesired) {
      keepTaxa<-taxaToRetain(assignFrame,nIndividualsDesired,minPerPop)
      retainedTaxaMatrix[rep,]<-keepTaxa
+     prunedAF<-prunedAssignFrame(assignFrame,keepTaxa)
      physamp<-phy
      delTaxa<-taxaToDrop(assignFrame,keepTaxa)
      for (tree in 1:length(phy)) {
-        physamp<-drop.tip(phy[[tree]],delTaxa)
+        physamp[[tree]]<-drop.tip(phy[[tree]],delTaxa)
+        for (tipIndex in 1:length(physamp[[tree]]$tip.label)) {
+          (physamp[[tree]]$tip.label)[tipIndex]<-as.character(which(prunedAF[,2]==physamp[[tree]]$tip.label)[tipIndex])
+        }
      }
+      prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
      write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
-     write.table(prunedAssignFrame(assignFrame,keepTaxa),file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+     write.table(prunedAF,file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
    }
   return(retainedTaxaMatrix)
 }
