@@ -425,10 +425,13 @@ taxaToDrop<-function(assignFrame,taxaRetained) {
 prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,minPerPop=1) {
    for (rep in 1:nSamplesDesired) {
      keepTaxa<-taxaToRetain(assignFrame,nIndividualsDesired,minPerPop)
+     physamp<-phy
      delTaxa<-taxaToDrop(assignFrame,keepTaxa)
-     physamp<-drop.tip(phy,delTaxa)
+     for (tree in 1:length(phy)) {
+        physamp<-drop.tip(phy[[tree]],delTaxa)
+     }
      write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
-    write.table(prunedAssignFrame(assignFrame,keepTaxa),file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+     write.table(prunedAssignFrame(assignFrame,keepTaxa),file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
    }
 }
 
