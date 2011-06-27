@@ -443,6 +443,7 @@ prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,m
           new.label<-as.character(which(prunedAF[,2]==old.label))
           newphy$tip.label[tipIndex]<-new.label
         }
+        physamp[[tree]]<-newphy
      }
       prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
      write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
