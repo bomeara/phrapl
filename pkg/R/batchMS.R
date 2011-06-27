@@ -435,7 +435,7 @@ prepSubsampling<-function(assignFrame,phy, nIndividualsDesired,nSamplesDesired,m
      physamp<-phy
      delTaxa<-taxaToDrop(assignFrame,keepTaxa)
      for (tree in 1:length(phy)) {
-        newphy<-drop.tip(phy[[tree]],delTaxa)
+        newphy<-drop.tip(phy[[tree]],as.character(delTaxa))
         for (tipIndex in 1:length(newphy$tip.label)) {
           old.label<-newphy$tip.label[tipIndex]
           print(paste("old.label = ",old.label))
