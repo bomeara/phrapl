@@ -106,7 +106,12 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
           initialMigration<-paste(initialMigration, "x", sep=" ") 
        }
        else {
-         initialMigration<-paste(initialMigration, sprintf("%f",migrationParameters[migrationArray[i,j,1] ]),sep=" ")
+         if (migrationArray[i,j,1] > 0) {
+           initialMigration<-paste(initialMigration, sprintf("%f",migrationParameters[migrationArray[i,j,1] ]),sep=" ")
+         }
+         else {
+           initialMigration<-paste(initialMigration, sprintf("%f",0),sep=" ")
+         }
        }
       }
     }
@@ -136,7 +141,12 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
           for (toPos in 1:nPop) {
             migrationArrayValue<-migrationArray[fromPos,toPos,generation]
            if (!is.na(migrationArrayValue) ) {
-            msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",migrationParameters[migrationArrayValue]),sep=" ")              
+             if (migrationArrayValue>0) {
+                msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",migrationParameters[migrationArrayValue]),sep=" ")     
+             }
+             else {
+                msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",0),sep=" ")     
+             }
            }
           }
         }
@@ -325,6 +335,55 @@ generateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=gen
 				}
 				migrationIndividualsList[[length(migrationIndividualsList)+1]]<-migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)
 			}
+		}		
+	}
+  return(migrationIndividualsList)
+}
+
+#this is like generateMigrationIndividuals, but allows some migration rates to be set to 0 with no penalty in terms of number of free parameters
+generateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierIndividualsList=generateN0multiplierIndividuals(popVector,popIntervalsList=generateIntervals(popVector,maxK),maxK), maxK, verbose=FALSE) {
+  migrationIndividualsList<-list()
+	for (i in 1:length(n0multiplierIndividualsList)) {
+    if (verbose==TRUE) {
+      print(paste("doing ",i,"/",length(n0multiplierIndividualsList)))
+    }
+		collapseMatrix<-n0multiplierIndividualsList[[i]]$collapseMatrix
+    n0multiplierMap<-n0multiplierIndividualsList[[i]]$n0multiplierMap
+		numFinalPops<-dim(collapseMatrix)[1]
+    numSteps<-dim(collapseMatrix)[2]
+    migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
+    for (interval in 1:numSteps) {
+       for (fromPop in 1:numFinalPops) {
+          for (toPop in 1:numFinalPops) {
+            if (fromPop!=toPop) {
+             if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
+                migrationTemplate[fromPop,toPop,interval]<-1
+              }
+            }
+          }
+       }
+    }
+    numPairs=sum(migrationTemplate,na.rm=TRUE)
+		possibleMappings<-compositions(numPairs)
+
+   for (mappingIndex in 1:dim(possibleMappings)[2]) {
+			thisMapping<-possibleMappings[,mappingIndex]
+			if ((length(which(thisMapping>0)) + kCollapseMatrix(collapseMatrix) + kN0multiplierMap(n0multiplierMap) )-1<=maxK) { #note the -1: we take away one free param because we allow zero migration rates
+				migrationArray<-migrationTemplate
+				whichPositions <- which(migrationArray==1)
+				for (positionIndex in 1:length(whichPositions)) {
+					position=whichPositions[positionIndex]
+					paramPosition<-which(thisMapping>0)[1]
+					migrationArray[position]=paramPosition #the position of the first parameter
+					thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we've used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
+				}
+        for (paramToMakeZero in sequence(max(migrationArray))) {
+          migrationArrayModified<-migrationArray
+          migrationArrayModified[which(migrationArrayModified==paramToMakeZero)]<-0
+          migrationArrayModified[which(migrationArrayModified>paramToMakeZero)]<-migrationArrayModified[which(migrationArrayModified>paramToMakeZero)]-1
+				  migrationIndividualsList[[length(migrationIndividualsList)+1]]<-migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArrayModified)
+        }
+      }
 		}		
 	}
   return(migrationIndividualsList)
