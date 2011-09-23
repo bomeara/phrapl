@@ -83,7 +83,7 @@ createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
   migrationArray<-migrationIndividual$migrationArray
   nPop<-length(popVector)
   numSteps<-dim(collapseMatrix)[2]
-   n0multiplierParameters<-parameterVector[grep("n0multiplier",names(parameterVector))]
+  n0multiplierParameters<-parameterVector[grep("n0multiplier",names(parameterVector))]
   migrationParameters<-parameterVector[grep("migration",names(parameterVector))]
   collapseParameters<-parameterVector[grep("collapse",names(parameterVector))]
 
@@ -393,6 +393,31 @@ generateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierInd
 	}
   return(migrationIndividualsList)
 }
+
+generateExpansionmultiplierIndividuals<-function(popVector,migrationIndividualsList=generateMigrationIndividualsAllowNoMigration(popVector,maxK),maxK) {
+	expansionmultiplierIndividualsList<-list()
+	for (i in 1:length(migrationIndividualsList)) {
+		expansionmultiplierMapTemplate<-1+0*migrationIndividualsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
+		numLineages=sum(expansionmultiplierMapTemplate,na.rm=TRUE)
+		possibleMappings<-compositions(numLineages)
+		for (mappingIndex in 1:dim(possibleMappings)[2]) {
+			thisMapping<-possibleMappings[,mappingIndex]
+			if ((length(which(thisMapping>0))+kPopInterval(migrationIndividualsList[[i]]) )<=maxK) { #only do it on those mappings that have not too many free parameters
+				expansionmultiplierMap<-expansionmultiplierMapTemplate
+				whichPositions <- which(expansionmultiplierMap==1)
+				for (positionIndex in 1:length(whichPositions)) {
+					position=whichPositions[positionIndex]
+					paramPosition<-which(thisMapping>0)[1]
+					expansionmultiplierMap[position]=paramPosition #the position of the first parameter
+					thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we've used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
+				}
+				expansionmultiplierIndividualsList[[length(expansionmultiplierIndividualsList)+1]]<-expansionmultiplierindividual(migrationIndividualsList[[i]]$collapseMatrix, migrationIndividualsList[[i]]$complete, expansionmultiplierMap)
+			}
+		}
+	}
+	return(expansionmultiplierIndividualsList)
+}
+
 
 loadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms") {
   msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
