@@ -394,7 +394,7 @@ generateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierInd
   return(migrationIndividualsList)
 }
 
-generateExpansionmultiplierIndividuals<-function(popVector,migrationIndividualsList=generateMigrationIndividualsAllowNoMigration(popVector,maxK),maxK) {
+generateExpansionMultiplierIndividuals<-function(popVector,migrationIndividualsList=generateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList=generateN0multiplierIndividuals(popVector,popIntervalsList=generateIntervals(popVector,maxK),maxK),maxK),maxK) {
 	expansionmultiplierIndividualsList<-list()
 	for (i in 1:length(migrationIndividualsList)) {
 		expansionmultiplierMapTemplate<-1+0*migrationIndividualsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
