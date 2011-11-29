@@ -669,6 +669,7 @@ returnModel<-function(p,migrationArrayMap) {
 
 
 
+
 searchContinuousModelSpace<-function(p, migrationArrayMap, badAIC=100000000000000, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE) {
   model<-returnModel(p,migrationArrayMap)
   if(is.na(model)) {
