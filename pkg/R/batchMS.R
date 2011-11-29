@@ -79,6 +79,10 @@ msIndividualParameters<-function(migrationIndividual) {
 	return(parameterList)
 }
 
+kAll<-function(migrationIndividual) {
+  return(length(msIndividualParameters(migrationIndividual))) 
+}
+
 createMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,nTrees=1) {
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
@@ -472,8 +476,15 @@ saveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	return(returnCode)
 }
 
-pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE) {
+pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE) {
 	msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
+  if(print.ms.string) {
+    print(msCallInfo) 
+  }
+  if(debug) {
+    print("parameterVector")
+    print(parameterVector)
+  }
 	unresolvedFlag<-"-u"
 	if (unresolvedTest==FALSE) {
 		unresolvedFlag<-""
@@ -622,7 +633,7 @@ combineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.
 	return(list(sumLnL,meanLnL,medianLnL,rescaledSumLnL,rescaledMeanLnL,rescaledMedianLnL))
 }
 
-makeMigrationArrayMap<-function(migrationArray) {
+generateMigrationArrayMap<-function(migrationArray) {
   migrationArrayMap<-data.frame(matrix(c(1,1,1,1,1,1,1),nrow=1)) #uses the first entry in migrationArray
   print(migrationArrayMap)
   for (model in 2:length(migrationArray)) {
@@ -668,25 +679,48 @@ returnModel<-function(p,migrationArrayMap) {
 }
 
 
+returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE,...) {
+  parameterVector<-exp(par)
+  names(parameterVector)<-msIndividualParameters(migrationIndividual)
+  if(debug) {
+    print(parameterVector) 
+  }
+  lnLValue<-convertOutputVectorToLikelihood(pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug),nTrees=nTrees)
+  AICValue<-2*(-lnLValue + kAll(migrationIndividual))
+  if(print.results) {
+    resultsVector<-c(AICValue,lnLValue,exp(par))
+    names(resultsVector)<-c("AIC","lnL",msIndividualParameters(migrationIndividual))
+    print(resultsVector)
+  }
+  return(AICValue)
+}
 
-
-searchContinuousModelSpace<-function(p, migrationArrayMap, badAIC=100000000000000, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE) {
-  model<-returnModel(p,migrationArrayMap)
-  if(is.na(model)) {
+searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, debug=FALSE,method="nlminb",...) {
+  modelID<-returnModel(p,migrationArrayMap)
+  if(print.result) {
+    resultVector<-c(modelID,p)
+    names(resultVector)<-c("migrationArryIndividualID","collapseMatrix.number", "n0multiplierMap.number","migrationArray.number")
+  }
+  if(is.na(modelID)) {
     return(badAIC)
   }
   else {
-    #do optimization, return lnL #though later AIC
-    return(model)
+    paramNames<-msIndividualParameters(migrationArray[[modelID]])
+    startingVals<-log(rep(1,length(paramNames))) #going to optimize in log space
+    if(debug) {
+      print(startingVals) 
+    }
+    searchResults<-optimx(par=startingVals, fn=returnAIC, method=method, migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, debug=debug, ...)
+    return(searchResults$fvalues)
   }
 }
 
-searchDiscreteModelSpace<-function(migrationArrayMap, badAIC=100000000000000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE, pop.size=50, ...) {
+searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="nlminb", pop.size=50, ...) {
   Domains<-matrix(ncol=2,nrow=3)
   Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
   Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
   Domains[3,]<-range(migrationArrayMap$migrationArray.number)
   
-  results<-genoud(searchContinuousModelSpace,nvars=3, starting.values=c(1,1,1), MemoryMatrix=TRUE, boundary.enforcement=2, data.type.int=TRUE, Domains=Domains, migrationArrayMap=migrationArrayMap, badAIC=badAIC, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, debug=debug, pop.size=pop.size, ...)
+  results<-genoud(searchContinuousModelSpace,nvars=3, starting.values=c(1,1,1), MemoryMatrix=TRUE, boundary.enforcement=2, data.type.int=TRUE, Domains=Domains, migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, print.ms.string=print.ms.string, badAIC=badAIC, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, debug=debug, pop.size=pop.size, ...)
   return(results)
 }
