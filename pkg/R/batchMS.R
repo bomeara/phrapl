@@ -1,5 +1,8 @@
 library(partitions)
 library(ape)
+library(rgenoud)
+library(optimx)
+
 
 colMax<-function(x,na.rm=TRUE) {
 	maxVal=rep(NA,dim(x)[2])
@@ -617,4 +620,72 @@ combineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.
 	rescaledMeanLnL<-mean(rescaledLikelihoodVector)
 	rescaledMedianLnL<-median(rescaledLikelihoodVector)
 	return(list(sumLnL,meanLnL,medianLnL,rescaledSumLnL,rescaledMeanLnL,rescaledMedianLnL))
+}
+
+makeMigrationArrayMap<-function(migrationArray) {
+  migrationArrayMap<-data.frame(matrix(c(1,1,1,1,1,1,1),nrow=1)) #uses the first entry in migrationArray
+  print(migrationArrayMap)
+  for (model in 2:length(migrationArray)) {
+    newRow<-c(model,rep(NA,6))
+    for (comparison in sequence(dim(migrationArrayMap)[1])) {
+      comparisonRow<-as.integer(migrationArrayMap[comparison,])
+     if(identical(migrationArray[[comparisonRow[3] ]]$collapseMatrix, migrationArray[[model]]$collapseMatrix)) {
+       newRow[2:3]<-comparisonRow[2:3]
+     }
+     if(identical(migrationArray[[comparisonRow[5] ]]$n0multiplierMap, migrationArray[[model]]$n0multiplierMap)) {
+       newRow[4:5]<-comparisonRow[4:5]
+     }
+     if(identical(migrationArray[[comparisonRow[7] ]]$migrationArray, migrationArray[[model]]$migrationArray)) {
+       newRow[6:7]<-comparisonRow[6:7]
+     }
+    }
+    if(is.na(newRow[2])) {
+      newRow[2:3]<-c(1+max(migrationArrayMap[,2]),model)
+    }
+    if(is.na(newRow[4])) {
+      newRow[4:5]<-c(1+max(migrationArrayMap[,4]),model)
+    }
+   if(is.na(newRow[6])) {
+      newRow[6:7]<-c(1+max(migrationArrayMap[,6]),model)
+    }
+    migrationArrayMap<-rbind(migrationArrayMap,newRow)
+    print(newRow)
+  }
+  names(migrationArrayMap)<-c("model","collapseMatrix.number","collapseMatrix.parent","n0multiplierMap.number","n0multiplierMap.parent","migrationArray.number","migrationArray.parent")
+  return(migrationArrayMap)
+}
+
+returnModel<-function(p,migrationArrayMap) {
+   prunedResults<-subset(migrationArrayMap, migrationArrayMap$collapseMatrix.number==p[1])
+   prunedResults<-subset(prunedResults, prunedResults$n0multiplierMap.number==p[2])
+   prunedResults<-subset(prunedResults, prunedResults$migrationArray.number==p[3])
+   if(dim(prunedResults)[1]==1) {
+      return(prunedResults$model) 
+   }
+   else  {
+      return(NA) 
+   }
+}
+
+
+
+searchContinuousModelSpace<-function(p, migrationArrayMap, badAIC=100000000000000, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE) {
+  model<-returnModel(p,migrationArrayMap)
+  if(is.na(model)) {
+    return(badAIC)
+  }
+  else {
+    #do optimization, return lnL #though later AIC
+    return(model)
+  }
+}
+
+searchDiscreteModelSpace<-function(migrationArrayMap, badAIC=100000000000000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE, pop.size=50, ...) {
+  Domains<-matrix(ncol=2,nrow=3)
+  Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
+  Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
+  Domains[3,]<-range(migrationArrayMap$migrationArray.number)
+  
+  results<-genoud(searchContinuousModelSpace,nvars=3, starting.values=c(1,1,1), MemoryMatrix=TRUE, boundary.enforcement=2, data.type.int=TRUE, Domains=Domains, migrationArrayMap=migrationArrayMap, badAIC=badAIC, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, debug=debug, pop.size=pop.size, ...)
+  return(results)
 }
