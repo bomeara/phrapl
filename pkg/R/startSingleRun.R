@@ -1,4 +1,5 @@
 setwd("/Users/bomeara/Dropbox/CarstensScratch/analysis")
+source("~/Documents/MyDocuments/Active/phrapl/src/R/batchMS.R")
 itnmax=40
 popVector<-c(3,4,4)
 maxK<-2
