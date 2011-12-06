@@ -8,6 +8,7 @@ doSingleRun<-function(itnmax,nTrees,rep) {
   system(paste("mkdir ",newDir))
   setwd(newDir)
   print(system("pwd"))
+  system('cp ../*.pl .')
   source("../individualRunTestPerformance.R")
   individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees)
 }
