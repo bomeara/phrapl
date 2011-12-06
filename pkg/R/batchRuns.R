@@ -15,5 +15,5 @@ singleParamDoSingleRun<-function(itnmax_nTrees_rep) {
 }
 itnmax_nTrees_repVector<-c(outer(c(outer(paste(itnmaxVector,"_",sep=""),nTreesVector,"paste",sep="")),sequence(nrep),"paste",sep="_"))
 
-mc.cores<-detectCores()
+mc.cores<-max(1,detectCores()-1)
 mclapply(itnmax_nTrees_repVector,FUN=singleParamDoSingleRun,mc.cores=mc.cores)
