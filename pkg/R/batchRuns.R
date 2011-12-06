@@ -7,7 +7,8 @@ doSingleRun<-function(itnmax,nTrees,rep) {
   filename<-paste(newDir,".Rsave",sep="")
   system(paste("mkdir ",newDir))
   setwd(newDir)
-  load("../individualRunTestPerformance.R")
+  print(system("pwd"))
+  source("../individualRunTestPerformance.R")
   individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees)
 }
 singleParamDoSingleRun<-function(itnmax_nTrees_rep) {
