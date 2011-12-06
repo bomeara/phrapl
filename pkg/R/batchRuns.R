@@ -1,3 +1,4 @@
+library(parallel)
 itnmaxVector<-c(2,25,100)
 nTreesVector<-c(10000,1000000,100000000)
 nrep<-6
