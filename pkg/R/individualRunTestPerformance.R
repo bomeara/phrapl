@@ -19,6 +19,7 @@ individualRunTestPerformance<-function(filename="testRunResult.Rsave",batchMSloc
   recoveredModelID<-returnModel(result$par,migrationArrayMap)
   summaryVec<-c(trueModelID,recoveredModelID,itnmax,nTrees,nTreesObserved,elapsed.time)
   names(summaryVec)<-c("trueModelID","recoveredModelID","itnmax","nTrees","nTreesObserved","seconds")
+  print(summaryVec)
   cat(names(summaryVec),file="summary.txt")
   cat("\n",file="summary.txt",append=TRUE)
   cat(summaryVec,file="summary.txt",append=TRUE)
