@@ -14,7 +14,7 @@ doSingleRun<-function(itnmax,nTrees,nTreesObserved,rep) {
   individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees, nTreesObserved=nTreesObserved)
 }
 singleParamDoSingleRun<-function(itnmax_nTrees_nTreesObserved_rep) {
-  x<-as.integer(strsplit(itnmax_nTrees_rep,split="_")[[1]])
+  x<-as.integer(strsplit(itnmax_nTrees_nTreesObserved_rep,split="_")[[1]])
   doSingleRun(itnmax=x[1],nTrees=x[2],nTreesObserved=x[3],rep=x[4])
 }
 itnmax_nTrees_nTreesObservedVector<-c(outer(c(outer(paste(itnmaxVector,"_",sep=""),nTreesVector,"paste",sep="")),nTreesObservedVector,"paste",sep="_"))
