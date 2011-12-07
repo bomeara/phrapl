@@ -740,7 +740,7 @@ searchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, 
   }
 }
 
-searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=10000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="nlminb", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
+searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=10000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
   Domains<-matrix(ncol=2,nrow=3)
   Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
   Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
@@ -750,7 +750,7 @@ searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector,
   return(results)
 }
 
-searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=10000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="nlminb", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
+searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=10000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
   Domains<-matrix(ncol=2,nrow=3)
   Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
   Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
