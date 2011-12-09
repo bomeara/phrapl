@@ -1,0 +1,445 @@
+
+R version 2.14.0 (2011-10-31)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin10.8.0/x86_64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> source("../R/batchMS.R")
+Loading required package: polynom
+##  rgenoud (Version 5.7-3, Build Date: 2011-05-04)
+##  See http://sekhon.berkeley.edu/rgenoud for additional documentation.
+Loading required package: numDeriv
+Loading required package: BB
+Loading required package: quadprog
+Loading required package: ucminf
+Loading required package: Rcgmin
+Loading required package: Rvmmin
+
+Attaching package: ‘Rvmmin’
+
+The following object(s) are masked from ‘package:Rcgmin’:
+
+    optansout
+
+Loading required package: minqa
+Loading required package: Rcpp
+Loading required package: setRNG
+
+Attaching package: ‘optimx’
+
+The following object(s) are masked from ‘package:Rvmmin’:
+
+    optansout
+
+The following object(s) are masked from ‘package:Rcgmin’:
+
+    optansout
+
+> for (npop in 1:20) {
++ 	for(maxK in 1:10) {
++ 		print(paste("Now starting ",npop," populations and maxK=",maxK))
++ 		start=proc.time()
++ 		try(generateMigrationIndividualsNoCollapseAllowNoMigration(popVector=rep(5,npop),maxK=maxK,verbose=TRUE,file=paste("migrationArray_CollapseForbidden_npop",npop,"_maxK",maxK,".Rsave",sep="")))	
++ 		print("That took")
++ 		print(proc.time()-start)
++ 	}
++ }
+[1] "Now starting  1  populations and maxK= 1"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.003   0.000   0.003 
+[1] "Now starting  1  populations and maxK= 2"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.001   0.000   0.002 
+[1] "Now starting  1  populations and maxK= 3"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.001   0.000   0.001 
+[1] "Now starting  1  populations and maxK= 4"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.002   0.000   0.001 
+[1] "Now starting  1  populations and maxK= 5"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.001   0.000   0.002 
+[1] "Now starting  1  populations and maxK= 6"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.002   0.000   0.001 
+[1] "Now starting  1  populations and maxK= 7"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.001   0.000   0.001 
+[1] "Now starting  1  populations and maxK= 8"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.001   0.000   0.002 
+[1] "Now starting  1  populations and maxK= 9"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.003   0.000   0.003 
+[1] "Now starting  1  populations and maxK= 10"
+Error in rep(NA, dim(x)[2]) : invalid 'times' argument
+[1] "That took"
+   user  system elapsed 
+  0.002   0.000   0.001 
+[1] "Now starting  2  populations and maxK= 1"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 1. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 1  (migration individuals so far =  0 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.001   0.006 
+[1] "Now starting  2  populations and maxK= 2"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 2. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.004   0.000   0.005 
+[1] "Now starting  2  populations and maxK= 3"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 3. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.001   0.006 
+[1] "Now starting  2  populations and maxK= 4"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 4. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.000   0.005 
+[1] "Now starting  2  populations and maxK= 5"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 5. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.001   0.005 
+[1] "Now starting  2  populations and maxK= 6"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 6. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.006   0.000   0.006 
+[1] "Now starting  2  populations and maxK= 7"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 7. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.000   0.005 
+[1] "Now starting  2  populations and maxK= 8"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 8. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.001   0.006 
+[1] "Now starting  2  populations and maxK= 9"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 9. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.006   0.000   0.005 
+[1] "Now starting  2  populations and maxK= 10"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 10. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 2  (migration individuals so far =  0 )"
+[1] "doing  2 / 2  (migration individuals so far =  3 )"
+[1] "That took"
+   user  system elapsed 
+  0.005   0.001   0.005 
+[1] "Now starting  3  populations and maxK= 1"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 1. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 1  (migration individuals so far =  0 )"
+[1] "That took"
+   user  system elapsed 
+  0.014   0.000   0.015 
+[1] "Now starting  3  populations and maxK= 2"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 2. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 3  (migration individuals so far =  0 )"
+[1] "doing  2 / 3  (migration individuals so far =  11 )"
+[1] "doing  3 / 3  (migration individuals so far =  12 )"
+[1] "That took"
+   user  system elapsed 
+  0.032   0.001   0.033 
+[1] "Now starting  3  populations and maxK= 3"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 3. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  41 )"
+[1] "doing  3 / 4  (migration individuals so far =  52 )"
+[1] "doing  4 / 4  (migration individuals so far =  63 )"
+[1] "That took"
+   user  system elapsed 
+  0.048   0.001   0.048 
+[1] "Now starting  3  populations and maxK= 4"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 4. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  81 )"
+[1] "doing  3 / 4  (migration individuals so far =  122 )"
+[1] "doing  4 / 4  (migration individuals so far =  163 )"
+[1] "That took"
+   user  system elapsed 
+  0.062   0.000   0.063 
+[1] "Now starting  3  populations and maxK= 5"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 5. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  106 )"
+[1] "doing  3 / 4  (migration individuals so far =  187 )"
+[1] "doing  4 / 4  (migration individuals so far =  268 )"
+[1] "That took"
+   user  system elapsed 
+  0.084   0.001   0.085 
+[1] "Now starting  3  populations and maxK= 6"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 6. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  112 )"
+[1] "doing  3 / 4  (migration individuals so far =  218 )"
+[1] "doing  4 / 4  (migration individuals so far =  324 )"
+[1] "That took"
+   user  system elapsed 
+  0.096   0.001   0.106 
+[1] "Now starting  3  populations and maxK= 7"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 7. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  112 )"
+[1] "doing  3 / 4  (migration individuals so far =  224 )"
+[1] "doing  4 / 4  (migration individuals so far =  336 )"
+[1] "That took"
+   user  system elapsed 
+  0.102   0.000   0.103 
+[1] "Now starting  3  populations and maxK= 8"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 8. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  112 )"
+[1] "doing  3 / 4  (migration individuals so far =  224 )"
+[1] "doing  4 / 4  (migration individuals so far =  336 )"
+[1] "That took"
+   user  system elapsed 
+  0.101   0.000   0.101 
+[1] "Now starting  3  populations and maxK= 9"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 9. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  112 )"
+[1] "doing  3 / 4  (migration individuals so far =  224 )"
+[1] "doing  4 / 4  (migration individuals so far =  336 )"
+[1] "That took"
+   user  system elapsed 
+  0.150   0.001   0.151 
+[1] "Now starting  3  populations and maxK= 10"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 10. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  112 )"
+[1] "doing  3 / 4  (migration individuals so far =  224 )"
+[1] "doing  4 / 4  (migration individuals so far =  336 )"
+[1] "That took"
+   user  system elapsed 
+  0.099   0.004   0.102 
+[1] "Now starting  4  populations and maxK= 1"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 1. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 1  (migration individuals so far =  0 )"
+[1] "That took"
+   user  system elapsed 
+  0.511   0.001   0.513 
+[1] "Now starting  4  populations and maxK= 2"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 2. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 4  (migration individuals so far =  0 )"
+[1] "doing  2 / 4  (migration individuals so far =  23 )"
+[1] "doing  3 / 4  (migration individuals so far =  24 )"
+[1] "doing  4 / 4  (migration individuals so far =  25 )"
+[1] "That took"
+   user  system elapsed 
+  2.023   0.004   2.026 
+[1] "Now starting  4  populations and maxK= 3"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 3. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 7  (migration individuals so far =  0 )"
+[1] "doing  2 / 7  (migration individuals so far =  188 )"
+[1] "doing  3 / 7  (migration individuals so far =  211 )"
+[1] "doing  4 / 7  (migration individuals so far =  234 )"
+[1] "doing  5 / 7  (migration individuals so far =  235 )"
+[1] "doing  6 / 7  (migration individuals so far =  258 )"
+[1] "doing  7 / 7  (migration individuals so far =  259 )"
+[1] "That took"
+   user  system elapsed 
+  3.538   0.008   3.546 
+[1] "Now starting  4  populations and maxK= 4"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 4. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  848 )"
+[1] "doing  3 / 8  (migration individuals so far =  1036 )"
+[1] "doing  4 / 8  (migration individuals so far =  1224 )"
+[1] "doing  5 / 8  (migration individuals so far =  1247 )"
+[1] "doing  6 / 8  (migration individuals so far =  1435 )"
+[1] "doing  7 / 8  (migration individuals so far =  1458 )"
+[1] "doing  8 / 8  (migration individuals so far =  1481 )"
+[1] "That took"
+   user  system elapsed 
+  4.243   0.011   4.255 
+[1] "Now starting  4  populations and maxK= 5"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 5. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  2498 )"
+[1] "doing  3 / 8  (migration individuals so far =  3346 )"
+[1] "doing  4 / 8  (migration individuals so far =  4194 )"
+[1] "doing  5 / 8  (migration individuals so far =  4382 )"
+[1] "doing  6 / 8  (migration individuals so far =  5230 )"
+[1] "doing  7 / 8  (migration individuals so far =  5418 )"
+[1] "doing  8 / 8  (migration individuals so far =  5606 )"
+[1] "That took"
+   user  system elapsed 
+  5.185   0.019   5.203 
+[1] "Now starting  4  populations and maxK= 6"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 6. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  5270 )"
+[1] "doing  3 / 8  (migration individuals so far =  7768 )"
+[1] "doing  4 / 8  (migration individuals so far =  10266 )"
+[1] "doing  5 / 8  (migration individuals so far =  11114 )"
+[1] "doing  6 / 8  (migration individuals so far =  13612 )"
+[1] "doing  7 / 8  (migration individuals so far =  14460 )"
+[1] "doing  8 / 8  (migration individuals so far =  15308 )"
+[1] "That took"
+   user  system elapsed 
+  7.962   0.072   8.034 
+[1] "Now starting  4  populations and maxK= 7"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 7. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  8504 )"
+[1] "doing  3 / 8  (migration individuals so far =  13774 )"
+[1] "doing  4 / 8  (migration individuals so far =  19044 )"
+[1] "doing  5 / 8  (migration individuals so far =  21542 )"
+[1] "doing  6 / 8  (migration individuals so far =  26812 )"
+[1] "doing  7 / 8  (migration individuals so far =  29310 )"
+[1] "doing  8 / 8  (migration individuals so far =  31808 )"
+[1] "That took"
+   user  system elapsed 
+ 15.412   1.256  16.669 
+[1] "Now starting  4  populations and maxK= 8"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 8. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  11144 )"
+[1] "doing  3 / 8  (migration individuals so far =  19648 )"
+[1] "doing  4 / 8  (migration individuals so far =  28152 )"
+[1] "doing  5 / 8  (migration individuals so far =  33422 )"
+[1] "doing  6 / 8  (migration individuals so far =  41926 )"
+[1] "doing  7 / 8  (migration individuals so far =  47196 )"
+[1] "doing  8 / 8  (migration individuals so far =  52466 )"
+[1] "That took"
+   user  system elapsed 
+ 29.806   3.380  33.188 
+[1] "Now starting  4  populations and maxK= 9"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 9. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  12629 )"
+[1] "doing  3 / 8  (migration individuals so far =  23773 )"
+[1] "doing  4 / 8  (migration individuals so far =  34917 )"
+[1] "doing  5 / 8  (migration individuals so far =  43421 )"
+[1] "doing  6 / 8  (migration individuals so far =  54565 )"
+[1] "doing  7 / 8  (migration individuals so far =  63069 )"
+[1] "doing  8 / 8  (migration individuals so far =  71573 )"
+[1] "That took"
+   user  system elapsed 
+ 49.973   5.758  55.857 
+[1] "Now starting  4  populations and maxK= 10"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 10. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 8  (migration individuals so far =  0 )"
+[1] "doing  2 / 8  (migration individuals so far =  13179 )"
+[1] "doing  3 / 8  (migration individuals so far =  25808 )"
+[1] "doing  4 / 8  (migration individuals so far =  38437 )"
+[1] "doing  5 / 8  (migration individuals so far =  49581 )"
+[1] "doing  6 / 8  (migration individuals so far =  62210 )"
+[1] "doing  7 / 8  (migration individuals so far =  73354 )"
+[1] "doing  8 / 8  (migration individuals so far =  84498 )"
+[1] "That took"
+   user  system elapsed 
+ 66.719   8.832  75.555 
+[1] "Now starting  5  populations and maxK= 1"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 1. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 1  (migration individuals so far =  0 )"
+[1] "That took"
+   user  system elapsed 
+129.426   0.727 130.175 
+[1] "Now starting  5  populations and maxK= 2"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 2. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 5  (migration individuals so far =  0 )"
+[1] "doing  2 / 5  (migration individuals so far =  39 )"
+[1] "doing  3 / 5  (migration individuals so far =  40 )"
+[1] "doing  4 / 5  (migration individuals so far =  41 )"
+[1] "doing  5 / 5  (migration individuals so far =  42 )"
+[1] "That took"
+   user  system elapsed 
+652.490   3.378 655.904 
+[1] "Now starting  5  populations and maxK= 3"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 3. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 11  (migration individuals so far =  0 )"
+[1] "doing  2 / 11  (migration individuals so far =  552 )"
+[1] "doing  3 / 11  (migration individuals so far =  591 )"
+[1] "doing  4 / 11  (migration individuals so far =  630 )"
+[1] "doing  5 / 11  (migration individuals so far =  631 )"
+[1] "doing  6 / 11  (migration individuals so far =  670 )"
+[1] "doing  7 / 11  (migration individuals so far =  671 )"
+[1] "doing  8 / 11  (migration individuals so far =  672 )"
+[1] "doing  9 / 11  (migration individuals so far =  711 )"
+[1] "doing  10 / 11  (migration individuals so far =  712 )"
+[1] "doing  11 / 11  (migration individuals so far =  713 )"
+[1] "That took"
+    user   system  elapsed 
+1419.682   10.336 1430.077 
+[1] "Now starting  5  populations and maxK= 4"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 4. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 15  (migration individuals so far =  0 )"
+[1] "doing  2 / 15  (migration individuals so far =  4428 )"
+[1] "doing  3 / 15  (migration individuals so far =  4980 )"
+[1] "doing  4 / 15  (migration individuals so far =  5532 )"
+[1] "doing  5 / 15  (migration individuals so far =  5571 )"
+[1] "doing  6 / 15  (migration individuals so far =  6123 )"
+[1] "doing  7 / 15  (migration individuals so far =  6162 )"
+[1] "doing  8 / 15  (migration individuals so far =  6201 )"
+[1] "doing  9 / 15  (migration individuals so far =  6202 )"
+[1] "doing  10 / 15  (migration individuals so far =  6754 )"
+[1] "doing  11 / 15  (migration individuals so far =  6793 )"
+[1] "doing  12 / 15  (migration individuals so far =  6832 )"
+[1] "doing  13 / 15  (migration individuals so far =  6833 )"
+[1] "doing  14 / 15  (migration individuals so far =  6872 )"
+[1] "doing  15 / 15  (migration individuals so far =  6873 )"
+[1] "That took"
+    user   system  elapsed 
+1966.258    5.006 1971.340 
+[1] "Now starting  5  populations and maxK= 5"
+[1] "note: setMaxK called, but maxK already exists, so using the existing one of 5. To change this behavior, give setMaxK the option force=TRUE"
+[1] "doing  1 / 16  (migration individuals so far =  0 )"
+[1] "doing  2 / 16  (migration individuals so far =  23808 )"
+[1] "doing  3 / 16  (migration individuals so far =  28236 )"
+[1] "doing  4 / 16  (migration individuals so far =  32664 )"
+[1] "doing  5 / 16  (migration individuals so far =  33216 )"
+[1] "doing  6 / 16  (migration individuals so far =  37644 )"
+[1] "doing  7 / 16  (migration individuals so far =  38196 )"
+[1] "doing  8 / 16  (migration individuals so far =  38748 )"
