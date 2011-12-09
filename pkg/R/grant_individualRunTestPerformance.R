@@ -3,6 +3,9 @@ individualRunTestPerformance<-function(filename="testRunResult.Rsave",batchMSloc
   if(is.null(migrationArray)) {
     migrationArray<-generateMigrationIndividualsAllowNoMigration(popVector,maxK=maxK)
   }
+  trueModel<-migrationArray[[trueModelID]] #NOTE: We use a tree model from the whole set before tossing modelsToRemove
+  #This lets us use a model for generation we don't have in the analysis set
+
   if(!is.null(modelsToRemove)) {
   	migrationArray<-migrationArray[-modelsToRemove]
   }
@@ -10,7 +13,6 @@ individualRunTestPerformance<-function(filename="testRunResult.Rsave",batchMSloc
     migrationArrayMap<-generateMigrationArrayMap(migrationArray)
   }
   createAssignment(popVector)
-  trueModel<-migrationArray[[trueModelID]]
   names(trueModelParams)<-msIndividualParameters(trueModel)
   msCallInfo<-createMSstringSpecific(popVector,trueModel,trueModelParams,nTrees=nTreesObserved)
   system(paste(msLocation=msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' > observed.tre"),intern=FALSE)
