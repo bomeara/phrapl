@@ -1,8 +1,10 @@
-individualRunTestPerformance<-function(filename="testRunResult.Rsave",batchMSlocation="../batchMS.R",compareLocation="comparecladespipe.pl",msLocation="/usr/local/bin/ms",popVector=c(3,4,4),maxK=2,itnmax=40,nTrees=1000000,migrationArray=NULL,migrationArrayMap=NULL, trueModelID=5,trueModelParams=c(0.9,0.2),nTreesObserved=3,modelsToRemove=NULL) {
+grant_individualRunTestPerformance<-function(filename="testRunResult.Rsave",batchMSlocation="../batchMS.R",compareLocation="comparecladespipe.pl",msLocation="/usr/local/bin/ms",popVector=c(3,4,4),maxK=2,itnmax=40,nTrees=1000000,migrationArray=NULL,migrationArrayMap=NULL, trueModelID=5,trueModelParams=c(0.9,0.2),nTreesObserved=3,modelsToRemove=NULL) {
   source(batchMSlocation)
+  print("creating migrationArray")
   if(is.null(migrationArray)) {
     migrationArray<-generateMigrationIndividualsAllowNoMigration(popVector,maxK=maxK)
   }
+  print("getting true model")
   trueModel<-migrationArray[[trueModelID]] #NOTE: We use a tree model from the whole set before tossing modelsToRemove
   #This lets us use a model for generation we don't have in the analysis set
 
@@ -12,12 +14,14 @@ individualRunTestPerformance<-function(filename="testRunResult.Rsave",batchMSloc
   if(is.null(migrationArrayMap) || !is.null(modelsToRemove)) {
     migrationArrayMap<-generateMigrationArrayMap(migrationArray)
   }
+  print(paste("number of models in migrationArray = ",length(migrationArray)))
   createAssignment(popVector)
   names(trueModelParams)<-msIndividualParameters(trueModel)
   msCallInfo<-createMSstringSpecific(popVector,trueModel,trueModelParams,nTrees=nTreesObserved)
+  print(paste("ms call is ",msCallInfo))
   system(paste(msLocation=msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' > observed.tre"),intern=FALSE)
   start.time<-proc.time()
-  result<-searchDiscreteModelSpace(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, nTrees=10000 ,msLocation=msLocation,compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.tre",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=TRUE, debug=FALSE,itnmax=itnmax,method="BFGS",print.level=2)
+  result<-searchDiscreteModelSpaceOptim(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, nTrees=10000 ,msLocation=msLocation,compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.tre",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=TRUE, debug=TRUE,itnmax=itnmax,method="BFGS",print.level=2)
   print(result)
   elapsed.time<-proc.time()-start.time
   print(elapsed.time)

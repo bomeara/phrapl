@@ -1,3 +1,7 @@
+library(parallel)
+source("batchMS.R")
+source("grant_individualRunTestPerformance.R")
+
 itnmaxVector<-c(2,25,100)
 nTreesVector<-c(10000,1000000,100000000)
 nTreesObservedVector<-c(3,10,100)
@@ -14,6 +18,8 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,rep,modelsToRemo
   popVector<-c(NA)
   trueModelParams<-c(NA)
   maxK<-2
+  modelsToRemove<-NULL
+  migrationArray<-NULL
   if (overallModel==1) { 
     #original plan
     #A four-population divergence model with some size change
@@ -41,8 +47,8 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,rep,modelsToRemo
         modelsToRemove<-append(modelsToRemove,i) 
       }
     }
-    trueModelParams<-(3,5,5,1)
-    names(trueModelparams)<-msIndividualParameters(migrationArray[[trueModelID]]
+    trueModelParams<-c(3,5,5,1)
+    names(trueModelParams)<-msIndividualParameters(migrationArray[[trueModelID]])
   }
   else if (overallModel==2) { #a divergence with gene flow model (2 pops)
   #For the divergence with gene flow, let theta-A be 5.0, theta1 be 3.0, and theta2 be 4.0. 
@@ -58,7 +64,8 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,rep,modelsToRemo
   	maxK<-5
   
   }
-  individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees, nTreesObserved=nTreesObserved,modelsToRemove=modelsToRemove,maxK=maxK)
+  print(filename)
+  try(grant_individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees, nTreesObserved=nTreesObserved,trueModelParams=trueModelParams,modelsToRemove=modelsToRemove,maxK=maxK,migrationArray=migrationArray))
 }
 singleParamDoSingleRun<-function(itnmax_nTrees_nTreesObserved_rep,overallModel,modelsToRemove,dataDir) {
   x<-as.integer(strsplit(itnmax_nTrees_nTreesObserved_rep,split="_")[[1]])
@@ -67,5 +74,5 @@ singleParamDoSingleRun<-function(itnmax_nTrees_nTreesObserved_rep,overallModel,m
 itnmax_nTrees_nTreesObservedVector<-c(outer(c(outer(paste(itnmaxVector,"_",sep=""),nTreesVector,"paste",sep="")),nTreesObservedVector,"paste",sep="_"))
 itnmax_nTrees_nTreesObserved_repVector<-c(outer(itnmax_nTrees_nTreesObservedVector,sequence(nrep),"paste",sep="_"))
 
-mc.cores<-max(1,floor(detectCores()/3))
-mclapply(itnmax_nTrees_nTreesObserved_repVector,FUN=singleParamDoSingleRun,mc.cores=mc.cores,dataDir=dataDir)
+mc.cores<-max(1,floor(detectCores()-2))
+mclapply(itnmax_nTrees_nTreesObserved_repVector,FUN=singleParamDoSingleRun,mc.cores=mc.cores,dataDir=dataDir,overallModel=1)
