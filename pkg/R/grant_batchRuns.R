@@ -78,11 +78,15 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,replicates,model
   #filter such that only migration models are possible -- no collapse
   	popVector<-rep(5,4)
   	maxK<-5
+    load(paste(dataDir,"migrationArray_CollapseForbidden_npop4_maxK5.Rsave",sep="")) 
+    migrationArray<-returnSymmetricMigrationOnly(migrationArray)
+
   
   }
   print(filename)
   print(paste("migrationArray length in batch run is ",length(migrationArray)))
   try(grant_individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees, nTreesObserved=nTreesObserved,trueModelParams=trueModelParams,trueModelID=trueModelID, modelsToRemove=modelsToRemove,maxK=maxK,migrationArray=migrationArray,popVector=popVector))
+  setwd("..")
 }
 singleParamDoSingleRun<-function(itnmax_nTrees_nTreesObserved_replicates,overallModel,modelsToRemove,dataDir) {
   x<-as.integer(strsplit(itnmax_nTrees_nTreesObserved_replicates,split="_")[[1]])

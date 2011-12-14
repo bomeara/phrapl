@@ -855,3 +855,32 @@ searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVe
   results<-genoud(searchContinuousModelSpaceOptim,nvars=3, max=FALSE,starting.values=c(1,1,1), MemoryMatrix=TRUE, boundary.enforcement=2, data.type.int=TRUE, Domains=Domains, migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, print.ms.string=print.ms.string, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, debug=debug, method=method,itnmax=itnmax, pop.size=pop.size, print.results=print.results,...)
   return(results)
 }
+
+#only works on island models (no collapse)
+returnSymmetricMigrationOnly<-function(migrationArray) {
+  newMigrationArray<-list()
+  storedMigrationString<-c()
+  for (i in sequence(length(migrationArray))) {
+    migrationIndividual<-migrationArray[[i]]
+    if(max(migrationIndividual$collapseMatrix,na.rm=TRUE)==0) {
+      migration.main<-migrationIndividual$migrationArray[ , , 1] 
+      migration.upper<-migration.main[upper.tri(migration.main)]
+      migrationString<-paste(migration.upper,collapse="_")
+      if(sum(grepl(migrationString,storedMigrationString))==0) {
+        if(length(c(min(migration.upper):max(migration.upper)))==length(unique(migration.upper))) { #that is, we don't skip any parameters: no 0, 1, 3
+          for (row.index in 2:dim(migration.main)[1]) {
+            for (col.index in 1:(dim(migration.main)[2]-1)) {
+              if (row.index>col.index) {
+                migration.main[row.index,col.index]=migration.main[col.index,row.index] 
+              }
+            }
+          }
+          storedMigrationString<-c(storedMigrationString,migrationString)
+          migrationIndividual$migrationArray[, , 1]<-migration.main
+          newMigrationArray[[1+length(newMigrationArray)]]<-migrationIndividual
+        }
+      }
+    }
+  }
+  return(newMigrationArray)
+}
