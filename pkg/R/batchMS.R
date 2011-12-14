@@ -775,7 +775,7 @@ returnModel<-function(p,migrationArrayMap) {
 }
 
 #maxParameterValue prevents MS from going nuts (not finishing) with really high migration or other rates
-returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=10000,...) {
+returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=1000,...) {
   parameterVector<-exp(par)
   names(parameterVector)<-msIndividualParameters(migrationIndividual)
   if(max(parameterVector)>maxParameterValue) {
