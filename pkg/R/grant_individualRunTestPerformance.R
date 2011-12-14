@@ -31,8 +31,11 @@ grant_individualRunTestPerformance<-function(filename="testRunResult.Rsave",batc
   print(summaryVec)
   cat(names(summaryVec),file="summary.txt")
   cat("\n",file="summary.txt",append=TRUE)
+  
   cat(summaryVec,file="summary.txt",append=TRUE)
   cat("\n",file="summary.txt",append=TRUE)
+  cat("\nelapsed.time",file="summary.txt",append=TRUE)
+  cat(elapsed.time,file="summary.txt",append=TRUE)
   cat("\ncollapse matrix",file="summary.txt",append=TRUE)
   cat("\ntrue  ",file="summary.txt",append=TRUE)
   cat(migrationArray[[trueModelID]]$collapseMatrix,file="summary.txt",append=TRUE)

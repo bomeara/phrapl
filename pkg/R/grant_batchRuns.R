@@ -7,8 +7,8 @@ nTreesVector<-c(10000,1000000,100000000)
 nTreesObservedVector<-c(3,10,100)
 nrep<-10
 dataDir<-"/Users/bomeara/Documents/MyDocuments/Active/phrapl/pkg/data/"
-doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,rep,modelsToRemove,dataDir) {
-  newDir<-paste("itnmax",itnmax,"_nTrees",nTrees,"_nTreesObs",nTreesObserved,"_rep",rep,sep="")
+doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,replicates,modelsToRemove,dataDir) {
+  newDir<-paste("itnmax",itnmax,"_nTrees",nTrees,"_nTreesObs",nTreesObserved,"_rep",replicates,sep="")
   filename<-paste(newDir,".Rsave",sep="")
   system(paste("mkdir ",newDir))
   setwd(newDir)
@@ -51,11 +51,27 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,rep,modelsToRemo
     names(trueModelParams)<-msIndividualParameters(migrationArray[[trueModelID]])
   }
   else if (overallModel==2) { #a divergence with gene flow model (2 pops)
-  #For the divergence with gene flow, let theta-A be 5.0, theta1 be 3.0, and theta2 be 4.0. 
+  #For the divergence with gene flow, let theta-A be 5.0 [note: doesn't matter], theta1 be 3.0, and theta2 be 4.0. 
   #Divergence of 1.5N, and migration rates of 0.125.
   	popVector<-rep(5,2)
-  	maxK<-4
-  }
+  	maxK<-4 #note for this model 4 is the max anyway
+    load(paste(dataDir,"migrationArray_npop2_maxK4.Rsave",sep="")) 
+    print(paste("migrationArray length ",length(migrationArray)))
+    #now for a hack to add in symmetric migration rates
+    migrationArray2<-migrationArray
+    for (i in sequence(length(migrationArray2))) {
+       if (max(migrationArray2[[i]]$migrationArray[, , 1],na.rm=TRUE)==0) {
+           migrationArray2[[i]]$migrationArray[, , 1]<-migrationArray2[[i]]$migrationArray[, , 1]+1
+           migrationArray[[length(migrationArray)+1]]<-migrationArray2[[i]]
+       }
+
+    }
+    trueModelID<-16
+    trueModelParams<-c(1.5,3.0,4.0,0.125)
+    names(trueModelParams)<-msIndividualParameters(migrationArray[[trueModelID]])   
+    popVector<-rep(5,2)
+  	maxK<-4 #note for this model 4 is the max anyway
+   }
   else if (overallModel==3) { #a four population island model
   #For the n-island model, let theta1=6, theta2=6, theta3=4, and theta4=4. 
   #Symmetric migration matrix of 1-2 = 0.125, 1-3 = 0.250, 1-4 = 0.0625, 2-3 = 0, 2-4 = 0.125, and 3-4 = 0.250 
@@ -65,14 +81,16 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,rep,modelsToRemo
   
   }
   print(filename)
-  try(grant_individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees, nTreesObserved=nTreesObserved,trueModelParams=trueModelParams,modelsToRemove=modelsToRemove,maxK=maxK,migrationArray=migrationArray))
+  print(paste("migrationArray length in batch run is ",length(migrationArray)))
+  try(grant_individualRunTestPerformance(filename=filename,itnmax=itnmax, nTrees=nTrees, nTreesObserved=nTreesObserved,trueModelParams=trueModelParams,trueModelID=trueModelID, modelsToRemove=modelsToRemove,maxK=maxK,migrationArray=migrationArray,popVector=popVector))
 }
-singleParamDoSingleRun<-function(itnmax_nTrees_nTreesObserved_rep,overallModel,modelsToRemove,dataDir) {
-  x<-as.integer(strsplit(itnmax_nTrees_nTreesObserved_rep,split="_")[[1]])
-  doSingleRun(overallModel=overallModel,itnmax=x[1],nTrees=x[2],nTreesObserved=x[3],rep=x[4],modelsToRemove=modelsToRemove,dataDir=dataDir)
+singleParamDoSingleRun<-function(itnmax_nTrees_nTreesObserved_replicates,overallModel,modelsToRemove,dataDir) {
+  x<-as.integer(strsplit(itnmax_nTrees_nTreesObserved_replicates,split="_")[[1]])
+  doSingleRun(overallModel=overallModel,itnmax=x[1],nTrees=x[2],nTreesObserved=x[3],replicates=x[4],modelsToRemove=modelsToRemove,dataDir=dataDir)
 }
 itnmax_nTrees_nTreesObservedVector<-c(outer(c(outer(paste(itnmaxVector,"_",sep=""),nTreesVector,"paste",sep="")),nTreesObservedVector,"paste",sep="_"))
-itnmax_nTrees_nTreesObserved_repVector<-c(outer(itnmax_nTrees_nTreesObservedVector,sequence(nrep),"paste",sep="_"))
+itnmax_nTrees_nTreesObserved_replicatesVector<-c(outer(itnmax_nTrees_nTreesObservedVector,sequence(nrep),"paste",sep="_"))
 
 mc.cores<-max(1,floor(detectCores()-2))
-mclapply(itnmax_nTrees_nTreesObserved_repVector,FUN=singleParamDoSingleRun,mc.cores=mc.cores,dataDir=dataDir,overallModel=1)
+print(itnmax_nTrees_nTreesObserved_replicatesVector)
+mclapply(itnmax_nTrees_nTreesObserved_replicatesVector,FUN=singleParamDoSingleRun,mc.cores=mc.cores,dataDir=dataDir,overallModel=2)
