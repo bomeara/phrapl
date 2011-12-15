@@ -7,9 +7,15 @@ grant_individualRunTestPerformance<-function(filename="testRunResult.Rsave",batc
   print("getting true model")
   trueModel<-migrationArray[[trueModelID]] #NOTE: We use a tree model from the whole set before tossing modelsToRemove
   #This lets us use a model for generation we don't have in the analysis set
-
+  trueModelID.rescaled<-trueModel
   if(!is.null(modelsToRemove)) {
+    trueModelID.rescaled<-NA
   	migrationArray<-migrationArray[-modelsToRemove]
+    for (i in sequence(length(migrationArray))) {
+      if(sum(paste(dput(migrationArray[[i]]))==paste(dput(trueModel)))==4) {
+        trueModelID.rescaled<-i
+      }
+    }
   }
   if(is.null(migrationArrayMap) || !is.null(modelsToRemove)) {
     migrationArrayMap<-generateMigrationArrayMap(migrationArray)
@@ -26,8 +32,8 @@ grant_individualRunTestPerformance<-function(filename="testRunResult.Rsave",batc
   elapsed.time<-proc.time()-start.time
   print(elapsed.time)
   recoveredModelID<-returnModel(result$par,migrationArrayMap)
-  summaryVec<-c(trueModelID,recoveredModelID,itnmax,nTrees,nTreesObserved,elapsed.time)
-  names(summaryVec)<-c("trueModelID","recoveredModelID","itnmax","nTrees","nTreesObserved","seconds")
+  summaryVec<-c(trueModelID.rescaled,recoveredModelID,itnmax,nTrees,nTreesObserved,elapsed.time)
+  names(summaryVec)<-c("trueModelID.rescaled","recoveredModelID","itnmax","nTrees","nTreesObserved","seconds")
   print(summaryVec)
   cat(names(summaryVec),file="summary.txt")
   cat("\n",file="summary.txt",append=TRUE)
@@ -38,19 +44,19 @@ grant_individualRunTestPerformance<-function(filename="testRunResult.Rsave",batc
   cat(elapsed.time,file="summary.txt",append=TRUE)
   cat("\ncollapse matrix",file="summary.txt",append=TRUE)
   cat("\ntrue  ",file="summary.txt",append=TRUE)
-  cat(migrationArray[[trueModelID]]$collapseMatrix,file="summary.txt",append=TRUE)
+  cat(trueModel$collapseMatrix,file="summary.txt",append=TRUE)
   cat("\ninfer ",file="summary.txt",append=TRUE)
   cat(migrationArray[[recoveredModelID]]$collapseMatrix,file="summary.txt",append=TRUE)
 
   cat("\n\nn0multiplierMap",file="summary.txt",append=TRUE)
   cat("\ntrue  ",file="summary.txt",append=TRUE)
-  cat(migrationArray[[trueModelID]]$n0multiplierMap,file="summary.txt",append=TRUE)
+  cat(trueModel$n0multiplierMap,file="summary.txt",append=TRUE)
   cat("\ninfer ",file="summary.txt",append=TRUE)
   cat(migrationArray[[recoveredModelID]]$n0multiplierMap,file="summary.txt",append=TRUE)
 
   cat("\n\nmigrationArray",file="summary.txt",append=TRUE)
   cat("\ntrue  ",file="summary.txt",append=TRUE)
-  cat(migrationArray[[trueModelID]]$migrationArray,file="summary.txt",append=TRUE)
+  cat(trueModel$migrationArray,file="summary.txt",append=TRUE)
   cat("\ninfer ",file="summary.txt",append=TRUE)
   cat(migrationArray[[recoveredModelID]]$migrationArray,file="summary.txt",append=TRUE)
 
