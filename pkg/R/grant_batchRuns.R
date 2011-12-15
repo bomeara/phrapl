@@ -77,11 +77,18 @@ doSingleRun<-function(overallModel,itnmax,nTrees,nTreesObserved,replicates,model
   #Symmetric migration matrix of 1-2 = 0.125, 1-3 = 0.250, 1-4 = 0.0625, 2-3 = 0, 2-4 = 0.125, and 3-4 = 0.250 
   #filter such that only migration models are possible -- no collapse
   	popVector<-rep(5,4)
-  	maxK<-5
-    load(paste(dataDir,"migrationArray_CollapseForbidden_npop4_maxK5.Rsave",sep="")) 
+  	maxK<-6
+    load(paste(dataDir,"migrationArray_CollapseForbidden_npop4_maxK6.Rsave",sep=""))
+    trueModel<-migrationArray[[1]]
+    trueModel$n0multiplierMap<-matrix(c(1,1,2,2),ncol=1)
+    trueModel$migrationArray[, , 1]<-matrix(c(NA,1,2,3,NA,NA,0,1,NA,NA,NA,2,NA,NA,NA,NA),ncol=4,byrow=TRUE)
+    migrationArray[[length(migrationArray)+1]]<-trueModel
     migrationArray<-returnSymmetricMigrationOnly(migrationArray)
-
-  
+    trueModelID<-length(migrationArray)
+    trueModelParams<-c(6,4,0.125,0.250,0.0625)
+    names(trueModelParams)<-msIndividualParameters(migrationArray[[trueModelID]])   
+    popVector<-rep(5,4)
+  	maxK<-6
   }
   print(filename)
   print(paste("migrationArray length in batch run is ",length(migrationArray)))
