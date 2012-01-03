@@ -775,7 +775,7 @@ returnModel<-function(p,migrationArrayMap) {
 }
 
 #maxParameterValue prevents MS from going nuts (not finishing) with really high migration or other rates
-returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=1000,...) {
+returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100,...) {
   parameterVector<-exp(par)
   names(parameterVector)<-msIndividualParameters(migrationIndividual)
   if(max(parameterVector)>maxParameterValue) {
@@ -794,7 +794,7 @@ returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   return(AICValue)
 }
 
-searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=10000, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,...) {
+searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,...) {
   modelID<-returnModel(p,migrationArrayMap)
   if(print.results) {
     resultVector<-c(modelID,p)
@@ -815,7 +815,7 @@ searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVe
   }
 }
 
-searchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=10000, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,...) {
+searchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,...) {
   modelID<-returnModel(p,migrationArrayMap)
   if(print.results) {
     resultVector<-c(modelID,p)
@@ -836,7 +836,7 @@ searchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, 
   }
 }
 
-searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=10000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
+searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=100, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
   Domains<-matrix(ncol=2,nrow=3)
   Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
   Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
@@ -846,7 +846,7 @@ searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector,
   return(results)
 }
 
-searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=10000, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
+searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=100, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
   Domains<-matrix(ncol=2,nrow=3)
   Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
   Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
