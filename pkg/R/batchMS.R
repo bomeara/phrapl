@@ -876,10 +876,12 @@ returnSymmetricMigrationOnly<-function(migrationArray) {
         migrationIndividual$migrationArray[, , 1]<-migration.main
         focalString<-paste(as.character(dput(migrationIndividual)),collapse="_")
        if(sum(grepl(focalString,storedObjectString))==0) {
-         
-          storedObjectString<-c(storedObjectString,focalString)
-
-          newMigrationArray[[1+length(newMigrationArray)]]<-migrationIndividual
+         if (min(colMin(migration.main))>0) {
+         	if (min(rowMin(migration.main))>0) {
+          		storedObjectString<-c(storedObjectString,focalString)
+          		newMigrationArray[[1+length(newMigrationArray)]]<-migrationIndividual
+          	}
+          }
         }
       }
     }
