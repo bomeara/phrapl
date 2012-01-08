@@ -817,7 +817,7 @@ searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVe
   }
   else {
     paramNames<-msIndividualParameters(migrationArray[[modelID]])
-    startingVals<-log(rep(1,length(paramNames))) #going to optimize in log space
+    startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space
     if(debug) {
       print(startingVals) 
     }
