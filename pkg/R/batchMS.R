@@ -37,6 +37,17 @@ rowMin<-function(x,na.rm=TRUE) {
 	return(minVal)
 }
 
+matrixContainsAllValues(x,minVal=1) {
+	maxVal<-max(x,na.rm=TRUE)
+	hasAllValues<-TRUE
+	for(i in c(minVal,maxVal)) {
+		if(sum(x==i,na.rm=TRUE)==0) {
+			hasAllValues<-FALSE
+			return(hasAllValues)
+		}
+	}
+	return(hasAllValues)
+}
 
 colCountIf<-function(x,val) {
 	countVec<-rep(NA,dim(x)[2])
@@ -875,11 +886,13 @@ returnSymmetricMigrationOnly<-function(migrationArray) {
         }
         migrationIndividual$migrationArray[, , 1]<-migration.main
         focalString<-paste(as.character(dput(migrationIndividual)),collapse="_")
-       if(sum(grepl(focalString,storedObjectString))==0) {
-         if (min(colMax(migration.main))>0) { #false means that the maximum value for one column is zero, indicating no inflow into that pop
-         	if (min(rowMax(migration.main))>0) { #false means that the maximum value for the row is zero, indicating no outflow from that pop (and note that we're supposed to be symmetric, so the colMax should have checked this, but redundancy for safety is good).
-          		storedObjectString<-c(storedObjectString,focalString)
-          		newMigrationArray[[1+length(newMigrationArray)]]<-migrationIndividual
+        if(matrixContainsAllValues(migration.main,1)) {
+		   if(sum(grepl(focalString,storedObjectString))==0) {
+			 if (min(colMax(migration.main))>0) { #false means that the maximum value for one column is zero, indicating no inflow into that pop
+				if (min(rowMax(migration.main))>0) { #false means that the maximum value for the row is zero, indicating no outflow from that pop (and note that we're supposed to be symmetric, so the colMax should have checked this, but redundancy for safety is good).
+					storedObjectString<-c(storedObjectString,focalString)
+					newMigrationArray[[1+length(newMigrationArray)]]<-migrationIndividual
+				}
           	}
           }
         }
