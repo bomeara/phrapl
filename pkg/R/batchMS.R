@@ -876,8 +876,8 @@ returnSymmetricMigrationOnly<-function(migrationArray) {
         migrationIndividual$migrationArray[, , 1]<-migration.main
         focalString<-paste(as.character(dput(migrationIndividual)),collapse="_")
        if(sum(grepl(focalString,storedObjectString))==0) {
-         if (min(colMin(migration.main))>0) {
-         	if (min(rowMin(migration.main))>0) {
+         if (min(colMax(migration.main))>0) { #false means that the maximum value for one column is zero, indicating no inflow into that pop
+         	if (min(rowMax(migration.main))>0) { #false means that the maximum value for the row is zero, indicating no outflow from that pop (and note that we're supposed to be symmetric, so the colMax should have checked this, but redundancy for safety is good).
           		storedObjectString<-c(storedObjectString,focalString)
           		newMigrationArray[[1+length(newMigrationArray)]]<-migrationIndividual
           	}
