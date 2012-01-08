@@ -37,7 +37,7 @@ rowMin<-function(x,na.rm=TRUE) {
 	return(minVal)
 }
 
-matrixContainsAllValues(x,minVal=1) {
+matrixContainsAllValues<-function(x,minVal=1) {
 	maxVal<-max(x,na.rm=TRUE)
 	hasAllValues<-TRUE
 	for(i in c(minVal,maxVal)) {
