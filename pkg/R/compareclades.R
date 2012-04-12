@@ -2,6 +2,10 @@
 library(ape)
 library(phangorn)
 
+#DO NOT USE THIS YET; IT HAS YET TO BE TESTED, AND DOESN'T DEAL WITH
+#	ASSIGNMENTS YET
+
+
 does.agree.unrooted<-function(phyA,phyB) { #so you need to have added outgroup if you want this rooted
 	#break down trees into their splits. If they are compatible, the max of the compatibility matrix will be 0.
 	#they must have the same tips
