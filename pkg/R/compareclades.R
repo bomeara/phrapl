@@ -3,7 +3,7 @@ library(ape)
 library(phangorn)
 
 #DO NOT USE THIS YET; IT HAS YET TO BE TESTED, AND DOESN'T DEAL WITH
-#	ASSIGNMENTS YET
+#ASSIGNMENTS YET
 
 
 does.agree.unrooted<-function(phyA,phyB) { #so you need to have added outgroup if you want this rooted
