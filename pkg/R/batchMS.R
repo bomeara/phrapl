@@ -368,7 +368,7 @@ generateN0multiplierIndividuals<-function(popVector,popIntervalsList=generateInt
 	return(n0multiplierIndividualsList)
 }
 
-kN0multiplierMap<-function(kN0multiplierMap) {
+kN0multiplierMap<-function(n0multiplierMap) {
 	return(max(n0multiplierMap,na.rm=TRUE)) 
 }
 
