@@ -713,7 +713,8 @@ prunedAssignFrame<-function(assignFrame,taxaRetained) {
 	return(assignFrame[taxaRetained,])
 }
 
-convertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=0.000000001) {
+#idea is that you scale the prob of missing by the number of possible trees
+convertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector)))) {
 	outputVector<-as.numeric(outputVector)
 	outputVector[which(outputVector==0)]<-probOfMissing
 	outputVector<-outputVector/nTrees
@@ -795,7 +796,7 @@ returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   if(debug) {
     print(parameterVector) 
   }
-  lnLValue<-convertOutputVectorToLikelihood(pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug),nTrees=nTrees)
+  lnLValue<-convertOutputVectorToLikelihood(pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug), nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
   AICValue<-2*(-lnLValue + kAll(migrationIndividual))
   if(print.results) {
     resultsVector<-c(AICValue,lnLValue,exp(par))
