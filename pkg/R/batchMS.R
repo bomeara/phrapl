@@ -713,9 +713,9 @@ prunedAssignFrame<-function(assignFrame,taxaRetained) {
 	return(assignFrame[taxaRetained,])
 }
 
-convertOutputVectorToLikelihood<-function(outputVector,nTrees) {
+convertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=0.000000001) {
 	outputVector<-as.numeric(outputVector)
-	outputVector[which(outputVector==0)]<-0.1
+	outputVector[which(outputVector==0)]<-probOfMissing
 	outputVector<-outputVector/nTrees
 	outputVector<-log(outputVector)
 	lnL<-sum(outputVector)
