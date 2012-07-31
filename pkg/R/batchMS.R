@@ -3,7 +3,7 @@ library(ape)
 library(rgenoud)
 library(optimx)
 library(parallel)
-
+ncores<-1 #can set to a different number to do in parallel
 
 colMax<-function(x,na.rm=TRUE) {
 	maxVal=rep(NA,dim(x)[2])
@@ -583,8 +583,8 @@ saveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	return(returnCode)
 }
 
-pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE) {
-	msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
+pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE,ncores=ncores) {
+	msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,ceiling(nTrees/ncores))
   if(print.ms.string) {
     print(msCallInfo) 
   }
@@ -600,8 +600,17 @@ pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	if (debug) {
 		print(outputstring) 
 	}
-	outputVector<-system(outputstring,intern=TRUE)
-	return(outputVector)
+	if (ncores==1) {
+		outputVector<-system(outputstring,intern=TRUE)
+		return(outputVector)
+	}
+	else {
+		wrapOutput<-function(x,outputstring) {
+			as.numeric(system(outputstring,intern=TRUE))
+		}
+		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=outputstring,mc.cores=ncores)),1,sum)
+		return(outputVector)
+	}
 }
 
 
