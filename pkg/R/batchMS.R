@@ -877,6 +877,27 @@ searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVe
   return(results)
 }
 
+exhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,intermediate="intermediate.RSave",...) {
+  AIC.values<-rep(NA,length(migrationArray))
+  for (modelID in sequence(length(migrationArray))) {
+    paramNames<-msIndividualParameters(migrationArray[[modelID]])
+    startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space
+    if(debug) {
+      print(startingVals) 
+    }
+    searchResults<-optim(par=startingVals, fn=returnAIC, method=method, control=list(maxit=itnmax), migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, ...)
+    if(debug) {
+    	print(searchResults)
+    }
+    AIC.values[modelID]<-searchResults$value
+    if (!is.null(intermediate)) {
+    	save(AIC.values,file=intermediate)
+    }
+	print(paste("Done ",modelID," of ",length(migrationArray)," models",sep=""))
+  }
+  return(AIC.values)
+}
+
 #only works on island models (no collapse)
 returnSymmetricMigrationOnly<-function(migrationArray) {
   newMigrationArray<-list()
