@@ -893,7 +893,7 @@ exhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, ba
     if (!is.null(intermediate)) {
     	save(AIC.values,file=intermediate)
     }
-	print(paste("Done ",modelID," of ",length(migrationArray)," models",sep=""))
+	print(paste("Done ",modelID," of ",length(migrationArray)," models with AIC ", searchResults$value,sep=""))
   }
   return(AIC.values)
 }
