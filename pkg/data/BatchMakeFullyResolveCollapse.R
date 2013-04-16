@@ -1,3 +1,4 @@
+BatchMakeFullyResolveCollapse<-function() {
 source("../R/batchMS.R")
 for (npop in 1:5) {
 	for(maxK in 1:10) {
@@ -7,4 +8,5 @@ for (npop in 1:5) {
 		print("That took")
 		print(proc.time()-start)
 	}
+}
 }

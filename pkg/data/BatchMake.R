@@ -1,3 +1,4 @@
+BatchMake<-function() {
 source("../R/batchMS.R")
 for (npop in 1:4) {
 	for(maxK in 1:10) {
@@ -7,4 +8,5 @@ for (npop in 1:4) {
 		print("That took")
 		print(proc.time()-start)
 	}
+}
 }
