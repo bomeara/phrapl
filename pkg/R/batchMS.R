@@ -4,6 +4,7 @@ library(rgenoud)
 library(optimx)
 library(parallel)
 ncores<-1 #can set to a different number to do in parallel
+popVector<-c() #create as a global so can use it in declaration of functions
 
 colMax<-function(x,na.rm=TRUE) {
 	maxVal=rep(NA,dim(x)[2])
@@ -91,6 +92,12 @@ n0multiplierindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap) 
 migrationindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap,migrationArray) {
 	tI<-list(collapseMatrix=collapseMatrix,complete=complete,n0multiplierMap=n0multiplierMap,migrationArray=migrationArray)
 	class(tI)<-"migrationindividual"
+	return(tI)
+}
+
+expansionmultiplierindividual<-function(collapseMatrix, complete, expansionmultiplierMap) {
+	tI<-list()  #FIX THIS!!!!
+	stop("This code is not written yet")
 	return(tI)
 }
 
