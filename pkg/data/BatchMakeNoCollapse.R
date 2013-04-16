@@ -1,3 +1,4 @@
+BatchMakeNoCollapse<-function() {
 source("../R/batchMS.R")
 for (npop in 1:20) {
 	for(maxK in 1:10) {
@@ -7,4 +8,5 @@ for (npop in 1:20) {
 		print("That took")
 		print(proc.time()-start)
 	}
+}
 }
