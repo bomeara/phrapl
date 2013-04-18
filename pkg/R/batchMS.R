@@ -590,8 +590,10 @@ saveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	return(returnCode)
 }
 
-pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE,ncores=ncores) {
+pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE,ncores=1) {
+print(paste("ncores", ncores))
 	msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,ceiling(nTrees/ncores))
+	
   if(print.ms.string) {
     print(msCallInfo) 
   }
@@ -884,29 +886,15 @@ searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVe
   return(results)
 }
 
-exhaustiveSearchIndividual<-function(modelID, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,intermediate="intermediate.RSave",...) {
-    paramNames<-msIndividualParameters(migrationArray[[modelID]])
-    startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space
-    if(debug) {
-      print(startingVals) 
-    }
-    searchResults<-NA
-    try(searchResults<-optim(par=startingVals, fn=returnAIC, method=method, control=list(maxit=itnmax), migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, ...))
-    if(debug) {
-    	try(print(searchResults))
-    }
-    result<-NA
-    if(!is.na(searchResults$value)) {
-    	result<-searchResults$value
-    }
-	return(result)
-}
 
 
 exhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, ncores=ncores, ...) {
   AIC.values<-rep(NA,length(migrationArray))
-  modelID.vector <- sequence(length(migrationArray))
-  AIC.values<-simplify2array(mclapply(modelID.vector, exhaustiveSearchIndividual, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,intermediate="intermediate.RSave", mc.cores=ncores,...))
+  for (i in sequence(length(migrationArray))) {
+  	p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
+  	print(c(i, length(migrationArray), i/length(migrationArray)))
+  	try(AIC.values[i]<-searchContinuousModelSpaceOptim(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax,...))
+  }
   return(AIC.values)
 }
 
