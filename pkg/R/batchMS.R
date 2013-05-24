@@ -591,7 +591,6 @@ saveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 }
 
 pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE,ncores=1) {
-print(paste("ncores", ncores))
 	msCallInfo<-createMSstringSpecific(popVector,migrationIndividual,parameterVector,ceiling(nTrees/ncores))
 	
   if(print.ms.string) {
@@ -805,7 +804,7 @@ returnModel<-function(p,migrationArrayMap) {
 }
 
 #maxParameterValue prevents MS from going nuts (not finishing) with really high migration or other rates
-returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100,...) {
+returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100) {
   parameterVector<-exp(par)
   names(parameterVector)<-msIndividualParameters(migrationIndividual)
   if(max(parameterVector)>maxParameterValue) {
@@ -914,8 +913,9 @@ exhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, ba
   AIC.values<-rep(NA,length(migrationArray))
   for (i in sequence(length(migrationArray))) {
   	p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
-  	print(c(i, length(migrationArray), i/length(migrationArray)))
   	try(AIC.values[i]<-searchContinuousModelSpaceOptim(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax,...))
+  	print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
+
   }
   return(AIC.values)
 }
