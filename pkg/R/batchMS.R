@@ -733,10 +733,15 @@ prunedAssignFrame<-function(assignFrame,taxaRetained) {
 #idea is that you scale the prob of missing by the number of possible trees
 convertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector)))) {
 	outputVector<-as.numeric(outputVector)
+	print(paste("outputvector"))
+	print(outputVector)
 	outputVector[which(outputVector==0)]<-probOfMissing
 	outputVector<-outputVector/nTrees
 	outputVector<-log(outputVector)
+	print("log output vector/ntrees")
+	print(outputVector)
 	lnL<-sum(outputVector)
+	print(paste("lnL", lnL))
 	return(lnL)
 }
 
@@ -839,7 +844,7 @@ searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVe
     if(debug) {
       print(startingVals) 
     }
-    searchResults<-optimx(par=startingVals, fn=returnAIC, method=method, migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, control=list(iter.max=itnmax, maxit=itnmax,iter.lim=itnmax),...)
+    searchResults<-optimx(par=startingVals, fn=eeturnAIC, method=method, migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, control=list(iter.max=itnmax, maxit=itnmax,iter.lim=itnmax),...)
     return(searchResults$fvalues)
   }
 }
@@ -881,7 +886,7 @@ searchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     if(debug) {
       print(startingVals) 
     }
-    searchResults<-nloptr(x0=startingVals, eval_f=returnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1), migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, ...)
+    searchResults<-nloptr(x0=startingVals, eval_f=returnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug)
     return(searchResults$solution)
   }
 }
