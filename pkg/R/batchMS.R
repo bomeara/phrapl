@@ -604,15 +604,17 @@ pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	if (unresolvedTest==FALSE) {
 		unresolvedFlag<-""
 	}
-	outputstring<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' | perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
+	outputstring<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' | /opt/local/bin/perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
 	if (debug) {
 		print(outputstring) 
 	}
 	if (ncores==1) {
+		print("using ncores==1")
 		outputVector<-system(outputstring,intern=TRUE)
+		print("outputvector from pipeMS is ")
+		print(outputVector)
 		return(outputVector)
-	}
-	else {
+	} else {
 		wrapOutput<-function(x,outputstring) {
 			as.numeric(system(outputstring,intern=TRUE))
 		}
@@ -818,9 +820,15 @@ returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   if(debug) {
     print(parameterVector) 
   }
-  lnLValue<-convertOutputVectorToLikelihood(pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug), nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
+  print("wd is ")
+  print(getwd())
+  likelihoodVector<-pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug)
+  print("likelihoodVector")
+  print(likelihoodVector)
+  lnLValue<-convertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
   AICValue<-2*(-lnLValue + kAll(migrationIndividual))
-  if(print.results) {
+  if(TRUE) {
+#  if(print.results) {
     resultsVector<-c(AICValue,lnLValue,exp(par))
     names(resultsVector)<-c("AIC","lnL",msIndividualParameters(migrationIndividual))
     print(resultsVector)
@@ -865,7 +873,7 @@ searchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, 
     if(debug) {
       print(startingVals) 
     }
-    searchResults<-optim(par=startingVals, fn=returnAIC, method=method, control=list(maxit=itnmax), migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, ...)
+    searchResults<-optim(par=startingVals, fn=returnAIC, method=method, control=list(maxit=itnmax), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.result, debug=debug, ...)
     return(searchResults$value)
   }
 }
