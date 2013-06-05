@@ -604,7 +604,7 @@ pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	if (unresolvedTest==FALSE) {
 		unresolvedFlag<-""
 	}
-	outputstring<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' | /opt/local/bin/perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
+	outputstring<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' | perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
 	if (debug) {
 		print(outputstring) 
 	}
