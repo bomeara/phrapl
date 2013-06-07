@@ -1,10 +1,10 @@
 Package: phrapl
-Version: 0.3
-Date: 2012-09-03
+Version: 0.32
+Date: 2013-06-07
 Title: Phylogeography using approximate likelihood
 Author: Brian O'Meara <bomeara@utk.edu>, Bryan Carstens
 Maintainer: Brian O'Meara <bomeara@utk.edu>
-Imports: ape, partitions, rgenoud, optimx, parallel, nloptr
-Depends: ape, partitions, rgenoud, optimx, parallel, nloptr
+Imports: ape, partitions, rgenoud, optimx, parallel, nloptr, Matrix
+Depends: ape, partitions, rgenoud, optimx, parallel, nloptr, Matrix
 Description: Fits various phylogeographic models using approximate likelihood.
 License: GPL (>= 2)
