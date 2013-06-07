@@ -608,19 +608,16 @@ pipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	if (debug) {
 		print(outputstring) 
 	}
-	if (ncores==1) {
-		print("using ncores==1")
+	#if (ncores==1) {
 		outputVector<-system(outputstring,intern=TRUE)
-		print("outputvector from pipeMS is ")
-		print(outputVector)
 		return(outputVector)
-	} else {
-		wrapOutput<-function(x,outputstring) {
-			as.numeric(system(outputstring,intern=TRUE))
-		}
-		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=outputstring,mc.cores=ncores)),1,sum)
-		return(outputVector)
-	}
+	#} else {
+	#	wrapOutput<-function(x,outputstring) {
+	#		as.numeric(system(outputstring,intern=TRUE))
+	#	}
+	#	outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=outputstring,mc.cores=ncores)),1,sum)
+	#	return(outputVector)
+	#}
 }
 
 
@@ -735,15 +732,10 @@ prunedAssignFrame<-function(assignFrame,taxaRetained) {
 #idea is that you scale the prob of missing by the number of possible trees
 convertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector)))) {
 	outputVector<-as.numeric(outputVector)
-	print(paste("outputvector"))
-	print(outputVector)
 	outputVector[which(outputVector==0)]<-probOfMissing
 	outputVector<-outputVector/nTrees
 	outputVector<-log(outputVector)
-	print("log output vector/ntrees")
-	print(outputVector)
 	lnL<-sum(outputVector)
-	print(paste("lnL", lnL))
 	return(lnL)
 }
 
@@ -823,12 +815,10 @@ returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   print("wd is ")
   print(getwd())
   likelihoodVector<-pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug)
-  print("likelihoodVector")
-  print(likelihoodVector)
   lnLValue<-convertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
   AICValue<-2*(-lnLValue + kAll(migrationIndividual))
   if(TRUE) {
-#  if(print.results) {
+  if(print.results) {
     resultsVector<-c(AICValue,lnLValue,exp(par))
     names(resultsVector)<-c("AIC","lnL",msIndividualParameters(migrationIndividual))
     print(resultsVector)
@@ -920,6 +910,16 @@ searchDiscreteModelSpaceOptim<-function(migrationArrayMap, migrationArray, popVe
   return(results)
 }
 
+searchDiscreteModelSpaceNLoptr<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=100, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="nlminb", itnmax=NULL,pop.size=50, print.results=FALSE, maxtime=0, maxeval=0, ...) {
+  Domains<-matrix(ncol=2,nrow=3)
+  Domains[1,]<-range(migrationArrayMap$collapseMatrix.number)
+  Domains[2,]<-range(migrationArrayMap$n0multiplierMap.number)
+  Domains[3,]<-range(migrationArrayMap$migrationArray.number)
+  
+  results<-genoud(searchContinuousModelSpaceNLoptr,nvars=3, max=FALSE,starting.values=c(1,1,1), MemoryMatrix=TRUE, boundary.enforcement=2, data.type.int=TRUE, Domains=Domains, migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, print.ms.string=print.ms.string, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, debug=debug, method=method,itnmax=itnmax, pop.size=pop.size, print.results=print.results, maxtime=maxtime, maxeval=maxeval, return.all=FALSE,...)
+  return(results)
+}
+
 
 
 exhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, ncores=ncores, results.file=NULL, return.all=TRUE, ...) {
@@ -946,7 +946,7 @@ exhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, b
   		if(!is.null(result.indiv)) {
   			AIC.values[i]<-result.indiv$objective	
   		}
-  		results.list<-append(results.list, result.indiv)
+  		results.list<-append(results.list, list(result.indiv))
   	} else {
   		try(AIC.values[i]<-searchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
   	}
