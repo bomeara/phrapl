@@ -895,7 +895,7 @@ searchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
       print(startingVals) 
     }
     searchResults<-nloptr(x0=startingVals, eval_f=returnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1, maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug)
-    ifelse(return.all, return(searchResults), return(searchResults$solution))     
+    ifelse(return.all, return(searchResults), return(searchResults$objective))     
   }
 }
 
@@ -944,7 +944,7 @@ exhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, b
   		result.indiv<-NULL
   		try(result.indiv<-searchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
   		if(!is.null(result.indiv)) {
-  			AIC.values[i]<-result.indiv$solution	
+  			AIC.values[i]<-result.indiv$objective	
   		}
   		results.list<-append(results.list, result.indiv)
   	} else {
