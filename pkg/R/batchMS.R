@@ -817,7 +817,6 @@ returnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   likelihoodVector<-pipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug)
   lnLValue<-convertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
   AICValue<-2*(-lnLValue + kAll(migrationIndividual))
-  if(TRUE) {
   if(print.results) {
     resultsVector<-c(AICValue,lnLValue,exp(par))
     names(resultsVector)<-c("AIC","lnL",msIndividualParameters(migrationIndividual))
