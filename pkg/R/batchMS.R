@@ -798,7 +798,9 @@ returnModel<-function(p,migrationArrayMap) {
       return(prunedResults$model) 
    }
    else  {
-      return(NA) 
+   	  warning(paste("All these models match", prunedResults$model, "taking first one"))
+   	  print(paste("All these models match", prunedResults$model, "taking first one"))
+      return(prunedResults$model[1]) 
    }
 }
 
@@ -942,6 +944,7 @@ exhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, b
   	if(return.all) {
   		result.indiv<-NULL
   		try(result.indiv<-searchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
+  		print(result.indiv)
   		if(!is.null(result.indiv)) {
   			AIC.values[i]<-result.indiv$objective	
   		}
