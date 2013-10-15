@@ -1,5 +1,5 @@
 library(rgl)
-library(phrapl)
+#library(phrapl)
 library(RColorBrewer)
 load("/Users/bomeara/Documents/MyDocuments/Active/phrapl/pkg/data/migrationArray_npop3_maxK5.Rsave")
 
