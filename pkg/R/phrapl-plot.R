@@ -4,7 +4,7 @@
 #load("/Users/bomeara/Documents/MyDocuments/Active/phrapl/pkg/data/migrationArray_npop3_maxK5.Rsave")
 
 
-arrow3d2 <- function(base, tip, rad=1, col="red",offset=TRUE) {
+Arrow3d2 <- function(base, tip, rad=1, col="red",offset=TRUE) {
 	length.out=10
 	if(!offset) {
 		length.out=8	
@@ -19,14 +19,14 @@ arrow3d2 <- function(base, tip, rad=1, col="red",offset=TRUE) {
 }
 
 #suggestion from Zach Marion: allow placement on a landscape map, so you can see rivers and such as boundaries
-plotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, time.axis=FALSE, time.axis.col="black", apply.base=FALSE, base.color='black', new.window=TRUE) {
+PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, time.axis=FALSE, time.axis.col="black", apply.base=FALSE, base.color='black', new.window=TRUE) {
 if(new.window) {
 	open3d()
 	}
   rgl.material(shininess=100)
 	
 	if(is.null(parameterVector)) {
-		parameterVector.names<-msIndividualParameters(migrationIndividual)
+		parameterVector.names<-MsIndividualParameters(migrationIndividual)
 		parameterVector<-sequence(length(parameterVector.names)) #just dummy variables, so we can see that models are different
 		names(parameterVector)<-parameterVector.names
 	}
@@ -54,7 +54,7 @@ if(new.window) {
 	}
 	text3d(x=current.terminal.pos[,1], y=current.terminal.pos[,2], z=rep(1-.2, nPop), texts=taxonNames, col="black")
 	if(time.axis) {
-		arrow3d2(base=c(2,2,1+dim(collapseMatrix)[2]), tip=c(2,2,1), rad=0.1, col=time.axis.col, offset=FALSE)
+		Arrow3d2(base=c(2,2,1+dim(collapseMatrix)[2]), tip=c(2,2,1), rad=0.1, col=time.axis.col, offset=FALSE)
 		text3d(x=2, y=2, z=.8, texts="Present day", col=time.axis.col, cex=0.8)
 	}
 	if (apply.base) {
@@ -100,7 +100,7 @@ if(new.window) {
 									offset=2/3	
 								}
 								#arrow3d(base=c(current.terminal.pos[from.index,], regime+offset), tip=c(current.terminal.pos[to.index,],regime+offset),rad=migrationParameters[local.migrationMatrix[from.index, to.index] ]*base.radius/3)
-								arrow3d2(base=c(current.terminal.pos[from.index,], regime+offset), tip=c(current.terminal.pos[to.index,],regime+offset),rad=migrationParameters[local.migrationMatrix[from.index, to.index] ]*base.radius/3, col=(brewer.pal(8,"Set1"))[local.migrationMatrix[from.index, to.index]])
+								Arrow3d2(base=c(current.terminal.pos[from.index,], regime+offset), tip=c(current.terminal.pos[to.index,],regime+offset),rad=migrationParameters[local.migrationMatrix[from.index, to.index] ]*base.radius/3, col=(brewer.pal(8,"Set1"))[local.migrationMatrix[from.index, to.index]])
 							}	
 						}	
 					}
@@ -113,7 +113,7 @@ if(new.window) {
 	
 }
 
-saveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
+SaveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
 	dir=tempdir()
 	if(!is.null(save.dir)) {
 		try(system(paste("mkdir", save.dir)), silent=TRUE)	
@@ -122,13 +122,13 @@ saveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
 	result<-movie3d(spin3d(rpm=total.revolutions/(duration/60)), duration=duration, dir=dir)
 }
 
-#plotModel(migrationArray[[500]], taxonNames=c("","",""))
-#saveMovie(save.dir="~/Desktop/movies")
+# PlotModel(migrationArray[[500]], taxonNames=c("","",""))
+# saveMovie(save.dir="~/Desktop/movies")
 
 #try(system("mkdir ~/Desktop/models"))
 #setwd("~/Desktop/models")
 #for (i in sequence(length(migrationArray))) {
-#	plotModel(migrationArray[[i]], taxonNames=c("","",""), new.window=FALSE)
+#	PlotModel(migrationArray[[i]], taxonNames=c("","",""), new.window=FALSE)
 #	rgl.snapshot(paste("model",i,".png", sep=""))	
 #	saveMovie(save.dir="~/Desktop/models")
 #	system(paste("mv movie.gif movie", i, ".gif", sep=""))

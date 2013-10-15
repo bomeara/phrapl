@@ -3,8 +3,7 @@
 #library(rgenoud)
 #library(optimx)
 #library(parallel)
-ncores<-1 #can set to a different number to do in parallel
-popVector<-c() #create as a global so can use it in declaration of functions
+if(getRversion() >= "2.15.1")  utils::globalVariables(c("ncores", "popVector", "maxK","migrationArray", "migrationArrayMap"))
 
 ColMax<-function(x,na.rm=TRUE) {
 	maxVal=rep(NA,dim(x)[2])
@@ -294,7 +293,7 @@ GenerateIntervalsFullyResolvedCollapse<-function(popVector,maxK) {
 	for (i in 1:dim(firstIntervals)[2]) {
 		popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
 	}
-	popIntervalsList<-CompleteIntervals(UpdateCompletes(PopIntervalsList))
+	popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
   intervalsToDelete<-c()
   for (i in sequence(length(popIntervalsList))) {
     focalCollapseMatrix<-popIntervalsList[[i]]$collapseMatrix
@@ -309,7 +308,7 @@ GenerateIntervalsFullyResolvedCollapse<-function(popVector,maxK) {
 
 #the basic idea here is that at each population in each time interval there is a n0multiplier. These can all be set to the same value, allowed to vary, or assigned in clumps (i.e., pops 1, 3, and 6 have the same n0multiplier value)
 #this generates all such mappings, subject to staying within the maximum number of free parameters
-GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=setMaxK(popVector)),maxK=SetMaxK(popVector)) {
+GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)) {
 	n0multiplierIndividualsList<-list()
 	for (i in 1:length(popIntervalsList)) {
 		n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
@@ -478,7 +477,7 @@ GenerateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierInd
 						thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
 					}
 					if (is.na(max(migrationArray,na.rm=TRUE))) {
-						migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(N0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)				
+						migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)				
 						#print(paste("Just created migration individual ",length(migrationIndividualsList)))
 					}
 					else {
@@ -524,7 +523,7 @@ GenerateExpansionMultiplierIndividuals<-function(popVector,migrationIndividualsL
 					expansionmultiplierMap[position]=paramPosition #the position of the first parameter
 					thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
 				}
-				expansionmultiplierIndividualsList[[length(expansionmultiplierIndividualsList)+1]]<-expansionmultiplierindividual(migrationIndividualsList[[i]]$collapseMatrix, migrationIndividualsList[[i]]$complete, expansionmultiplierMap)
+				expansionmultiplierIndividualsList[[length(expansionmultiplierIndividualsList)+1]]<-Expansionmultiplierindividual(migrationIndividualsList[[i]]$collapseMatrix, migrationIndividualsList[[i]]$complete, expansionmultiplierMap)
 			}
 		}
 	}
