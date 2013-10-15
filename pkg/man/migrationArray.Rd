@@ -1,5 +1,7 @@
 \name{migration.array}
 \alias{migrationArray_CollapseForbidden_npop2_maxK1}
+\alias{migrationArray}
+\alias{maxK}
 \alias{migrationArray_CollapseForbidden_npop2_maxK10}
 \alias{migrationArray_CollapseForbidden_npop2_maxK2}
 \alias{migrationArray_CollapseForbidden_npop2_maxK3}
