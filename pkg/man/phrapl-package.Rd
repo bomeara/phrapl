@@ -15,7 +15,7 @@ Phylogeographic analysis using approximated likelihoods
 }
 
 \author{
-  Brian O'Meara, Bryan Carstens, Nathan Jackson, Adriana Morales-Garcia
+  Brian O'Meara, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
 
   Maintainer: Brian O'Meara <bomeara@utk.edu>
 }
