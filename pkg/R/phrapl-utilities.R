@@ -612,7 +612,7 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NA) {
+PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NA,subsamplingPath=NA) {
 	retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired)
 	if(class(phy)!="multiPhylo") {
 		phy<-c(phy)
@@ -635,8 +635,15 @@ PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,mi
 			physamp[[tree]]<-newphy
 		}
 		prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
-		write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
-		write.table(prunedAF,file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+		if(is.na(subsamplingPath)) {
+			write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
+			write.table(prunedAF,file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+		}
+		else {
+			write.tree(physamp,file=paste(subsamplingPath,"obs",rep,".tre",sep=""))
+			write.table(prunedAF,file=paste(subsamplingPath,"assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+			
+		}
 	}
 	return(retainedTaxaMatrix)
 }
