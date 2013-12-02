@@ -574,7 +574,7 @@ PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 }
 
 
-TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000, finalPopVector=NA) {
+TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,finalPopVector=NA) {
 	samplesGood<-FALSE
 	toRetain<-c()
 	attempts<-0
@@ -612,13 +612,13 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1, finalPopVector=NA) {
+PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NA) {
 	retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired)
 	if(class(phy)!="multiPhylo") {
 		phy<-c(phy)
 	}
 	for (rep in 1:nSamplesDesired) {
-		keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop, finalPopVector)
+		keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,finalPopVector)
 		retainedTaxaMatrix[rep,]<-keepTaxa
 		prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
 		physamp<-phy
