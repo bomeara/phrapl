@@ -574,11 +574,11 @@ PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 }
 
 
-TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,finalPopVector=NA) {
+TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,finalPopVector=NULL) {
 	samplesGood<-FALSE
 	toRetain<-c()
 	attempts<-0
-	if(!is.na(finalPopVector[1])) {
+	if(!is.null(finalPopVector[1])) {
 		nIndividualsDesired<-sum(finalPopVector)
 	}
 	while (samplesGood!=TRUE) {
@@ -595,7 +595,7 @@ TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutof
 				if (length(which(retainedPops==(levels(assignFrame[,1]))[i]))<minPerPop) {
 					samplesGood<-FALSE
 				}
-				if(!is.na(finalPopVector[1])) {
+				if(!is.null(finalPopVector[1])) {
 					if (length(which(retainedPops==(levels(assignFrame[,1]))[i]))!=finalPopVector[i]) {
 						samplesGood<-FALSE
 					}
@@ -612,7 +612,8 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NA,subsamplingPath=NA) {
+PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,subsamplingPath=NULL,
+	observedSubsampleFile="observed",assignSubsampleFile="assign") {
 	retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired)
 	if(class(phy)!="multiPhylo") {
 		phy<-c(phy)
@@ -635,13 +636,14 @@ PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,mi
 			physamp[[tree]]<-newphy
 		}
 		prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
-		if(is.na(subsamplingPath)) {
-			write.tree(physamp,file=paste("obs",rep,".tre",sep=""))
-			write.table(prunedAF,file=paste("assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+		if(is.null(subsamplingPath)) {
+			write.tree(physamp,file=paste(observedSubsampleFile,rep,".tre",sep=""))
+			write.table(prunedAF,file=paste(assignSubsampleFile,rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
 		}
 		else {
-			write.tree(physamp,file=paste(subsamplingPath,"obs",rep,".tre",sep=""))
-			write.table(prunedAF,file=paste(subsamplingPath,"assign",rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+			write.tree(physamp,file=paste(subsamplingPath,observedSubsampleFile,rep,".tre",sep=""))
+			write.table(prunedAF,file=paste(subsamplingPath,assignSubsampleFile,rep,".txt",sep=""),
+				quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
 			
 		}
 	}
