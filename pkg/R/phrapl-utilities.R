@@ -575,35 +575,56 @@ PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 
 
 TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,finalPopVector=NULL) {
-	samplesGood<-FALSE
-	toRetain<-c()
-	attempts<-0
-	if(!is.null(finalPopVector[1])) {
-		nIndividualsDesired<-sum(finalPopVector)
-	}
-	while (samplesGood!=TRUE) {
-		if (attempts>attemptsCutoff) {
-			stop(paste("No random sample met the criteria after",attempts,"attempts"))
-		}
-		attempts<-attempts+1
-		toRetain<-sample(dim(assignFrame)[1],nIndividualsDesired,replace=FALSE)
-		retainedPops<-(assignFrame[,1])[toRetain]
+	#if "finalPopVector" has not been specified, then iteratively randomly sample "nIndividualsDesired" from the 
+	#entire dataset "attemptsCutoff" times until at least "minPerPop" individuals are represented per population 
+	#within "toRetain"	
+	if(is.null(finalPopVector)) {
 		samplesGood<-FALSE
-		if (nlevels(retainedPops)==nlevels(assignFrame[,1])) {
-			samplesGood<-TRUE
-			for (i in 1:nlevels(assignFrame[,1])){
-				if (length(which(retainedPops==(levels(assignFrame[,1]))[i]))<minPerPop) {
-					samplesGood<-FALSE
-				}
-				if(!is.null(finalPopVector[1])) {
-					if (length(which(retainedPops==(levels(assignFrame[,1]))[i]))!=finalPopVector[i]) {
+		toRetain<-c()
+		attempts<-0
+		while (samplesGood!=TRUE) {
+			if (attempts>attemptsCutoff) {
+				stop(paste("No random sample met the criteria after",attempts,"attempts"))
+			}		
+			attempts<-attempts+1
+			toRetain<-sample(dim(assignFrame)[1],nIndividualsDesired,replace=FALSE)
+			retainedPops<-(assignFrame[,1])[toRetain]
+			samplesGood<-FALSE
+			if (nlevels(retainedPops)==nlevels(assignFrame[,1])) {
+				samplesGood<-TRUE
+				for (i in 1:nlevels(assignFrame[,1])){
+					if (length(which(retainedPops==(levels(assignFrame[,1]))[i]))<minPerPop) {
 						samplesGood<-FALSE
 					}
 				}
 			}
 		}
+	} else {
+		#if finalPopVector has been specified, then randomly sample according to the population-specific sample sizes
+		#indicated within finalPopVector
+		nIndividualsDesired<-sum(finalPopVector)
+		toRetain <- array()
+		#for each population...
+		for(numLevel in 1:length(levels(assignFrame[,1])))
+		{
+			thisPopSamples <- assignFrame[which(assignFrame[,1] == unique(assignFrame[,1])[numLevel]),][[2]]
+			#...if the there is more than one individual in the population...
+			if (length(thisPopSamples) > 1)
+			{
+				#...randomly sample "finalPopVector[numLevel]" individuals and add them to "toRetain"
+				toRetainTemp <- sample(thisPopSamples,finalPopVector[numLevel],replace=FALSE)
+				toRetain <- c(toRetain,toRetainTemp)[!is.na(c(toRetain,toRetainTemp))]
+			} else {
+				#But if there is only one individual in the population (and one sample is to be drawn)...
+				if(finalPopVector[numLevel] == 1)
+				{
+					#Then add that sample to "toRetain"
+					toRetain <- c(toRetain,thisPopSamples)[!is.na(c(toRetain,thisPopSamples))]
+				}
+			}
+		}
 	}
-	return(toRetain[sort.list(toRetain)])
+return(toRetain[sort.list(toRetain)])
 }
 
 TaxaToDrop<-function(assignFrame,taxaRetained) {
