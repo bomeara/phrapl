@@ -671,6 +671,42 @@ PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,mi
 	return(retainedTaxaMatrix)
 }
 
+PrepAssignFrame <- function(phy,assignFrame) {
+ 	#Function for prepping the assignFrame for subsampling
+	#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) trees for each locus and outputs
+	#assignment files tailored to each locus and trees that are relabeled with numbers to match the assignment files 
+	tips.vec <- phy$tip.label #make an array of the included individuals
+	phy$tip.label <- c(1:length(phy$tip.label)) #change tip labels to consecutive numbers			
+	assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
+	match.vec <- data.frame()
+	for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
+	{
+		for(match1 in 1:length(assign.vec)) #go through each individual in the assignment spreadsheet and ask...
+		{
+			a.match <- tips.vec[match] %in% assign.vec[match1] #is the current tip individual the same as the current individual in the spreadsheet?
+			if(a.match=="TRUE") #if so,
+			{
+				match.temp <- assignFrame[match1,] #remember the assignment
+			}
+		}
+		match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
+	}
+	assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy$tip.label)))) #convert this locus-specific spreadsheet into assignFrame
+	colnames(assignFrame) <- c("popLabel","indivTotal")	
+	assignFrame <- assignFrame[order(assignFrame$popLabel),]
+	
+	#Now re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
+	for(changetips in 1:length(phy$tip.label))
+	{
+		phy$tip.label[assignFrame$indivTotal[changetips]] <- changetips
+	}
+
+	#Now, make new assignFrame with the new tip labels listed in order
+	assignFrame <- data.frame(assignFrame[,1],c(1:length(phy$tip.label)))
+	colnames(assignFrame) <- c("popLabel","indivTotal")	
+	return(list(assignFrame,phy)) #return both the assignFrame and re-labeled trees
+}	
+
 PrunedPopVector<-function(assignFrame,taxaRetained) {
 	assignFrameLabels<-assignFrame[taxaRetained,1]
 	popVector<-rep(NA,nlevels(assignFrameLabels))
@@ -778,4 +814,34 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
     }
   }
   return(newMigrationArray)
+}
+
+RunSeqConverter <- function(seqConvPath,inFile,outputFormat,inputFormat){
+	#Function for running seqConverter to convert nexus files to phylip (requires that the seqConverter perl script
+	#be in your designated path)
+	seqConvPath=seqConvPath
+	inFile=inFile
+	outputFormat=outputFormat
+	inputFormat=inputFormat
+	
+	systemCall1 <-system(paste(seqConvPath,"seqConverter.pl -d",inFile," -o",outputFormat," -i",inputFormat,sep=""))
+	return(systemCall1)
+}
+
+RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,inputFile,mutationModel,outgroup,iterations,seed){
+	#Function for producing input string for RAxML and calling up the program (requires that RAxML be in your
+	#designated path)
+	raxmlPath=raxmlPath
+	raxmlVersion=raxmlVersion
+	inputPath=inputPath
+	inputFile=inputFile
+	mutationModel=mutationModel
+	outgroup=outgroup
+	iterations=iterations
+	seed=seed
+	outputFile <- paste(inputFile,".tre",sep="")
+		
+	systemCall2 <- system(paste(raxmlPath,raxmlVersion," -w ",inputPath," -s ",inputPath,inputFile," -n ",outputFile," -m ",mutationModel,
+		" -o ",outgroup," -f d -N ",iterations," -p ",seed,sep=""))
+	return(systemCall2)
 }
