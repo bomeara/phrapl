@@ -671,16 +671,20 @@ PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,mi
 	return(retainedTaxaMatrix)
 }
 
+
 PrepAssignFrame <- function(phy,assignFrame) {
- 	#Function for prepping the assignFrame for subsampling
-	#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) trees for each locus and outputs
-	#assignment files tailored to each locus and trees that are relabeled with numbers to match the assignment files 
+#Function for prepping the assignFrame for subsampling
+#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) trees for each locus and outputs
+#assignment files tailored to each locus and trees that are relabeled with numbers to match the assignment files. Note that only tree tips
+#that are included in the inputted assignment file will be retained in the outputs.
+ 	
 	tips.vec <- phy$tip.label #make an array of the included individuals
-	phy$tip.label <- c(1:length(phy$tip.label)) #change tip labels to consecutive numbers			
+	phy$tip.label <- as.character(c(1:length(phy$tip.label))) #change tip labels to consecutive numbers			
 	assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
 	match.vec <- data.frame()
 	for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
 	{
+		match.temp = NULL
 		for(match1 in 1:length(assign.vec)) #go through each individual in the assignment spreadsheet and ask...
 		{
 			a.match <- tips.vec[match] %in% assign.vec[match1] #is the current tip individual the same as the current individual in the spreadsheet?
@@ -689,16 +693,22 @@ PrepAssignFrame <- function(phy,assignFrame) {
 				match.temp <- assignFrame[match1,] #remember the assignment
 			}
 		}
-		match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
+		if(!is.null(match.temp)){
+			match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
+		} else {
+			phy<-drop.tip(phy,as.character(match)) #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
+			cat("Warning: Some trees contain tip names not included in the inputted assignment file. These tips will not be subsampled.\n",
+				file=paste(basePath,"WARNINGS.txt",sep=""),append=TRUE)
+		}
 	}
 	assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy$tip.label)))) #convert this locus-specific spreadsheet into assignFrame
 	colnames(assignFrame) <- c("popLabel","indivTotal")	
-	assignFrame <- assignFrame[order(assignFrame$popLabel),]
+	assignFrame <- assignFrame[order(assignFrame$popLabel),] #order new assignFrame by population
 	
 	#Now re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
 	for(changetips in 1:length(phy$tip.label))
 	{
-		phy$tip.label[assignFrame$indivTotal[changetips]] <- changetips
+		phy$tip.label[assignFrame$indivTotal[changetips]] <- as.numeric(changetips)
 	}
 
 	#Now, make new assignFrame with the new tip labels listed in order
