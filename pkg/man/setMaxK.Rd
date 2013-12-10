@@ -2,7 +2,7 @@
 \alias{setMaxK}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+setMaxK
 }
 \description{
 Maximum value of free parameters to be used in the searching process
