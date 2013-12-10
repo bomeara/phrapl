@@ -6,7 +6,7 @@ setMaxK
 }
 \description{
 Maximum value of free parameters to be used in the searching process
-
+}
 \usage{
 setMaxK(popVector, nTrees = 1, taxaPerParam = 5, force = FALSE)
 }
