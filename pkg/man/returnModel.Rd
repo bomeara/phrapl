@@ -2,8 +2,8 @@
 \alias{returnModel}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-returModel
-
+returnModel
+}
 \description{
 Show a list of the models that match better to the data
 }
