@@ -633,9 +633,11 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,subsamplingPath=NULL,
-	observedSubsampleFile="observed",assignSubsampleFile="assign") {
+function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,subsamplingPath=NULL,
+	observedSubsampleFile="observed",assignSubsampleFile="assign",outgroupPrune=TRUE) {
 	retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired)
+	#Iteratively subsamples using TaxaToRetain and then prunes the tree and assingment file accordingly. If outgroupPrune is
+	#TRUE, then the last individual in the tree is removed.
 	if(class(phy)!="multiPhylo") {
 		phy<-c(phy)
 	}
@@ -649,14 +651,19 @@ PrepSubsampling<-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,mi
 			newphy<-drop.tip(phy[[tree]],as.character(delTaxa))
 			for (tipIndex in 1:length(newphy$tip.label)) {
 				old.label<-newphy$tip.label[tipIndex]
-# print(paste("old.label = ",old.label))
-# print(prunedAF[,2])
 				new.label<-as.character(which(prunedAF[,2]==old.label))
 				newphy$tip.label[tipIndex]<-new.label
 			}
+			if(outgroupPrune==TRUE){
+				physamp[[1]]<-drop.tip(newphy,length(keepTaxa))
+			}else{			
 			physamp[[tree]]<-newphy
+			}
 		}
 		prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
+		if(outgroupPrune==TRUE){
+			prunedAF<-prunedAF[-length(prunedAF[,2]),]
+		}
 		if(is.null(subsamplingPath)) {
 			write.tree(physamp,file=paste(observedSubsampleFile,rep,".tre",sep=""))
 			write.table(prunedAF,file=paste(assignSubsampleFile,rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
