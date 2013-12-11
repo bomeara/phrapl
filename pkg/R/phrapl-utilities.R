@@ -633,96 +633,103 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-function(assignFrame,phy,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,subsamplingPath=NULL,
-	observedSubsampleFile="observed",assignSubsampleFile="assign",outgroupPrune=TRUE) {
-	retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired)
-	#Iteratively subsamples using TaxaToRetain and then prunes the tree and assingment file accordingly. If outgroupPrune is
-	#TRUE, then the last individual in the tree is removed.
-	if(class(phy)!="multiPhylo") {
-		phy<-c(phy)
+prepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,
+	outgroupPrune=TRUE) {
+#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file containing a tree for each locus.
+#For each locus, subsampling can be done either by iteratively sampling nIndividualsDesired from the entire dataset (with a minimum sample per 
+#population specified by minPerPop), or, if a finalPopVector is specified, can be done by sampling a specified number of individuals per population.
+#A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is placed in a specified subsamplePath and includes 
+#1) a nSamplesDesired number of tree files with subsampled trees from each locus and 2) a single assignment file (if a finalPopVector is specified) 
+#or an assignment file for each locus and replicate (if finalPopVector=NULL).   
+	
+	#Read in the assignment file constructed from all loci
+	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
+	#Read in tree file
+	phy.file <- paste(subsamplePath,treesFile,sep="")
+	phyOriginal <- read.tree(file=phy.file) #read in tree from file
+	if(class(phyOriginal)!="multiPhylo") { #if there is only one locus...
+		treesInput<-c(phyOriginal) #convert phy to a multiphylo class
 	}
-	for (rep in 1:nSamplesDesired) {
-		keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,finalPopVector)
-		retainedTaxaMatrix[rep,]<-keepTaxa
-		prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
-		physamp<-phy
-		delTaxa<-TaxaToDrop(assignFrame,keepTaxa)
-		for (tree in 1:length(phy)) {
-			newphy<-drop.tip(phy[[tree]],as.character(delTaxa))
-			for (tipIndex in 1:length(newphy$tip.label)) {
+	for (tree in 1:length(phyOriginal)){ #for each locus (i.e., tree)
+		phy<-phyOriginal #renew phy for each locus
+		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus	
+		tips.vec <- phy[[tree]]$tip.label #make an array of the included individuals
+		phy[[tree]]$tip.label <- as.character(c(1:length(phy[[tree]]$tip.label))) #change tip labels to consecutive numbers			
+		assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
+		match.vec <- data.frame()
+		for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
+		{
+			match.temp = NULL
+			for(match1 in 1:length(assign.vec)) #go through each individual in the assignment spreadsheet and ask...
+			{
+				a.match <- tips.vec[match] %in% assign.vec[match1] #is the current tip individual the same as the current individual in the spreadsheet?
+				if(a.match=="TRUE") #if so,
+				{
+					match.temp <- assignFrame[match1,] #remember the assignment
+				}
+			}
+			if(!is.null(match.temp)){
+				match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
+			} else { #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
+				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match)) 
+				cat("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
+					"These tips will not be subsampled.\n",file=paste(basePath,"WARNINGS.txt",sep=""),append=TRUE)
+			}
+		}
+		assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy[[tree]]$tip.label)))) #convert this locus-specific one into assignFrame
+		colnames(assignFrame) <- c("popLabel","indivTotal")	
+		assignFrame <- assignFrame[order(assignFrame$popLabel),] #order new assignFrame by population
+	
+		#Re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
+		for(changetips in 1:length(phy[[tree]]$tip.label))
+		{
+			phy[[tree]]$tip.label[assignFrame$indivTotal[changetips]] <- as.numeric(changetips)
+		}
+
+		#Make new assignFrame with the new tip labels listed in order
+		assignFrame <- data.frame(assignFrame[,1],c(1:length(phy[[tree]]$tip.label)))
+		colnames(assignFrame) <- c("popLabel","indivTotal")	
+		
+		#Begin the subsampling
+		retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
+		for (rep in 1:nSamplesDesired) {
+			keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,finalPopVector) #subsample assignFrame
+			retainedTaxaMatrix[rep,]<-keepTaxa
+			prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
+			delTaxa<-TaxaToDrop(assignFrame,keepTaxa)
+			newphy<-drop.tip(phy[[tree]],as.character(delTaxa)) #toss non-sampled individuals from the tree
+			for (tipIndex in 1:length(newphy$tip.label)) { #rename tips in tree to be consecutive
 				old.label<-newphy$tip.label[tipIndex]
 				new.label<-as.character(which(prunedAF[,2]==old.label))
 				newphy$tip.label[tipIndex]<-new.label
 			}
 			if(outgroupPrune==TRUE){
-				physamp[[1]]<-drop.tip(newphy,length(keepTaxa))
-			}else{			
-			physamp[[tree]]<-newphy
+				newphy<-drop.tip(newphy,length(keepTaxa)) #prune outgroup from tree
 			}
-		}
-		prunedAF[,2]<-as.character(c(1:length(prunedAF[,2])))
-		if(outgroupPrune==TRUE){
-			prunedAF<-prunedAF[-length(prunedAF[,2]),]
-		}
-		if(is.null(subsamplingPath)) {
-			write.tree(physamp,file=paste(observedSubsampleFile,rep,".tre",sep=""))
-			write.table(prunedAF,file=paste(assignSubsampleFile,rep,".txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
-		}
-		else {
-			write.tree(physamp,file=paste(subsamplingPath,observedSubsampleFile,rep,".tre",sep=""))
-			write.table(prunedAF,file=paste(subsamplingPath,assignSubsampleFile,rep,".txt",sep=""),
-				quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+			prunedAF[,2]<-as.character(c(1:length(prunedAF[,2]))) #rename tips in assignFrame to be consecutive
+			if(outgroupPrune==TRUE){
+				prunedAF<-prunedAF[-length(prunedAF[,2]),] #prune outgroup from assignFrame
+			}
 			
-		}
-	}
-	return(retainedTaxaMatrix)
-}
-
-
-PrepAssignFrame <- function(phy,assignFrame) {
-#Function for prepping the assignFrame for subsampling
-#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) trees for each locus and outputs
-#assignment files tailored to each locus and trees that are relabeled with numbers to match the assignment files. Note that only tree tips
-#that are included in the inputted assignment file will be retained in the outputs.
- 	
-	tips.vec <- phy$tip.label #make an array of the included individuals
-	phy$tip.label <- as.character(c(1:length(phy$tip.label))) #change tip labels to consecutive numbers			
-	assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
-	match.vec <- data.frame()
-	for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
-	{
-		match.temp = NULL
-		for(match1 in 1:length(assign.vec)) #go through each individual in the assignment spreadsheet and ask...
-		{
-			a.match <- tips.vec[match] %in% assign.vec[match1] #is the current tip individual the same as the current individual in the spreadsheet?
-			if(a.match=="TRUE") #if so,
-			{
-				match.temp <- assignFrame[match1,] #remember the assignment
+			#Export output
+			if (!file.exists(paste(subsamplePath,"trees",sep=""))){
+				dir.create(paste(subsamplePath,"trees",sep=""))
+			}
+			write.tree(newphy,file=paste(subsamplePath,"trees/observed",rep,".tre",sep=""),append=TRUE)
+			if(is.null(finalPopVector)){
+				if (!file.exists(paste(subsamplePath,"assignments",sep=""))){
+				dir.create(paste(subsamplePath,"assignments",sep=""))
+			}
+			write.table(prunedAF,file=paste(subsamplePath,"assignments/locus",tree,".assign",rep,".txt",sep=""),quote=FALSE,sep="\t",
+				row.names=FALSE,col.names=FALSE,append=FALSE)
 			}
 		}
-		if(!is.null(match.temp)){
-			match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
-		} else {
-			phy<-drop.tip(phy,as.character(match)) #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
-			cat("Warning: Some trees contain tip names not included in the inputted assignment file. These tips will not be subsampled.\n",
-				file=paste(basePath,"WARNINGS.txt",sep=""),append=TRUE)
+		if(!is.null(finalPopVector)){
+			write.table(prunedAF,file=paste(subsamplePath,"assign.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
+				col.names=FALSE,append=FALSE)
 		}
 	}
-	assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy$tip.label)))) #convert this locus-specific spreadsheet into assignFrame
-	colnames(assignFrame) <- c("popLabel","indivTotal")	
-	assignFrame <- assignFrame[order(assignFrame$popLabel),] #order new assignFrame by population
-	
-	#Now re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
-	for(changetips in 1:length(phy$tip.label))
-	{
-		phy$tip.label[assignFrame$indivTotal[changetips]] <- as.numeric(changetips)
-	}
-
-	#Now, make new assignFrame with the new tip labels listed in order
-	assignFrame <- data.frame(assignFrame[,1],c(1:length(phy$tip.label)))
-	colnames(assignFrame) <- c("popLabel","indivTotal")	
-	return(list(assignFrame,phy)) #return both the assignFrame and re-labeled trees
-}	
+}
 
 PrunedPopVector<-function(assignFrame,taxaRetained) {
 	assignFrameLabels<-assignFrame[taxaRetained,1]
@@ -833,32 +840,78 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
   return(newMigrationArray)
 }
 
-RunSeqConverter <- function(seqConvPath,inFile,outputFormat,inputFormat){
-	#Function for running seqConverter to convert nexus files to phylip (requires that the seqConverter perl script
-	#be in your designated path)
-	seqConvPath=seqConvPath
-	inFile=inFile
-	outputFormat=outputFormat
-	inputFormat=inputFormat
-	
-	systemCall1 <-system(paste(seqConvPath,"seqConverter.pl -d",inFile," -o",outputFormat," -i",inputFormat,sep=""))
-	return(systemCall1)
+runSeqConverter <- function(seqConvPath,inFilePath,inputFormat)
+#Function for running seqConverter to convert nexus, fasta, or se-al files to phylip
+#inputFormat can be "nex", "fasta", or "seal" (and files must use these as the file suffix)
+{
+	filesList <- list.files(inFilePath,pattern=paste("*.",inputFormat,sep=""))
+	for(numLoci in 1:length(filesList)){
+		systemCall1 <-system(paste(seqConvPath,"seqConverter.pl -d",paste(inFilePath,filesList[numLoci],sep="")," -ope",sep=""))
+	}
 }
 
-RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,inputFile,mutationModel,outgroup,iterations,seed){
-	#Function for producing input string for RAxML and calling up the program (requires that RAxML be in your
-	#designated path)
-	raxmlPath=raxmlPath
-	raxmlVersion=raxmlVersion
-	inputPath=inputPath
-	inputFile=inputFile
-	mutationModel=mutationModel
-	outgroup=outgroup
-	iterations=iterations
-	seed=seed
-	outputFile <- paste(inputFile,".tre",sep="")
-		
-	systemCall2 <- system(paste(raxmlPath,raxmlVersion," -w ",inputPath," -s ",inputPath,inputFile," -n ",outputFile," -m ",mutationModel,
-		" -o ",outgroup," -f d -N ",iterations," -p ",seed,sep=""))
+runRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,iterations,seed=sample(1:10000000,1),outputSeeds=TRUE,discard=FALSE)
+#Function for producing input string for RAxML and calling up the program (requires that RAxML be in your
+#designated path). It reads in all .phylip files in the designated path, and runs RAxML for each in turn.
+#Outgroups and mutation models can be specified either as a single string to be used for all loci or as a
+#vector which needs to match the order of the reading of the phylip files (i.e., alphabetic/numeric).
+{
+	phylipFilesList <- list.files(inputPath,pattern="*.phylip",full.names=FALSE)
+	seed.vec <- array()
+	for(numb in 1:length(phylipFilesList)){
+		inputFile=phylipFilesList[numb]
+		seed=sample(1:10000000,1)
+		currentSeed <- seed
+		seed.vec <- c(seed.vec,currentSeed)
+		outputFile <- paste(inputFile,".tre",sep="")
+		if(mutationModel=="file"){
+			mutationModelFile <- (read.table(paste(inputPath,"mutationModel.txt",sep="")))
+			thisMutationModel <- as.character(mutationModelFile[[1]][numb])
+		} else{
+			thisMutationModel <- mutationModel
+		}
+		if(outgroup=="file"){
+			outgroupFile <- (read.table(paste(inputPath,"outgroup.txt",sep="")))
+			thisOutgroup <- as.character(outgroupFile[[1]][numb])
+		} else {
+			thisOutgroup <-outgroup
+		}
+
+ 		systemCall2 <- system(paste(raxmlPath,raxmlVersion," -w ",inputPath," -s ",inputPath,inputFile," -n ",outputFile," -m ",thisMutationModel,
+				" -o ",thisOutgroup," -f d -N ",iterations," -p ",currentSeed,sep=""))
+
+		#Dicard inessential RAxML output
+		if(discard==TRUE){
+			if(file.exists(paste(inputPath,inputFile,".reduced",sep=""))){
+				unlink(paste(inputPath,inputFile,".reduced",sep=""))
+			}
+			if(file.exists(paste(inputPath,"RAxML_info.",inputFile,".tre",sep=""))){
+				unlink(paste(inputPath,"RAxML_info.",inputFile,".tre",sep=""))
+			}
+			for(run in 0:(iterations-1)){
+				if(file.exists(paste(inputPath,"RAxML_log.",inputFile,".tre.RUN.",run,sep=""))){
+					unlink(paste(inputPath,"RAxML_log.",inputFile,".tre.RUN.",run,sep=""))
+				}
+				if(file.exists(paste(inputPath,"RAxML_parsimonyTree.",inputFile,".tre.RUN.",run,sep=""))){
+					unlink(paste(inputPath,"RAxML_parsimonyTree.",inputFile,".tre.RUN.",run,sep=""))
+				}
+				if(file.exists(paste(inputPath,"RAxML_result.",inputFile,".tre.RUN.",run,sep=""))){
+					unlink(paste(inputPath,"RAxML_result.",inputFile,".tre.RUN.",run,sep=""))
+				}
+			}
+		}
+	}
+	if(outputSeeds==TRUE){
+		write.table(seed.vec[-1],file=paste(inputPath,"RAxML.seeds.txt",sep=""))
+	}
 	return(systemCall2)
+}
+
+#This takes a path to .tre files and merges all trees into a single file called trees.tre
+mergeTrees <- function(treesPath){	
+	filenames <- list.files(treesPath,pattern="*.tre",full.names=FALSE)
+	vecotr <- lapply(paste(treesPath,filenames,sep=""),read.table)
+	for (treeRep in 1:length(vecotr)){
+		write.table(vecotr[[treeRep]],file=paste(treesPath,"trees.tre",sep=""),append=TRUE,row.names=FALSE,col.names=FALSE,quote=FALSE)
+	}
 }
