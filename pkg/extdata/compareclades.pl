@@ -16,13 +16,13 @@ if ($#ARGV<1) {
 }
 else {
 	for (my $i = 0; $i <= $#ARGV; $i++) {
-		if ($ARGV[$i] =~ /-a([\w\.]+)/) {
+		if ($ARGV[$i] =~ /-a(\S+)/) {
 			$assignmentfile=$1;
 		}
-		elsif ($ARGV[$i] =~ /-o([\w\.]+)/) {
+		elsif ($ARGV[$i] =~ /-o(\S+)/) {
 			$observedfile=$1;
 		}
-		elsif ($ARGV[$i] =~ /-s([\w\.]+)/) {
+		elsif ($ARGV[$i] =~ /-s(\S+)/) {
 			$simulatedfile=$1;
 		}
 		elsif ($ARGV[$i] =~ /-c/) {
