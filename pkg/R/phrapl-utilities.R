@@ -633,7 +633,7 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-prepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,
+PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,
 	outgroupPrune=TRUE) {
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file containing a tree for each locus.
 #For each locus, subsampling can be done either by iteratively sampling nIndividualsDesired from the entire dataset (with a minimum sample per 
@@ -840,7 +840,7 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
   return(newMigrationArray)
 }
 
-runSeqConverter <- function(seqConvPath,inFilePath,inputFormat)
+RunSeqConverter <- function(seqConvPath,inFilePath,inputFormat)
 #Function for running seqConverter to convert nexus, fasta, or se-al files to phylip
 #inputFormat can be "nex", "fasta", or "seal" (and files must use these as the file suffix)
 {
@@ -850,7 +850,7 @@ runSeqConverter <- function(seqConvPath,inFilePath,inputFormat)
 	}
 }
 
-runRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,iterations,seed=sample(1:10000000,1),outputSeeds=TRUE,discard=FALSE)
+RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,iterations,seed=sample(1:10000000,1),outputSeeds=TRUE,discard=FALSE)
 #Function for producing input string for RAxML and calling up the program (requires that RAxML be in your
 #designated path). It reads in all .phylip files in the designated path, and runs RAxML for each in turn.
 #Outgroups and mutation models can be specified either as a single string to be used for all loci or as a
@@ -908,7 +908,7 @@ runRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,ite
 }
 
 #This takes a path to .tre files and merges all trees into a single file called trees.tre
-mergeTrees <- function(treesPath){	
+MergeTrees <- function(treesPath){	
 	filenames <- list.files(treesPath,pattern="*.tre",full.names=FALSE)
 	vecotr <- lapply(paste(treesPath,filenames,sep=""),read.table)
 	for (treeRep in 1:length(vecotr)){
