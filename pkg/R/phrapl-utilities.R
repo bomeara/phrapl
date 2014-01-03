@@ -648,7 +648,7 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 	phy.file <- paste(subsamplePath,treesFile,sep="")
 	phyOriginal <- read.tree(file=phy.file) #read in tree from file
 	if(class(phyOriginal)!="multiPhylo") { #if there is only one locus...
-		treesInput<-c(phyOriginal) #convert phy to a multiphylo class
+		phyOriginal<-c(phyOriginal) #convert phy to a multiphylo class
 	}
 	for (tree in 1:length(phyOriginal)){ #for each locus (i.e., tree)
 		phy<-phyOriginal #renew phy for each locus
