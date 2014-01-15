@@ -205,7 +205,7 @@ ReturnIncompletes<-function(popIntervalsList) {
 
 UpdateCompletes<-function(popIntervalsList) {
 	for (i in 1:length(popIntervalsList)) {
-		if (ColCountLast(popIntervalsList[[i]]$collapseMatrix,1)==0) {
+		if (ColCountLast(abs(popIntervalsList[[i]]$collapseMatrix),1)==0) {
 			popIntervalsList[[i]]$complete<-TRUE #end up with having no more collapses
 		}
 		else if (ColCountLast(popIntervalsList[[i]]$collapseMatrix,0)==0) {
@@ -224,7 +224,7 @@ CompleteIntervals<-function(popIntervalsList) {
 			lastGen<-currentParent$collapseMatrix[,dim(currentParent$collapseMatrix)[2] ]
 #all those in the lastGen in state 1 were merged into one population, identified by the one with the lowest id
 			survPop=length(which(lastGen==0))
-			if (length(which(lastGen==1))>0) {
+			if (length(which(abs(lastGen)==1))>0) {
 				survPop=survPop+1
 			}
 			else {
@@ -239,7 +239,7 @@ CompleteIntervals<-function(popIntervalsList) {
 			else {
 				rawIntervals=matrix(c(0,1),nrow=1)
 			}
-			rowMapping<-c(min(which(lastGen==1)),which(lastGen==0))
+			rowMapping<-c(min(which(abs(lastGen)==1)),which(lastGen==0))
 			rawIntervalsRescaled<-matrix(NA,ncol=dim(rawIntervals)[2],nrow=length(lastGen))
 			for (j in 1:length(rowMapping)) {
 				rawIntervalsRescaled[rowMapping[j], ]<-rawIntervals[j,]
@@ -289,6 +289,30 @@ GenerateIntervalsFullyResolvedCollapse<-function(popVector,maxK) {
 	firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
 	firstIntervals<-firstIntervals[,ColMax(firstIntervals)<=1] #we are okay with having all zeros: no population collapse
 	firstIntervals<-firstIntervals[,ColCountIf(firstIntervals,1)!=1] #we want intervals that have all zeros or at least two ones. What does it mean to have one lineage coalesce with itself?
+	popIntervalsList<-list()
+	for (i in 1:dim(firstIntervals)[2]) {
+		popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
+	}
+	popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
+  intervalsToDelete<-c()
+  for (i in sequence(length(popIntervalsList))) {
+    focalCollapseMatrix<-popIntervalsList[[i]]$collapseMatrix
+    if ((min(ColMax(focalCollapseMatrix))==0) || (dim(focalCollapseMatrix)[1]!=(1+dim(focalCollapseMatrix)[2]))) {
+       intervalsToDelete<-append(intervalsToDelete,i)
+    }
+  }
+  popIntervalsList<-popIntervalsList[-intervalsToDelete]
+	return(popIntervalsList)
+}
+
+GenerateIntervalsSpeciesDelimitation<-function(popVector,maxK) {
+#popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
+#maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
+  nPop <- length(popVector)
+	firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
+	firstIntervals<-firstIntervals[,ColMax(firstIntervals)==1] #we are not ok with all zeros
+	firstIntervals<-firstIntervals[,ColCountIf(firstIntervals,1)!=1] #we want intervals that have at least two ones. What does it mean to have one lineage coalesce with itself?
+	firstIntervals <- cbind(firstIntervals, -firstIntervals) #where -1 = merge into one species at present
 	popIntervalsList<-list()
 	for (i in 1:dim(firstIntervals)[2]) {
 		popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
