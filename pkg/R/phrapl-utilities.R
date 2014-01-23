@@ -727,9 +727,20 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 				new.label<-as.character(which(prunedAF[,2]==old.label))
 				newphy$tip.label[tipIndex]<-new.label
 			}
+			#If tossing outgroup
 			if(outgroupPrune==TRUE){
-				newphy<-drop.tip(newphy,length(keepTaxa)) #prune outgroup from tree
-			}
+				notFound=FALSE
+				tipIndex=0
+				
+				#Toss out that tip which has the highest tip label
+				while(notFound==FALSE){
+					tipIndex=tipIndex + 1
+					if(newphy$tip.label[tipIndex]==length(keepTaxa)){
+						newphy<-drop.tip(newphy,tipIndex)
+						notFound=TRUE
+					}
+				}
+			}		
 			prunedAF[,2]<-as.character(c(1:length(prunedAF[,2]))) #rename tips in assignFrame to be consecutive
 			if(outgroupPrune==TRUE){
 				prunedAF<-prunedAF[-length(prunedAF[,2]),] #prune outgroup from assignFrame
