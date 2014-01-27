@@ -100,7 +100,7 @@ ExhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, ba
   AIC.values<-rep(NA,length(migrationArray))
   for (i in sequence(length(migrationArray))) {
   	p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
-  	try(AIC.values[i]<-SearchContinuousModelSpaceOptim(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax,...))
+  	try(AIC.values[i]<-SearchContinuousModelSpaceOptim(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax,ncores=ncores,results.file=results.file,return.all=return.all,...))
   	print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
 	if(!is.null(results.file)) {
 		save(list=ls(), file=results.file)
@@ -116,14 +116,14 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, b
   	p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
   	if(return.all) {
   		result.indiv<-NULL
-  		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
+  		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, ncores=ncores, results.file=results.file, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
   		print(result.indiv)
   		if(!is.null(result.indiv)) {
   			AIC.values[i]<-result.indiv$objective	
   		}
   		results.list<-append(results.list, list(result.indiv))
   	} else {
-  		try(AIC.values[i]<-SearchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
+  		try(AIC.values[i]<-SearchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, ncores=ncores, results.file=results.file, maxtime=maxtime, maxeval=maxeval, return.all=return.all, ...))
   	}
   	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
 
