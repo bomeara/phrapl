@@ -109,10 +109,51 @@ ReturnModel<-function(p,migrationArrayMap) {
    }
 }
 
+ProportionDifference <- function(a,b) {
+	return(abs((a-b)/min(c(a,b))))
+}
+
+PassBounds <- function(parameterVector, parameterBounds) {
+	n0multiplierParameters<-sort(parameterVector[grep("n0multiplier",names(parameterVector))])
+	migrationParameters<-sort(parameterVector[grep("migration",names(parameterVector))])
+	collapseParameters<-sort(parameterVector[grep("collapse",names(parameterVector))])
+	if(min(migrationParameters) < parameterBounds$minMigrationRate) {
+		return(FALSE)
+	}
+	if(min(collapseParameters) <  parameterBounds$minCollapseTime) {
+		return(FALSE)
+	}
+	if(length(n0multiplierParameters)>1) { #have at least two
+		for (i in sequence(length(n0multiplierParameters)-1)) {
+			if (ProportionDifference(n0multiplierParameters[i], n0multiplierParameters[i+1]) < parameterBounds$minN0Ratio) {
+				return(FALSE)
+			}
+		}
+	}
+	if(length(migrationParameters)>1) { #have at least two
+		for (i in sequence(length(migrationParameters)-1)) {
+			if (ProportionDifference(migrationParameters[i], migrationParameters[i+1]) < parameterBounds$minMigrationRatio) {
+				return(FALSE)
+			}
+		}
+	}
+	if(length(collapseParameters)>1) { #have at least two
+		for (i in sequence(length(collapseParameters)-1)) {
+			if (ProportionDifference(collapseParameters[i], collapseParameters[i+1]) < parameterBounds$minCollapseRatio) {
+				return(FALSE)
+			}
+		}
+	}
+	return(TRUE)
+}
+
 #maxParameterValue prevents MS from going nuts (not finishing) with really high migration or other rates
-ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100) {
+ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1)) {
   parameterVector<-exp(par)
   names(parameterVector)<-MsIndividualParameters(migrationIndividual)
+  if(!PassBounds(parameterVector, parameterBounds)) {
+  	return(badAIC)
+  }
   if(max(parameterVector)>maxParameterValue) {
   	return(badAIC)
   }
