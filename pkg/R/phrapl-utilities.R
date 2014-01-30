@@ -5,6 +5,20 @@
 #library(parallel)
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("ncores", "popVector", "maxK","migrationArray", "migrationArrayMap"))
 
+AllParamCombinations<-function(numCells, minVal=0, maxVal=3) {
+	#first cell can be minval...1 (so, usually, 0 or 1). Next cell can be 0, 1, 2 (as long as maxval>=2), but the second cell can be no more than one greater than all previous cells. and so forth
+	#so values can be 00, 01, [but not 02], 10, 11, 12
+	#each row is a possible combination
+	initial.grid<-expand.grid(c(-1,0), c(-1,0,1), c(-1,0,1,2), c(-1,0,1,2,3), c(-1,0,1,2,3,4), c(-1,0,1,2,3,4,5), c(-1,0,1,2,3,4,5,6), c(-1,0,1,2,3,4,5,6,7))
+	if(minVal<-1 || maxVal>7) {
+		stop("This is hard coded for no lower than -1 for min value and 7 for max value")
+	}
+	initial.grid<-initial.grid[which(RowMin(initial.grid)>=minVal),]
+	initial.grid<-initial.grid[which(RowMax(initial.grid)<=maxVal),]
+	
+
+}
+
 ColMax<-function(x,na.rm=TRUE) {
 	maxVal=rep(NA,dim(x)[2])
 	for (i in 1:dim(x)[2]) {
@@ -360,7 +374,7 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you cannott fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
 GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE) {
 	migrationIndividualsList<-list()
-	for (i in sequence(n0multiplierIndividualsList)) {
+	for (i in sequence(length(n0multiplierIndividualsList))) {
 		if (verbose==TRUE) {
 			print(paste("doing ",i,"/",length(n0multiplierIndividualsList)))
 		}
@@ -397,8 +411,12 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 			}
 			thisMapping<-firstcomposition(numPairs)
 			#for (mappingIndex in sequence(dim(possibleMappings)[2])) {
+			numevaluations=1
 			while(evaluateMapping) {
+				print(numevaluations)
 				thisMapping<-c(thisMapping,rep(0,numPairs-length(thisMapping))) #adds trailing zeros
+									print(thisMapping)
+
 				thisMappingOrig<-thisMapping
 				if ( length(which(thisMapping>0)) <= mappingMaxKAllowed) { #only do it on those mappings that have not too many free parameters
 					migrationArray<-migrationTemplate
@@ -409,13 +427,14 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 						migrationArray[position]=paramPosition #the position of the first parameter
 						thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
 					}
+					print(migrationArray)
 					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)
 					#print(paste("Just created migration individual ",length(migrationIndividualsList)))
 				}
+				numevaluations<-numevaluations+1
 				if (!islastcomposition(thisMappingOrig,restricted=FALSE)) {
 					thisMapping<-nextcomposition(thisMappingOrig,restricted=FALSE)
-				}
-				else {
+				}	else {
 					evaluateMapping<-FALSE
 				}
 			}		
