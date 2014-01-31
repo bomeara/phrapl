@@ -58,7 +58,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     if(debug) {
       print(startingVals) 
     }
-    searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1, maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameter.bounds=parameter.bounds)
+    searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1, maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds)
     ifelse(return.all, return(searchResults), return(searchResults$objective))     
   }
 }
