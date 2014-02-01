@@ -886,7 +886,6 @@ CombineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.
 
 GenerateMigrationArrayMap<-function(migrationArray) {
   migrationArrayMap<-data.frame(matrix(c(1,1,1,1,1,1,1),nrow=1)) #uses the first entry in migrationArray
-  print(migrationArrayMap)
   for (model in 2:length(migrationArray)) {
     newRow<-c(model,rep(NA,6))
     for (comparison in sequence(dim(migrationArrayMap)[1])) {
@@ -911,7 +910,6 @@ GenerateMigrationArrayMap<-function(migrationArray) {
       newRow[6:7]<-c(1+max(migrationArrayMap[,6]),model)
     }
     migrationArrayMap<-rbind(migrationArrayMap,newRow)
-    print(newRow)
   }
   names(migrationArrayMap)<-c("model","collapseMatrix.number","collapseMatrix.parent","n0multiplierMap.number","n0multiplierMap.parent","migrationArray.number","migrationArray.parent")
   return(migrationArrayMap)
