@@ -5,18 +5,76 @@
 #library(parallel)
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("ncores", "popVector", "maxK","migrationArray", "migrationArrayMap"))
 
-AllParamCombinations<-function(numCells, minVal=0, maxVal=3) {
+TruncateToCells<-function(x, numCells, minVal, maxVal) {
+		if(x<=numCells) {
+			return(seq(from=minVal, to=min(maxVal, minVal+x), by=1))
+		} else {
+			return(NA)	
+		}
+}
+
+RowComplete<-function(x, allowableMaxInitial) {
+	if(length(unique(x))==length(seq(from=min(x, allowableMaxInitial), to=max(x), by=1))) {
+		return(TRUE)	
+	}	
+	return(FALSE)
+}
+
+AllParamCombinations<-function(numCells, minVal=0, maxVal=3, allowableMaxInitial=1) {
 	#first cell can be minval...1 (so, usually, 0 or 1). Next cell can be 0, 1, 2 (as long as maxval>=2), but the second cell can be no more than one greater than all previous cells. and so forth
 	#so values can be 00, 01, [but not 02], 10, 11, 12
 	#each row is a possible combination
-	initial.grid<-expand.grid(c(-1,0), c(-1,0,1), c(-1,0,1,2), c(-1,0,1,2,3), c(-1,0,1,2,3,4), c(-1,0,1,2,3,4,5), c(-1,0,1,2,3,4,5,6), c(-1,0,1,2,3,4,5,6,7))
-	if(minVal<-1 || maxVal>7) {
-		stop("This is hard coded for no lower than -1 for min value and 7 for max value")
-	}
+	#allowableMaxInitial allows you to have a min value of zero but let the first index be 1 if you want
+	initial.grid<-expand.grid(TruncateToCells(1, numCells, minVal, maxVal), 
+		TruncateToCells(2, numCells, minVal, maxVal),
+		TruncateToCells(3, numCells, minVal, maxVal),
+		TruncateToCells(4, numCells, minVal, maxVal),
+		TruncateToCells(5, numCells, minVal, maxVal),
+		TruncateToCells(6, numCells, minVal, maxVal),
+		TruncateToCells(7, numCells, minVal, maxVal),
+		TruncateToCells(8, numCells, minVal, maxVal),
+		TruncateToCells(9, numCells, minVal, maxVal),
+		TruncateToCells(10, numCells, minVal, maxVal),
+		TruncateToCells(11, numCells, minVal, maxVal),
+		TruncateToCells(12, numCells, minVal, maxVal),
+		TruncateToCells(13, numCells, minVal, maxVal),
+		TruncateToCells(14, numCells, minVal, maxVal),
+		TruncateToCells(15, numCells, minVal, maxVal),
+		TruncateToCells(16, numCells, minVal, maxVal),
+		TruncateToCells(17, numCells, minVal, maxVal),
+		TruncateToCells(18, numCells, minVal, maxVal),
+		TruncateToCells(19, numCells, minVal, maxVal),
+		TruncateToCells(20, numCells, minVal, maxVal),
+		TruncateToCells(21, numCells, minVal, maxVal),
+		TruncateToCells(22, numCells, minVal, maxVal),
+		TruncateToCells(23, numCells, minVal, maxVal),
+		TruncateToCells(24, numCells, minVal, maxVal),
+		TruncateToCells(25, numCells, minVal, maxVal),
+		TruncateToCells(26, numCells, minVal, maxVal),
+		TruncateToCells(27, numCells, minVal, maxVal),
+		TruncateToCells(28, numCells, minVal, maxVal),
+		TruncateToCells(29, numCells, minVal, maxVal),
+		TruncateToCells(30, numCells, minVal, maxVal),
+		TruncateToCells(31, numCells, minVal, maxVal),
+		TruncateToCells(32, numCells, minVal, maxVal),
+		TruncateToCells(33, numCells, minVal, maxVal),
+		TruncateToCells(34, numCells, minVal, maxVal),
+		TruncateToCells(35, numCells, minVal, maxVal),
+		TruncateToCells(36, numCells, minVal, maxVal),
+		TruncateToCells(37, numCells, minVal, maxVal),
+		TruncateToCells(38, numCells, minVal, maxVal),
+		TruncateToCells(39, numCells, minVal, maxVal),
+		TruncateToCells(40, numCells, minVal, maxVal),
+		TruncateToCells(41, numCells, minVal, maxVal),
+		TruncateToCells(42, numCells, minVal, maxVal),
+		TruncateToCells(44, numCells, minVal, maxVal)
+	)[,sequence(numCells)]
 	initial.grid<-initial.grid[which(RowMin(initial.grid)>=minVal),]
 	initial.grid<-initial.grid[which(RowMax(initial.grid)<=maxVal),]
-	
-
+	initial.grid<-initial.grid[which(initial.grid[,1]<=allowableMaxInitial),]
+	initial.grid<-initial.grid[which(apply(initial.grid, 1, RowComplete, allowableMaxInitial = allowableMaxInitial)),]
+	initial.grid<-unname(as.matrix(initial.grid))
+	return(initial.grid)
 }
 
 ColMax<-function(x,na.rm=TRUE) {
@@ -268,6 +326,31 @@ CompleteIntervals<-function(popIntervalsList) {
 	return(popIntervalsList)
 }
 
+#This function will build a graph connecting populations with migration and pop coalescence. It then tests for connectivity
+CheckFiniteCoalescence <- function(migrationIndividual) {
+	g <- graph.empty() + vertices(sequence(dim(migrationIndividual$collapseMatrix)[1]))
+	for (interval in sequence(dim(migrationIndividual$collapseMatrix)[2])) {
+		merges<-which(migrationIndividual$collapseMatrix[,interval]>0) 
+		if(length(merges)>1) {
+			for (i in c(2:length(merges))) {
+				g[merges[1], merges[i]] <- 1 #create an edge	
+			}				
+		}
+	}
+	for (i in sequence(dim(migrationIndividual$migrationArray)[1])) {
+		for (j in sequence(dim(migrationIndividual$migrationArray)[2])) {
+			for (k in sequence(dim(migrationIndividual$migrationArray)[3])) {
+				if(!is.na(migrationIndividual$migrationArray[i, j, k])) {
+					if(migrationIndividual$migrationArray[i, j, k]>0) {
+						g[i, k]<-1	
+					}
+				}
+			}	
+		}
+	}
+	return(is.connected(g, mode="weak"))
+}
+
 
 GenerateIntervals<-function(popVector,maxK) {
 #popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
@@ -284,64 +367,64 @@ GenerateIntervals<-function(popVector,maxK) {
 	return(popIntervalsList)
 }
 
-GenerateIntervalsNoCollapse<-function(popVector,maxK) {
-#popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
-#maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
-  nPop <- length(popVector)
-	firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
-	firstIntervals<-firstIntervals[,ColMax(firstIntervals)==0] #we only want ones with no collapse (like an island model)
-	popIntervalsList<-list()
-	popIntervalsList[[1]]<-Popinterval(as.matrix(firstIntervals,ncol=1))
-	popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
-	return(popIntervalsList)
-}
+# GenerateIntervalsNoCollapse<-function(popVector,maxK) {
+# #popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
+# #maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
+  # nPop <- length(popVector)
+	# firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
+	# firstIntervals<-firstIntervals[,ColMax(firstIntervals)==0] #we only want ones with no collapse (like an island model)
+	# popIntervalsList<-list()
+	# popIntervalsList[[1]]<-Popinterval(as.matrix(firstIntervals,ncol=1))
+	# popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
+	# return(popIntervalsList)
+# }
 
-GenerateIntervalsFullyResolvedCollapse<-function(popVector,maxK) {
-#popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
-#maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
-  nPop <- length(popVector)
-	firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
-	firstIntervals<-firstIntervals[,ColMax(firstIntervals)<=1] #we are okay with having all zeros: no population collapse
-	firstIntervals<-firstIntervals[,ColCountIf(firstIntervals,1)!=1] #we want intervals that have all zeros or at least two ones. What does it mean to have one lineage coalesce with itself?
-	popIntervalsList<-list()
-	for (i in 1:dim(firstIntervals)[2]) {
-		popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
-	}
-	popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
-  intervalsToDelete<-c()
-  for (i in sequence(length(popIntervalsList))) {
-    focalCollapseMatrix<-popIntervalsList[[i]]$collapseMatrix
-    if ((min(ColMax(focalCollapseMatrix))==0) || (dim(focalCollapseMatrix)[1]!=(1+dim(focalCollapseMatrix)[2]))) {
-       intervalsToDelete<-append(intervalsToDelete,i)
-    }
-  }
-  popIntervalsList<-popIntervalsList[-intervalsToDelete]
-	return(popIntervalsList)
-}
+# GenerateIntervalsFullyResolvedCollapse<-function(popVector,maxK) {
+# #popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
+# #maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
+  # nPop <- length(popVector)
+	# firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
+	# firstIntervals<-firstIntervals[,ColMax(firstIntervals)<=1] #we are okay with having all zeros: no population collapse
+	# firstIntervals<-firstIntervals[,ColCountIf(firstIntervals,1)!=1] #we want intervals that have all zeros or at least two ones. What does it mean to have one lineage coalesce with itself?
+	# popIntervalsList<-list()
+	# for (i in 1:dim(firstIntervals)[2]) {
+		# popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
+	# }
+	# popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
+  # intervalsToDelete<-c()
+  # for (i in sequence(length(popIntervalsList))) {
+    # focalCollapseMatrix<-popIntervalsList[[i]]$collapseMatrix
+    # if ((min(ColMax(focalCollapseMatrix))==0) || (dim(focalCollapseMatrix)[1]!=(1+dim(focalCollapseMatrix)[2]))) {
+       # intervalsToDelete<-append(intervalsToDelete,i)
+    # }
+  # }
+  # popIntervalsList<-popIntervalsList[-intervalsToDelete]
+	# return(popIntervalsList)
+# }
 
-GenerateIntervalsSpeciesDelimitation<-function(popVector,maxK) {
-#popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
-#maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
-  nPop <- length(popVector)
-	firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
-	firstIntervals<-firstIntervals[,ColMax(firstIntervals)==1] #we are not ok with all zeros
-	firstIntervals<-firstIntervals[,ColCountIf(firstIntervals,1)!=1] #we want intervals that have at least two ones. What does it mean to have one lineage coalesce with itself?
-	firstIntervals <- cbind(firstIntervals, -firstIntervals) #where -1 = merge into one species at present
-	popIntervalsList<-list()
-	for (i in 1:dim(firstIntervals)[2]) {
-		popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
-	}
-	popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
-  intervalsToDelete<-c()
-  for (i in sequence(length(popIntervalsList))) {
-    focalCollapseMatrix<-popIntervalsList[[i]]$collapseMatrix
-    if ((min(ColMax(focalCollapseMatrix))==0) || (dim(focalCollapseMatrix)[1]!=(1+dim(focalCollapseMatrix)[2]))) {
-       intervalsToDelete<-append(intervalsToDelete,i)
-    }
-  }
-  popIntervalsList<-popIntervalsList[-intervalsToDelete]
-	return(popIntervalsList)
-}
+# GenerateIntervalsSpeciesDelimitation<-function(popVector,maxK) {
+# #popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
+# #maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
+  # nPop <- length(popVector)
+	# firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
+	# firstIntervals<-firstIntervals[,ColMax(firstIntervals)==1] #we are not ok with all zeros
+	# firstIntervals<-firstIntervals[,ColCountIf(firstIntervals,1)!=1] #we want intervals that have at least two ones. What does it mean to have one lineage coalesce with itself?
+	# firstIntervals <- cbind(firstIntervals, -firstIntervals) #where -1 = merge into one species at present
+	# popIntervalsList<-list()
+	# for (i in 1:dim(firstIntervals)[2]) {
+		# popIntervalsList[[i]]<-Popinterval(as.matrix(firstIntervals[,i],ncol=1))
+	# }
+	# popIntervalsList<-CompleteIntervals(UpdateCompletes(popIntervalsList))
+  # intervalsToDelete<-c()
+  # for (i in sequence(length(popIntervalsList))) {
+    # focalCollapseMatrix<-popIntervalsList[[i]]$collapseMatrix
+    # if ((min(ColMax(focalCollapseMatrix))==0) || (dim(focalCollapseMatrix)[1]!=(1+dim(focalCollapseMatrix)[2]))) {
+       # intervalsToDelete<-append(intervalsToDelete,i)
+    # }
+  # }
+  # popIntervalsList<-popIntervalsList[-intervalsToDelete]
+	# return(popIntervalsList)
+# }
 
 
 #the basic idea here is that at each population in each time interval there is a n0multiplier. These can all be set to the same value, allowed to vary, or assigned in clumps (i.e., pops 1, 3, and 6 have the same n0multiplier value)
@@ -351,20 +434,13 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 	for (i in 1:length(popIntervalsList)) {
 		n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
 		numLineages=sum(n0multiplierMapTemplate,na.rm=TRUE)
-		possibleMappings<-compositions(numLineages)
-		for (mappingIndex in 1:dim(possibleMappings)[2]) {
-			thisMapping<-possibleMappings[,mappingIndex]
-			if ((length(which(thisMapping>0))+KPopInterval(popIntervalsList[[i]]) )<=maxK) { #only do it on those mappings that have not too many free parameters
-				n0multiplierMap<-n0multiplierMapTemplate
-				whichPositions <- which(n0multiplierMap==1)
-				for (positionIndex in 1:length(whichPositions)) {
-					position=whichPositions[positionIndex]
-					paramPosition<-which(thisMapping>0)[1]
-					n0multiplierMap[position]=paramPosition #the position of the first parameter
-					thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
-				}
-				n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierindividual(popIntervalsList[[i]]$collapseMatrix, popIntervalsList[[i]]$complete, n0multiplierMap)
-			}
+		possibleMappings<-AllParamCombinations(numCells = numLineages, minVal=1, maxVal=maxK-KPopInterval(popIntervalsList[[i]]), allowableMaxInitial=1)
+		for (mappingIndex in 1:dim(possibleMappings)[1]) {
+			thisMapping<-possibleMappings[mappingIndex,]
+			n0multiplierMap<-n0multiplierMapTemplate
+			whichPositions <- which(n0multiplierMap==1)
+			n0multiplierMap[whichPositions]<-thisMapping
+			n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierindividual(popIntervalsList[[i]]$collapseMatrix, popIntervalsList[[i]]$complete, n0multiplierMap)
 		}
 	}
 	return(n0multiplierIndividualsList)
@@ -372,7 +448,7 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 
 #now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters (times, n0multipliers, migration rates) under our chosen max
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you cannott fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
-GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE) {
+GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), maxMigrationK=Inf, verbose=FALSE) {
 	migrationIndividualsList<-list()
 	for (i in sequence(length(n0multiplierIndividualsList))) {
 		if (verbose==TRUE) {
@@ -396,46 +472,28 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 				}
 			}
 			numPairs=sum(migrationTemplate,na.rm=TRUE)
-		#	print(paste("starting compositions for ",numPairs))
-		#	possibleMappings<-compositions(numPairs)
-		#	print(paste("length of that was ",dim(possibleMappings)[2]))
-		#	maxMappingK<-dim(possibleMappings)[1]
-		#	actualMappingK <- maxMappingK - colCountIf(possibleMappings,0)
-		#	netK<-actualMappingK + kCollapseMatrix(collapseMatrix) + kN0multiplierMap(n0multiplierMap)
-			mappingMaxKAllowed <- maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )
-		#	possibleMappings<-possibleMappings[,which(netK<=maxK)]
+			mappingMaxKAllowed <- min(maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) ), maxMigrationK)
 			
 			evaluateMapping<-TRUE
 			if (mappingMaxKAllowed<=0) {
 				evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
 			}
-			thisMapping<-firstcomposition(numPairs)
-			#for (mappingIndex in sequence(dim(possibleMappings)[2])) {
+			allMappings<-AllParamCombinations(numPairs, 0, mappingMaxKAllowed, 1)
+			thisMapping<-allMappings[1,]
 			numevaluations=1
 			while(evaluateMapping) {
-				print(numevaluations)
-				thisMapping<-c(thisMapping,rep(0,numPairs-length(thisMapping))) #adds trailing zeros
-									print(thisMapping)
-
-				thisMappingOrig<-thisMapping
-				if ( length(which(thisMapping>0)) <= mappingMaxKAllowed) { #only do it on those mappings that have not too many free parameters
-					migrationArray<-migrationTemplate
-					whichPositions <- which(migrationArray==1)
-					for (positionIndex in 1:length(whichPositions)) {
-						position=whichPositions[positionIndex]
-						paramPosition<-which(thisMapping>0)[1]
-						migrationArray[position]=paramPosition #the position of the first parameter
-						thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
-					}
-					print(migrationArray)
-					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)
-					#print(paste("Just created migration individual ",length(migrationIndividualsList)))
-				}
+				migrationArray<-migrationTemplate
+				whichPositions <- which(migrationArray==1)
+				migrationArray[whichPositions]<-thisMapping
+				newIndividual<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)	
+				if(CheckFiniteCoalescence(newIndividual)) {
+					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
+				}			
 				numevaluations<-numevaluations+1
-				if (!islastcomposition(thisMappingOrig,restricted=FALSE)) {
-					thisMapping<-nextcomposition(thisMappingOrig,restricted=FALSE)
-				}	else {
-					evaluateMapping<-FALSE
+				if(numevaluations<=dim(allMappings)[1]) {
+					thisMapping<-allMappings[numevaluations,]	
+				} else {
+					evaluateMapping<-FALSE	
 				}
 			}		
 		}
@@ -443,135 +501,135 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 	return(migrationIndividualsList)
 }
 
-#this will create a set of models with no populations merging. However, not all populations need to have migration to every other population
-GenerateMigrationIndividualsNoCollapseAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervalsNoCollapse(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE,file=NULL) {
-  migrationArray<-GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList, maxK, verbose=verbose, file=NULL)
-  migrationIndividualsToKill<-c()
-  for (i in sequence(length(migrationArray))) {
-     if (RowMax(migrationArray[[i]]$migrationArray[, , 1])==0 && RowMax(migrationArray[[i]]$migrationArray[, , 1])==0) {
-        migrationIndividualsToKill<-append( migrationIndividualsToKill,i)
-     }
-  }
-  migrationArray<-migrationArray[-1*migrationIndividualsToKill]
-  if (!is.null(file)) {
-    save(migrationArray,maxK,popVector,file=file,compress=TRUE)
-  }
-  return(migrationArray)
-}
+# #this will create a set of models with no populations merging. However, not all populations need to have migration to every other population
+# GenerateMigrationIndividualsNoCollapseAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervalsNoCollapse(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE,file=NULL) {
+  # migrationArray<-GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList, maxK, verbose=verbose, file=NULL)
+  # migrationIndividualsToKill<-c()
+  # for (i in sequence(length(migrationArray))) {
+     # if (RowMax(migrationArray[[i]]$migrationArray[, , 1])==0 && RowMax(migrationArray[[i]]$migrationArray[, , 1])==0) {
+        # migrationIndividualsToKill<-append( migrationIndividualsToKill,i)
+     # }
+  # }
+  # migrationArray<-migrationArray[-1*migrationIndividualsToKill]
+  # if (!is.null(file)) {
+    # save(migrationArray,maxK,popVector,file=file,compress=TRUE)
+  # }
+  # return(migrationArray)
+# }
 
-#this will create a set of models where populations are linked only by a bifurcating tree
-GenerateMigrationIndividualsFullyResolvedCollapseAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervalsFullyResolvedCollapse(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE,file=NULL) {
-  migrationArray<-GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList, maxK, verbose=verbose, file=NULL)
-  migrationIndividualsToKill<-c()
-  for (i in sequence(length(migrationArray))) {
-     if (RowMax(migrationArray[[i]]$migrationArray[, , 1])==0 && RowMax(migrationArray[[i]]$migrationArray[, , 1])==0) {
-        migrationIndividualsToKill<-append( migrationIndividualsToKill,i)
-     }
-  }
-  migrationArray<-migrationArray[-1*migrationIndividualsToKill]
-  if (!is.null(file)) {
-    save(migrationArray,maxK,popVector,file=file,compress=TRUE)
-  }
-  return(migrationArray)
-}
+# #this will create a set of models where populations are linked only by a bifurcating tree
+# GenerateMigrationIndividualsFullyResolvedCollapseAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervalsFullyResolvedCollapse(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE,file=NULL) {
+  # migrationArray<-GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList, maxK, verbose=verbose, file=NULL)
+  # migrationIndividualsToKill<-c()
+  # for (i in sequence(length(migrationArray))) {
+     # if (RowMax(migrationArray[[i]]$migrationArray[, , 1])==0 && RowMax(migrationArray[[i]]$migrationArray[, , 1])==0) {
+        # migrationIndividualsToKill<-append( migrationIndividualsToKill,i)
+     # }
+  # }
+  # migrationArray<-migrationArray[-1*migrationIndividualsToKill]
+  # if (!is.null(file)) {
+    # save(migrationArray,maxK,popVector,file=file,compress=TRUE)
+  # }
+  # return(migrationArray)
+# }
 
 
-#this is like generateMigrationIndividuals, but allows some migration rates to be set to 0 with no penalty in terms of number of free parameters
-GenerateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK),maxK), maxK, verbose=FALSE, file=NULL) {
-	migrationIndividualsList<-list()
-	for (i in 1:length(n0multiplierIndividualsList)) {
-		if (verbose==TRUE) {
-			print(paste("doing ",i,"/",length(n0multiplierIndividualsList), " (migration individuals so far = ",length(migrationIndividualsList),")"))
-		}
-		collapseMatrix<-n0multiplierIndividualsList[[i]]$collapseMatrix
-		n0multiplierMap<-n0multiplierIndividualsList[[i]]$n0multiplierMap
-		numFinalPops<-dim(collapseMatrix)[1]
-		numSteps<-dim(collapseMatrix)[2]
-		if ((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )<=maxK) {
-			migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
-			for (interval in 1:numSteps) {
-				for (fromPop in 1:numFinalPops) {
-					for (toPop in 1:numFinalPops) {
-						if (fromPop!=toPop) {
-							if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
-								migrationTemplate[fromPop,toPop,interval]<-1
-							}
-						}
-					}
-				}
-			}
-			numPairs=sum(migrationTemplate,na.rm=TRUE)
-			mappingMaxKAllowed <- maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )
-			evaluateMapping<-TRUE
-			if (mappingMaxKAllowed<0) {
-				evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
-			}
-			thisMapping<-firstcomposition(numPairs)		
-			while(evaluateMapping) {
-				thisMapping<-c(thisMapping,rep(0,numPairs-length(thisMapping))) #adds trailing zeros
-				thisMappingOrig<-thisMapping
-				if ((length(which(thisMapping>0)) - 1 ) <=mappingMaxKAllowed) { #note the -1: we take away one free param because we allow zero migration rates
-					migrationArray<-migrationTemplate
-					whichPositions <- which(migrationArray==1)
-					for (positionIndex in 1:length(whichPositions)) {
-						position=whichPositions[positionIndex]
-						paramPosition<-which(thisMapping>0)[1]
-						migrationArray[position]=paramPosition #the position of the first parameter
-						thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
-					}
-					if (is.na(max(migrationArray,na.rm=TRUE))) {
-						migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)				
-						#print(paste("Just created migration individual ",length(migrationIndividualsList)))
-					}
-					else {
-						for (paramToMakeZero in sequence(max(migrationArray,na.rm=TRUE))) {
-							migrationArrayModified<-migrationArray
-							migrationArrayModified[which(migrationArrayModified==paramToMakeZero)]<-0
-							migrationArrayModified[which(migrationArrayModified>paramToMakeZero)]<-migrationArrayModified[which(migrationArrayModified>paramToMakeZero)]-1
-							migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArrayModified)
-							#print(paste("Just created migration individual ",length(migrationIndividualsList)))
-						}
-					}
-				}
-				if (!islastcomposition(thisMappingOrig,restricted=FALSE)) {
-					thisMapping<-nextcomposition(thisMappingOrig,restricted=FALSE)
-				}
-				else {
-					evaluateMapping<-FALSE
-				}
-			}
-		}
-	}
-  if (!is.null(file)) {
-    migrationArray<-migrationIndividualsList
-    save(migrationArray,maxK,popVector,file=file,compress=TRUE)
-  }
-	return(migrationIndividualsList)
-}
+# #this is like generateMigrationIndividuals, but allows some migration rates to be set to 0 with no penalty in terms of number of free parameters
+# GenerateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK),maxK), maxK, verbose=FALSE, file=NULL) {
+	# migrationIndividualsList<-list()
+	# for (i in 1:length(n0multiplierIndividualsList)) {
+		# if (verbose==TRUE) {
+			# print(paste("doing ",i,"/",length(n0multiplierIndividualsList), " (migration individuals so far = ",length(migrationIndividualsList),")"))
+		# }
+		# collapseMatrix<-n0multiplierIndividualsList[[i]]$collapseMatrix
+		# n0multiplierMap<-n0multiplierIndividualsList[[i]]$n0multiplierMap
+		# numFinalPops<-dim(collapseMatrix)[1]
+		# numSteps<-dim(collapseMatrix)[2]
+		# if ((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )<=maxK) {
+			# migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
+			# for (interval in 1:numSteps) {
+				# for (fromPop in 1:numFinalPops) {
+					# for (toPop in 1:numFinalPops) {
+						# if (fromPop!=toPop) {
+							# if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
+								# migrationTemplate[fromPop,toPop,interval]<-1
+							# }
+						# }
+					# }
+				# }
+			# }
+			# numPairs=sum(migrationTemplate,na.rm=TRUE)
+			# mappingMaxKAllowed <- maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )
+			# evaluateMapping<-TRUE
+			# if (mappingMaxKAllowed<0) {
+				# evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
+			# }
+			# thisMapping<-firstcomposition(numPairs)		
+			# while(evaluateMapping) {
+				# thisMapping<-c(thisMapping,rep(0,numPairs-length(thisMapping))) #adds trailing zeros
+				# thisMappingOrig<-thisMapping
+				# if ((length(which(thisMapping>0)) - 1 ) <=mappingMaxKAllowed) { #note the -1: we take away one free param because we allow zero migration rates
+					# migrationArray<-migrationTemplate
+					# whichPositions <- which(migrationArray==1)
+					# for (positionIndex in 1:length(whichPositions)) {
+						# position=whichPositions[positionIndex]
+						# paramPosition<-which(thisMapping>0)[1]
+						# migrationArray[position]=paramPosition #the position of the first parameter
+						# thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
+					# }
+					# if (is.na(max(migrationArray,na.rm=TRUE))) {
+						# migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)				
+						# #print(paste("Just created migration individual ",length(migrationIndividualsList)))
+					# }
+					# else {
+						# for (paramToMakeZero in sequence(max(migrationArray,na.rm=TRUE))) {
+							# migrationArrayModified<-migrationArray
+							# migrationArrayModified[which(migrationArrayModified==paramToMakeZero)]<-0
+							# migrationArrayModified[which(migrationArrayModified>paramToMakeZero)]<-migrationArrayModified[which(migrationArrayModified>paramToMakeZero)]-1
+							# migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArrayModified)
+							# #print(paste("Just created migration individual ",length(migrationIndividualsList)))
+						# }
+					# }
+				# }
+				# if (!islastcomposition(thisMappingOrig,restricted=FALSE)) {
+					# thisMapping<-nextcomposition(thisMappingOrig,restricted=FALSE)
+				# }
+				# else {
+					# evaluateMapping<-FALSE
+				# }
+			# }
+		# }
+	# }
+  # if (!is.null(file)) {
+    # migrationArray<-migrationIndividualsList
+    # save(migrationArray,maxK,popVector,file=file,compress=TRUE)
+  # }
+	# return(migrationIndividualsList)
+# }
 
-GenerateExpansionMultiplierIndividuals<-function(popVector,migrationIndividualsList=GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK),maxK),maxK),maxK) {
-	expansionmultiplierIndividualsList<-list()
-	for (i in 1:length(migrationIndividualsList)) {
-		expansionmultiplierMapTemplate<-1+0*migrationIndividualsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
-		numLineages=sum(expansionmultiplierMapTemplate,na.rm=TRUE)
-		possibleMappings<-compositions(numLineages)
-		for (mappingIndex in 1:dim(possibleMappings)[2]) {
-			thisMapping<-possibleMappings[,mappingIndex]
-			if ((length(which(thisMapping>0))+KPopInterval(migrationIndividualsList[[i]]) )<=maxK) { #only do it on those mappings that have not too many free parameters
-				expansionmultiplierMap<-expansionmultiplierMapTemplate
-				whichPositions <- which(expansionmultiplierMap==1)
-				for (positionIndex in 1:length(whichPositions)) {
-					position=whichPositions[positionIndex]
-					paramPosition<-which(thisMapping>0)[1]
-					expansionmultiplierMap[position]=paramPosition #the position of the first parameter
-					thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
-				}
-				expansionmultiplierIndividualsList[[length(expansionmultiplierIndividualsList)+1]]<-Expansionmultiplierindividual(migrationIndividualsList[[i]]$collapseMatrix, migrationIndividualsList[[i]]$complete, expansionmultiplierMap)
-			}
-		}
-	}
-	return(expansionmultiplierIndividualsList)
-}
+# GenerateExpansionMultiplierIndividuals<-function(popVector,migrationIndividualsList=GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK),maxK),maxK),maxK) {
+	# expansionmultiplierIndividualsList<-list()
+	# for (i in 1:length(migrationIndividualsList)) {
+		# expansionmultiplierMapTemplate<-1+0*migrationIndividualsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
+		# numLineages=sum(expansionmultiplierMapTemplate,na.rm=TRUE)
+		# possibleMappings<-compositions(numLineages)
+		# for (mappingIndex in 1:dim(possibleMappings)[2]) {
+			# thisMapping<-possibleMappings[,mappingIndex]
+			# if ((length(which(thisMapping>0))+KPopInterval(migrationIndividualsList[[i]]) )<=maxK) { #only do it on those mappings that have not too many free parameters
+				# expansionmultiplierMap<-expansionmultiplierMapTemplate
+				# whichPositions <- which(expansionmultiplierMap==1)
+				# for (positionIndex in 1:length(whichPositions)) {
+					# position=whichPositions[positionIndex]
+					# paramPosition<-which(thisMapping>0)[1]
+					# expansionmultiplierMap[position]=paramPosition #the position of the first parameter
+					# thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
+				# }
+				# expansionmultiplierIndividualsList[[length(expansionmultiplierIndividualsList)+1]]<-Expansionmultiplierindividual(migrationIndividualsList[[i]]$collapseMatrix, migrationIndividualsList[[i]]$complete, expansionmultiplierMap)
+			# }
+		# }
+	# }
+	# return(expansionmultiplierIndividualsList)
+# }
 
 
 LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms") {
