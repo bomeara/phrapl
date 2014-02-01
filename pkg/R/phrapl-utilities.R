@@ -6,7 +6,7 @@
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("ncores", "popVector", "maxK","migrationArray", "migrationArrayMap"))
 
 TruncateToCells<-function(x, numCells, minVal, maxVal) {
-		if(x<=numCells) {
+		if(x<=numCells && min(maxVal, minVal+x)>=minVal) {
 			return(seq(from=minVal, to=min(maxVal, minVal+x), by=1))
 		} else {
 			return(NA)	
