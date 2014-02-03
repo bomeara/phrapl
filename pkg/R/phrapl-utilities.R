@@ -69,6 +69,9 @@ AllParamCombinations<-function(numCells, minVal=0, maxVal=3, allowableMaxInitial
 		TruncateToCells(42, numCells, minVal, maxVal),
 		TruncateToCells(44, numCells, minVal, maxVal)
 	)[,sequence(numCells)]
+	if(sum(is.na(initial.grid))>0) {
+		return(matrix(nrow=0, ncol=numCells))	
+	}
 	initial.grid<-initial.grid[which(RowMin(initial.grid)>=minVal),]
 	initial.grid<-initial.grid[which(RowMax(initial.grid)<=maxVal),]
 	initial.grid<-initial.grid[which(initial.grid[,1]<=allowableMaxInitial),]
@@ -431,11 +434,11 @@ GenerateIntervals<-function(popVector,maxK) {
 #this generates all such mappings, subject to staying within the maximum number of free parameters
 GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)) {
 	n0multiplierIndividualsList<-list()
-	for (i in 1:length(popIntervalsList)) {
+	for (i in sequence(length(popIntervalsList))) {
 		n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
 		numLineages=sum(n0multiplierMapTemplate,na.rm=TRUE)
 		possibleMappings<-AllParamCombinations(numCells = numLineages, minVal=1, maxVal=maxK-KPopInterval(popIntervalsList[[i]]), allowableMaxInitial=1)
-		for (mappingIndex in 1:dim(possibleMappings)[1]) {
+		for (mappingIndex in sequence(dim(possibleMappings)[1])) {
 			thisMapping<-possibleMappings[mappingIndex,]
 			n0multiplierMap<-n0multiplierMapTemplate
 			whichPositions <- which(n0multiplierMap==1)
@@ -479,6 +482,9 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 				evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
 			}
 			allMappings<-AllParamCombinations(numPairs, 0, mappingMaxKAllowed, 1)
+			if(verbose==TRUE) {
+				print(paste("  there are ", dim(allMappings)[1], " migration mappings to try", sep=""))	
+			}
 			thisMapping<-allMappings[1,]
 			numevaluations=1
 			while(evaluateMapping) {
