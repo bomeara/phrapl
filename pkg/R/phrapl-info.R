@@ -151,10 +151,10 @@ PassBounds <- function(parameterVector, parameterBounds) {
 ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1)) {
   parameterVector<-exp(par)
   #now have to stitch in n0 being 1, always, for the first population
-  positionOfFirstN0 <- min(which(grep("n0multiplier", MsIndividualParameters(migrationIndividual))))
+  positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationIndividual)))
   parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
-  parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
-  if((1+length(parameterVectorFirstPart)) > length(parameterVector)) {
+  parameterVectorSecondPart<-parameterVector[(2+length(parameterVectorFirstPart)):length(parameterVector)]
+  if((2+length(parameterVectorFirstPart)) > length(parameterVector)) {
   	parameterVectorSecondPart<-c()
   }
   parameterVector<-c(parameterVectorFirstPart, 1, parameterVectorSecondPart)
@@ -174,7 +174,7 @@ ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   lnLValue<-ConvertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
   AICValue<-2*(-lnLValue + KAll(migrationIndividual))
   if(print.results) {
-    resultsVector<-c(AICValue,lnLValue,exp(par))
+    resultsVector<-c(AICValue,lnLValue,parameterVector)
     names(resultsVector)<-c("AIC","lnL",MsIndividualParameters(migrationIndividual))
     print(resultsVector)
   }
