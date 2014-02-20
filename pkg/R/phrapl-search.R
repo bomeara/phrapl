@@ -57,7 +57,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
   else {
     paramNames<-MsIndividualParameters(migrationArray[[modelID]])
     for(rep in sequence(numReps)) {
- 	   startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1 + sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. For N0, force first one to always be 1, so drop a parameter here
+ 	   startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. For n0, keep starting value, but then replace it with a 1 in ReturnAIC function
  	   if(debug) {
  	     print(startingVals) 
     }
