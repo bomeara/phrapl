@@ -355,9 +355,8 @@ CheckFiniteCoalescence <- function(migrationIndividual) {
 }
 
 
-GenerateIntervals<-function(popVector,maxK) {
+GenerateIntervals<-function(popVector) {
 #popVector is samples from each pop: c(5,6,2) means 5 samples from pop 1, 6 from pop 2, and 2 from pop3
-#maxK is the maximum number of free parameters you want. By default, allows one free parameter for every 20 samples
 	nPop <- length(popVector)
 	firstIntervals<-blockparts(c(1:nPop),nPop,include.fewer=TRUE)
 	firstIntervals<-firstIntervals[,ColMax(firstIntervals)<=1] #we are okay with having all zeros: no population collapse
@@ -432,12 +431,12 @@ GenerateIntervals<-function(popVector,maxK) {
 
 #the basic idea here is that at each population in each time interval there is a n0multiplier. These can all be set to the same value, allowed to vary, or assigned in clumps (i.e., pops 1, 3, and 6 have the same n0multiplier value)
 #this generates all such mappings, subject to staying within the maximum number of free parameters
-GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)) {
+GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector),maxK=SetMaxK(popVector), maxN0K=Inf) {
 	n0multiplierIndividualsList<-list()
 	for (i in sequence(length(popIntervalsList))) {
 		n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
 		numLineages=sum(n0multiplierMapTemplate,na.rm=TRUE)
-		possibleMappings<-AllParamCombinations(numCells = numLineages, minVal=1, maxVal=maxK-KPopInterval(popIntervalsList[[i]]), allowableMaxInitial=1)
+		possibleMappings<-AllParamCombinations(numCells = numLineages, minVal=1, maxVal=max(1,min(maxN0K, maxK-KPopInterval(popIntervalsList[[i]]))), allowableMaxInitial=1)
 		for (mappingIndex in sequence(dim(possibleMappings)[1])) {
 			thisMapping<-possibleMappings[mappingIndex,]
 			n0multiplierMap<-n0multiplierMapTemplate
@@ -451,7 +450,9 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 
 #now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters (times, n0multipliers, migration rates) under our chosen max
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you cannott fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
-GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), maxMigrationK=Inf, verbose=FALSE) {
+GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMigrationK=2, maxN0K=1, forceSymmetricalMigration=TRUE, verbose=FALSE) {
+	popIntervalsList<-GenerateIntervals(popVector)
+	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector,popIntervalsList,maxK=maxK, maxN0K=maxN0K)
 	migrationIndividualsList<-list()
 	for (i in sequence(length(n0multiplierIndividualsList))) {
 		if (verbose==TRUE) {
@@ -467,8 +468,14 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 				for (fromPop in 1:numFinalPops) {
 					for (toPop in 1:numFinalPops) {
 						if (fromPop!=toPop) {
-							if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
-								migrationTemplate[fromPop,toPop,interval]<-1
+							if(!forceSymmetricalMigration) {
+								if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
+									migrationTemplate[fromPop,toPop,interval]<-1
+								}
+							} else {
+								if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && toPop>fromPop) { #so only fill top diagonal
+									migrationTemplate[fromPop,toPop,interval]<-1
+								}								
 							}
 						}
 					}
@@ -491,8 +498,19 @@ GenerateMigrationIndividuals<-function(popVector,n0multiplierIndividualsList=Gen
 				migrationArray<-migrationTemplate
 				whichPositions <- which(migrationArray==1)
 				migrationArray[whichPositions]<-thisMapping
+				if(forceSymmetricalMigration) {
+					for (interval in 1:numSteps) {
+						for (fromPop in 1:numFinalPops) {
+							for (toPop in 1:numFinalPops) {
+								if (toPop<fromPop) {
+									migrationArray[fromPop,toPop,interval]<-migrationArray[toPop,fromPop,interval]
+								}
+							}
+						}
+					}
+				}
 				newIndividual<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)	
-				if(CheckFiniteCoalescence(newIndividual)) {
+				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK) {
 					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
 				}			
 				numevaluations<-numevaluations+1
