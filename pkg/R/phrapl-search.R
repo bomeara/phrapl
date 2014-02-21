@@ -38,6 +38,14 @@ SearchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, 
       print(startingVals) 
     }
     searchResults<-optim(par=startingVals, fn=ReturnAIC, method=method, control=list(maxit=itnmax), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds, ...)
+
+  			#stitch the first N0multiplier (=1) into the final parameter vector
+			positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
+			solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
+			solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
+			if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
+  			solutionVectorSecondPart<-c()
+
     ifelse(return.all, return(searchResults), return(searchResults$value))     
   }
 }
@@ -57,15 +65,25 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
   else {
     paramNames<-MsIndividualParameters(migrationArray[[modelID]])
     for(rep in sequence(numReps)) {
- 	   startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. For n0, keep starting value, but then replace it with a 1 in ReturnAIC function
+ 	   startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
  	   if(debug) {
  	     print(startingVals) 
     }
  	   searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1, maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds)
  	   if(debug) {
- 	   		print(searchResults)
+
+  			#stitch the first N0multiplier (=1) into the final parameter vector
+			positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
+			solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
+			solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
+			if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
+  			solutionVectorSecondPart<-c()
+  		}
+		searchResults$solution<-c(solutionVectorFirstPart,exp(1),solutionVectorSecondPart)
+
+ 	   	print(searchResults)
  	   	}
- 	   if(searchResults$objective <= best.result.objective) {
+ 	   	if(searchResults$objective <= best.result.objective) {
  	   		best.result<-searchResults
  	   		best.result.objective<-searchResults$objective	
  	   }
@@ -73,6 +91,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     ifelse(return.all, return(best.result), return(best.result.objective))     
   }
 }
+
 
 
 # searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=100, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
