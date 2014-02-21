@@ -153,8 +153,8 @@ ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   #now have to stitch in n0 being 1, always, for the first population
   positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationIndividual)))
   parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
-  parameterVectorSecondPart<-parameterVector[(2+length(parameterVectorFirstPart)):length(parameterVector)]
-  if((2+length(parameterVectorFirstPart)) > length(parameterVector)) {
+  parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
+  if((1+length(parameterVectorFirstPart)) > length(parameterVector)) {
   	parameterVectorSecondPart<-c()
   }
   parameterVector<-c(parameterVectorFirstPart, 1, parameterVectorSecondPart)
