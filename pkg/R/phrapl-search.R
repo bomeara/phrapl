@@ -44,8 +44,8 @@ SearchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, 
 			solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
 			solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
 			if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
-  			solutionVectorSecondPart<-c()
-
+  				solutionVectorSecondPart<-c()
+			}
     ifelse(return.all, return(searchResults), return(searchResults$value))     
   }
 }
@@ -160,7 +160,6 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, b
   	if(!is.null(results.file)) {
 		save(list=ls(), file=results.file)
 	}
-
   }
   ifelse(return.all, return(results.list), return(AIC.values))     
 }
