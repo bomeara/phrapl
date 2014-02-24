@@ -450,7 +450,7 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 
 #now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters (times, n0multipliers, migration rates) under our chosen max
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you cannott fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
-GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMigrationK=2, maxN0K=1, forceSymmetricalMigration=TRUE, verbose=FALSE) {
+GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMigrationK=2, maxN0K=1, forceSymmetricalMigration=TRUE, forceTree=FALSE, verbose=FALSE) {
 	popIntervalsList<-GenerateIntervals(popVector)
 	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector,popIntervalsList,maxK=maxK, maxN0K=maxN0K)
 	migrationIndividualsList<-list()
@@ -462,7 +462,7 @@ GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMi
 		n0multiplierMap<-n0multiplierIndividualsList[[i]]$n0multiplierMap
 		numFinalPops<-dim(collapseMatrix)[1]
 		numSteps<-dim(collapseMatrix)[2]
-		if ((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )<=maxK) {
+		if ((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )<=maxK && doRun) {
 			migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
 			for (interval in 1:numSteps) {
 				for (fromPop in 1:numFinalPops) {
@@ -522,6 +522,9 @@ GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMi
 			}		
 		}
 	}
+	if(forceTree) {
+		migrationIndividualsList<-FilterForFullyResolved(migrationIndividualsList)
+	}
 	return(migrationIndividualsList)
 }
 
@@ -557,6 +560,17 @@ GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMi
   # return(migrationArray)
 # }
 
+
+FilterForFullyResolved <- function(migrationArray) {
+	migrationIndividualsToKill<-c()
+   for (i in sequence(length(migrationArray))) {
+      if(min(ColMax(migrationArray[[i]]$collapseMatrix))==0 || dim(migrationArray[[i]]$collapseMatrix)[2]!=(dim(migrationArray[[i]]$collapseMatrix)[1]-1)) {
+         migrationIndividualsToKill<-append( migrationIndividualsToKill,i)
+      }
+   }
+   migrationArray<-migrationArray[-1*migrationIndividualsToKill]
+   return(migrationArray)
+}
 
 # #this is like generateMigrationIndividuals, but allows some migration rates to be set to 0 with no penalty in terms of number of free parameters
 # GenerateMigrationIndividualsAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervals(popVector,maxK),maxK), maxK, verbose=FALSE, file=NULL) {
