@@ -50,6 +50,8 @@ SearchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, 
   }
 }
 
+
+#TO DO: Add a starting grid (expand.grid()). Calculate AIC at each point, start at the Nstart best ones. If the optimal value is outside the bounds of the grid, offer warning or option to restart search centered at new grid
 SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
