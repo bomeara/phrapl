@@ -87,7 +87,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     		} 
     	}
     	if(is.null(nTreesGrid)) {
-    		nTreesGrid<-nTrees
+    		nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
     	}
     	startGrid <- log(expand.grid(startingVectorList)) #since optimize in log space
     }
