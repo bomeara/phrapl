@@ -101,7 +101,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	colnames(namedGrid)<-c("AIC",MsIndividualParameters(migrationArray[[modelID]])[-positionOfFirstN0])
     	save(namedGrid, file=gridSave)
     }
-    for(rep in sequence(numReps)) {
+    for(rep in sequence(min(numReps, dim(startGrid)[1]))) { #if numReps is larger than the grid, do only as many numReps as there are grid points
  	   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
  	   startingVals <- unlist(startGrid[order(initial.AIC)[rep],]) #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
  	   if(debug) {
