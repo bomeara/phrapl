@@ -117,7 +117,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 		if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
   			solutionVectorSecondPart<-c()
   		}
-		searchResults$solution<-c(solutionVectorFirstPart,exp(1),solutionVectorSecondPart)
+		searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
 		 if(debug) {
  	   	print(searchResults)
  	   	}
