@@ -105,6 +105,7 @@ ReturnModel<-function(p,migrationArrayMap) {
    else  {
    	  warning(paste("All these models match", prunedResults$model, "taking first one"))
    	  print(paste("All these models match", prunedResults$model, "taking first one"))
+   	  print("Perhaps you sent ReturnModel a model ID rather than a vector?")
       return(prunedResults$model[1]) 
    }
 }
@@ -168,8 +169,6 @@ ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
   if(debug) {
     print(parameterVector) 
   }
-  print("wd is ")
-  print(getwd())
   likelihoodVector<-PipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug)
   lnLValue<-ConvertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
   AICValue<-2*(-lnLValue + KAll(migrationIndividual))

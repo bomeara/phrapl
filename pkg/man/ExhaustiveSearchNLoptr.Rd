@@ -7,7 +7,7 @@ exhaustiveSearchNLoptr
 This function will perform an exhaustive search at every model across all model space using nonlinear optimization algorithms.
 }
 \usage{
-exhaustiveSearchNLoptr(migrationArrayMap, migrationArray, popVector, badAIC = 1e+14, maxParameterValue = 100, nTrees = 1, msLocation = "/usr/local/bin/ms", compareLocation = "comparecladespipe.pl", assign = "assign.txt", observed = "observed.txt", unresolvedTest = TRUE, print.ms.string = FALSE, print.results = FALSE, debug = FALSE, method = "nlminb", itnmax = NULL, ncores = ncores, results.file = NULL, maxtime = 0, maxeval = 0, return.all = TRUE, ...)
+ExhaustiveSearchNLoptr(migrationArrayMap, migrationArray, popVector, badAIC = 1e+14, maxParameterValue = 100, nTrees = 1, msLocation = "/usr/local/bin/ms", compareLocation = "comparecladespipe.pl", assign = "assign.txt", observed = "observed.txt", unresolvedTest = TRUE, print.ms.string = FALSE, print.results = FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=NULL, collapseStarts=c(0.1, 0.5, 2, 4, 8), n0Starts=c(0.1, 0.5, 1, 2, 4), migrationStarts=c(0.05, 0.1, 1), gridSave=NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -74,6 +74,14 @@ exhaustiveSearchNLoptr(migrationArrayMap, migrationArray, popVector, badAIC = 1e
   \item{return.all}{
 %%     ~~Describe \code{return.all} here~~
 }
+  \item{collapseStarts}{
+This includes a vector of possible starting parameters for collapse times (tau)
+}
+
+  \item{gridSave}{
+If you want to save the starting grid and AIC values, enter a file name here
+}
+
   \item{\dots}{
 %%     ~~Describe \code{\dots} here~~
 }
