@@ -52,7 +52,7 @@
 
 
 #TO DO: Add a starting grid (expand.grid()). Calculate AIC at each point, start at the Nstart best ones. If the optimal value is outside the bounds of the grid, offer warning or option to restart search centered at new grid
-SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=NULL, collapseStarts=c(0.1, 0.5, 2, 4, 8), n0Starts=c(0.1, 0.5, 1, 2, 4), migrationStarts=c(0.05, 0.1, 1), ...) {
+SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=NULL, collapseStarts=c(0.1, 0.5, 2, 4, 8), n0Starts=c(0.1, 0.5, 1, 2, 4), migrationStarts=c(0.05, 0.1, 1), gridSave=NULL, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -88,13 +88,19 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	}
     	startGrid <- log(expand.grid(startingVectorList)) #since optimize in log space
     }
-    initial.AIC <- sapply(startGrid, 1, ReturnAIC, migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds)
+    initial.AIC <- simplify2array(apply(startGrid, 1, ReturnAIC, migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds))
     if(debug) {
     	print(cbind(initial.AIC, exp(startGrid)))
     }
+    if(!is.null(gridSave)) {
+    	positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
+    	namedGrid<-cbind(initial.AIC, exp(startGrid))
+    	colnames(namedGrid)<-c("AIC",MsIndividualParameters(migrationArray[[modelID]])[-positionOfFirstN0])
+    	save(namedGrid, file=gridSave)
+    }
     for(rep in sequence(numReps)) {
  	   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
- 	   startingVals <- startGrid[order(initial.AIC)[rep],] #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
+ 	   startingVals <- unlist(startGrid[order(initial.AIC)[rep],]) #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
  	   if(debug) {
  	     print(startingVals) 
     	}
