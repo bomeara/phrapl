@@ -685,6 +685,15 @@ SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE,ncores=1) {
 	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,ceiling(nTrees/ncores))
 	
+	systemMS<-function(stringname=NULL){
+		outputVectorMS<-system(stringname,intern=TRUE)
+		return(outputVectorMS)
+	}
+	systemPerl<-function(stringname=NULL){
+		outputVectorPerl<-system(stringname,intern=TRUE)
+		return(outputVectorPerl)
+	}
+	
   if(print.ms.string) {
     print(msCallInfo) 
   }
@@ -696,12 +705,16 @@ PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	if (unresolvedTest==FALSE) {
 		unresolvedFlag<-""
 	}
-	outputstring<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' | perl ",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
+	#MS and perl called separately to facilitate profiling
+	outputstringMS<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' > mstrees.txt", sep=" ") 
+	outputstringPerl<- paste("cat mstrees.txt | perl",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
 	if (debug) {
-		print(outputstring) 
+		print(paste(outputstringMS,outputstringPerl,sep=" "))
 	}
 	#if (ncores==1) {
-		outputVector<-system(outputstring,intern=TRUE)
+		outputVectorMS<-systemMS(stringname=outputstringMS)
+		outputVectorPerl<-systemPerl(stringname=outputstringPerl)
+		outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
 		return(outputVector)
 	#} else {
 	#	wrapOutput<-function(x,outputstring) {
@@ -780,9 +793,10 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 #A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is placed in a specified subsamplePath and includes 
 #1) a nSamplesDesired number of tree files with subsampled trees from each locus and 2) a single assignment file (if a finalPopVector is specified) 
 #or an assignment file for each locus and replicate (if finalPopVector=NULL).   
-	
-	#Read in the assignment file constructed from all loci
+	#Read in and prep the assignment file constructed from all loci
 	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
+	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:length(assignFrameOriginal)))
+	colnames(assignFrameOriginal)<-c("indiv","popLabel","indivTotal")
 	#Read in tree file
 	phy.file <- paste(subsamplePath,treesFile,sep="")
 	phyOriginal <- read.tree(file=phy.file) #read in tree from file
@@ -812,7 +826,7 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 			} else { #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
 				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match)) 
 				cat("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
-					"These tips will not be subsampled.\n",file=paste(basePath,"WARNINGS.txt",sep=""),append=TRUE)
+					"These tips will not be subsampled.\n",file=paste(subsamplingPath,"WARNINGS.txt",sep=""),append=TRUE)
 			}
 		}
 		assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy[[tree]]$tip.label)))) #convert this locus-specific one into assignFrame
@@ -826,7 +840,7 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 		}
 
 		#Make new assignFrame with the new tip labels listed in order
-		assignFrame <- data.frame(assignFrame[,1],c(1:length(phy[[tree]]$tip.label)))
+		assignFrame <- data.frame(as.factor(assignFrame[,1]),c(1:length(phy[[tree]]$tip.label)))
 		colnames(assignFrame) <- c("popLabel","indivTotal")	
 		
 		#Begin the subsampling
