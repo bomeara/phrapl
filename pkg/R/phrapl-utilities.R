@@ -1077,3 +1077,247 @@ MergeTrees <- function(treesPath){
 		write.table(vecotr[[treeRep]],file=paste(treesPath,"trees.tre",sep=""),append=TRUE,row.names=FALSE,col.names=FALSE,quote=FALSE)
 	}
 }
+
+#This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
+#of models into a table
+ExtractAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(1:length(migrationArray))){
+
+	#Pull out the overall AICs
+	AIC<-grep("objective",result,value=TRUE)
+	AIC<-gsub(".+objective = ","",AIC)
+	AIC<-gsub(", solution.+","",AIC)
+	
+	#Construct dataframe consisting of AICs and model descriptions for each model
+  	overall.results<-data.frame
+	params.K<-rep(NA, length(AIC))
+	params.vector<-rep(NA, length(AIC))
+	for (i in sequence(length(AIC))) {
+		AIC[i]
+		KAll(migrationArray[[i]])
+		params.K[i]<-KAll(migrationArray[[i]])
+		params.vector[i]<-paste(MsIndividualParameters(migrationArray[[i]]), sep=" ", collapse=" ")
+	}
+	models<-as.character(modelVector)
+	params.K<-as.character(params.K)
+	
+	#Back-transform AICs to get Likelihoods
+	options(digits=12)
+	lnL<- as.character(round((as.numeric(AIC) / -2) + as.numeric(params.K),12))
+	
+	#Combine data
+	overall.results<-data.frame(models, AIC, lnL, params.K, params.vector,stringsAsFactors=FALSE)
+	overall.results[,1]<-as.numeric(overall.results[,1])
+	overall.results[,2]<-as.numeric(overall.results[,2])
+	overall.results[,3]<-as.numeric(overall.results[,3])
+	overall.results[,4]<-as.numeric(overall.results[,4])
+
+	return(overall.results)
+}
+
+
+#This function takes output from an exhaustive search and assembles parameter indexes and estimates
+#based on a set of models. A list containing two tables is outputted: one containing parameter indexes
+#and one containing parameter estimates
+ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVector=modelVector,npop=npop){
+
+	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
+	############(INCLUDING ALL BUT THE DIAGONAL NA's)
+	
+	#Establish column names for these parameters (keep square matrices method)
+	allMigs<-list()
+	for(thisMatrix in 1:(npop - 1)){ #for each possible matrix, given npop
+		currentMigs<-array(NA,dim=c(npop,npop)) # build dimensions of the current migration
+		allMigs[[length(allMigs)+1]] <- currentMigs #add it to the master list
+	}
+	#Fill in an array with migration parameter headers
+	migColnames=array()
+	for(thisMatrix in 1:length(allMigs)){ #for each migration matrix in the model
+		presentMatrix<-allMigs[[1]]
+		for(migFrom in 1:length(presentMatrix[,1])){ #for each row
+			for(migTo in 1:length(presentMatrix[1,])){ #for each column
+				if(migFrom !=migTo){ #skip diagonal migrations
+					migColnames<-c(migColnames,paste("m",thisMatrix,"_",migFrom,".",migTo,sep=""))
+				}
+			}
+		}
+	}	
+	migColnames<-migColnames[!is.na(migColnames)]	
+	
+	
+	############MAKE COLUMN HEADERS FOR COLLAPSE AND N0MULTI BASED ON FULLY RESOLVED TREE
+	#First, make rectangular matrix to match fully resolved case 
+	allCollapses<-array(NA,dim=c(npop,npop - 1))
+	
+	#Fill in arrays with parameter headers
+	collapseColnames=array()
+	n0multiColnames=array()
+	for(cols in 1:length(allCollapses[1,])){ #for each column
+		for(rows in 1:length(allCollapses[,1])){ #for each row
+			collapseColnames<-c(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
+			n0multiColnames<-c(n0multiColnames,paste("n_t",cols,".",rows,sep=""))
+		}
+	}	
+	collapseColnames<-collapseColnames[!is.na(collapseColnames)]	
+	n0multiColnames<-n0multiColnames[!is.na(n0multiColnames)]	
+	
+	
+	#############FILL IN A MATRIX WITH THE MIGRATION PARAMETER INDEXES
+	#First establish the total number of columns required to fit the migration parameters
+	migParmsNcol<-(npop^2 - npop) * (npop - 1)
+	
+	#Create empty matrix to fill
+	migParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=migParmsNcol)) #for parameter indexes
+	currentModelCount=0
+	
+	for(currentModel in modelVector){ #loop through each model
+		currentModelCount=currentModelCount+1
+		counter<-0
+		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
+			#migration matrix in the model. Note that the first two numbers give rows and columns of a 
+			#matrix, the last number gives the number of matrices (current and historical)
+		currentMatrix<-migrationArray[[currentModel]]$migrationArray[,,thisMatrix] #rename current matrix
+			for(migFrom in 1:length(currentMatrix[,1])){ #for each row	
+				for(migTo in 1:length(currentMatrix[1,])){ #for each column		
+					if(migFrom != migTo){ #skip migrations into same population	
+						counter<-counter+1 #keep track of column to deposit values	
+						migParms[currentModelCount,counter]<-currentMatrix[migFrom,migTo] #pull out the migration indexes
+					}
+				}
+			}
+		}
+	}			
+	colnames(migParms)<-migColnames
+			
+
+	#############FILL IN A MATRIX WITH THE COLLAPSE AND N0MULTI PARAMETER INDEXES
+	
+	#Create empty matrices to fill
+	collapseParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=(npop * (npop - 1)))) 
+	n0multiParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=(npop * (npop - 1))))
+	currentModelCount=0
+	
+	for(currentModel in modelVector){ #loop through each model
+		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
+		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
+		currentModelCount=currentModelCount+1
+		counter<-0
+		for(cols in 1:length(collapseCurrentMatrix[1,])){ #for each column
+			for(rows in 1:length(collapseCurrentMatrix[,1])){ #for each row	
+				counter<-counter+1 #keep track of column to deposit values	
+				collapseParms[currentModelCount,counter]<-collapseCurrentMatrix[rows,cols] #pull out indexes
+				n0multiParms[currentModelCount,counter]<-n0multiCurrentMatrix[rows,cols] #pull out indexes
+			}
+		}
+	}			
+	colnames(collapseParms)<-collapseColnames
+	colnames(n0multiParms)<-n0multiColnames
+	
+
+	
+	##########################MAKE MATRICES FILLED WITH THE PARAMETER VALUES, BASED ON THE INDEXES
+	#Create data.frames to substitute in with the parameter values
+	collapseParmsValues<-collapseParms
+	n0multiParmsValues<-n0multiParms
+	migParmsValues<-migParms
+	
+	#Now loop through each  (i.e., each row in Parms matrices)
+	for(eachCol in 1:nrow(collapseParms)){ 
+	
+		#First, make matrix of the collapse estimates
+		currentSol<-exp(result[[eachCol]]$solution) #back-transform the logged parameter estimates
+		if(length(currentSol)> 0){ #if there are parameter estimates left
+				
+			#Because different collapse parameters are denoted by different columns rather than by different index values,
+			#for each new time period (i.e., column), if there is a collapse, create a new index number so that a distinct
+			#tau is assigned to each coalescent event.
+			makeIndexes<-as.numeric(collapseParms[eachCol,])
+			count1<-1
+			count2<-npop
+			count3<-1
+			for(rep in 1:(length(makeIndexes) / npop)){
+				if(length(makeIndexes[count1:count2][which(makeIndexes[count1:count2]==1)]) > 0){
+					makeIndexes[count1:count2][which(makeIndexes[count1:count2]==1)] <- count3
+					count3<-count3 + 1
+				}
+				count1<-count1 + npop
+				count2<-count2 + npop
+			}
+
+			#Now calulate the number of unique parameters
+			uniqueCollapse<-makeIndexes[!is.na(makeIndexes)]
+			uniqueCollapse<-uniqueCollapse[which(uniqueCollapse > 0)]
+			uniqueCollapse<-length(unique(uniqueCollapse))
+			if(uniqueCollapse > 0){ #If there are any unique parameters
+				for(rep1 in 1:uniqueCollapse){ #For each unique parameter
+					for(rep2 in sequence(1:length(makeIndexes))){ #Go through each parameter position
+						if(!is.na(makeIndexes[rep2])){
+							if(makeIndexes[rep2]==rep1){ #if the index matches the unique parameter
+								collapseParmsValues[eachCol,rep2]<-currentSol[rep1] #change the index to the corresponding parameter value
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#Now take away from the parameters vector the used up parameter values
+		currentSol<-tail(currentSol,length(currentSol) - uniqueCollapse)
+			
+	
+		#Second, make matrix of the n0multiplier estimates
+		if(length(currentSol)> 0){ #if there are parameter estimates left
+			#Calulate the number of unique parameters
+			uniqueN0multi<-as.numeric(n0multiParms[eachCol,]) 
+			uniqueN0multi<-uniqueN0multi[!is.na(uniqueN0multi)]
+			uniqueN0multi<-uniqueN0multi[which(uniqueN0multi > 0)]
+			uniqueN0multi<-length(unique(uniqueN0multi))
+			if(uniqueN0multi > 0){ #If there are any unique parameters
+				for(rep1 in 1:uniqueN0multi){ #For each unique parameter
+					for(rep2 in sequence(1:ncol(n0multiParms))){ #Go through each parameter position
+						if(!is.na(as.numeric(n0multiParms[eachCol,rep2]))){
+							if(as.numeric(n0multiParms[eachCol,rep2])==rep1){ #if the index matches the unique parameter
+								n0multiParmsValues[eachCol,rep2]<-currentSol[rep1] #change the index to the corresponding parameter value
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		#Now take away from the parameters vector the used up parameter values
+		currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
+	
+	
+		#Third, make matrix of the migration estimates
+		if(length(currentSol)> 0){ #if there are parameter estimates left
+			#Calulate the number of unique parameters
+			uniqueMig<-as.numeric(migParms[eachCol,]) 
+			uniqueMig<-uniqueMig[!is.na(uniqueMig)]
+			uniqueMig<-uniqueMig[which(uniqueMig > 0)]
+			uniqueMig<-length(unique(uniqueMig))
+			if(uniqueMig > 0){ #If there are any unique parameters
+				for(rep1 in 1:uniqueMig){ #For each unique parameter
+					for(rep2 in sequence(1:ncol(migParms))){ #Go through each parameter position
+						if(!is.na(as.numeric(migParms[eachCol,rep2]))){
+							if(as.numeric(migParms[eachCol,rep2])==rep1){ #if the index matches the unique parameter
+								migParmsValues[eachCol,rep2]<-currentSol[rep1] #change the index to the corresponding parameter value
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	
+	##########################CBIND ALL PARAMETER INDEX COLUMNS TOGETHER
+	parameterIndexes<-cbind(collapseParms,n0multiParms,migParms)
+	#Add an "I" to colnames for the indexes (to distinguish them from the parameter values colnames)
+	for(rep in 1:ncol(parameterIndexes)){
+		colnames(parameterIndexes)[rep]<-paste(colnames(parameterIndexes)[rep],"_I",sep="")
+	}
+	parameterValues<-cbind(collapseParmsValues,n0multiParmsValues,migParmsValues)
+	parameterAll<-cbind(parameterValues,parameterIndexes)
+	
+	return(list(parameterValues,parameterIndexes))
+}
