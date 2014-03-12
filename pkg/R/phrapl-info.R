@@ -176,6 +176,86 @@ ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
     resultsVector<-c(AICValue,lnLValue,parameterVector)
     names(resultsVector)<-c("AIC","lnL",MsIndividualParameters(migrationIndividual))
     print(resultsVector)
+    print(paste(likelihoodVector,collapse=" ",sep=""))
+    matches<-sum(as.numeric(likelihoodVector))
+    names(matches)<-"matchSum"
+    print(matches)
+
   }
   return(AICValue)
+}
+
+#This takes an outputted grid from initial.AIC search and produces ranges of values for each parameter that can be constructed into
+#a new, finer-grained grid. This new grid is based on the range of values contained in the best supported combinations of parameter values
+#Outputted is a list of vectors containing a range of parameter values.
+CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
+	#Create ranges of parameter values from which can construct new finer-grained grid
+	gridSorted<-gridList[order(gridList$AIC),] #Sort current grid by AIC
+	parmNames<-colnames(gridSorted)[-1]
+	parmRanges<-data.frame(matrix(nrow=2,ncol=length(parmNames)))
+	parmRangesExtendedTEMP<-data.frame(matrix(nrow=2,ncol=length(parmNames)))
+	parmRangesExtended<-data.frame(matrix(nrow=2,ncol=length(parmNames)))
+	fineGrid<-list()
+	colnames(parmRanges)<-parmNames
+	colnames(parmRangesExtendedTEMP)<-parmNames
+	colnames(parmRangesExtended)<-parmNames
+	for(rep in 1:length(parmNames)){ #for each parameter
+		#Define ranges of the top 5 models
+		parmRanges[1,rep]<-min(gridSorted[1:5,(rep + 1)])
+		parmRanges[2,rep]<-max(gridSorted[1:5,(rep + 1)])
+		uniqueParmsVec<-unique(gridSorted[,(rep + 1)])[order(unique(gridSorted[,(rep + 1)]))] #vector of unique parms
+									
+		#If the minimum best parameter is not the smallest parameter in the grid, extend the range a bit (to 50% the distance
+		#from the next parameter value). Ditto for the maximum best parameter.
+		if(is.na(uniqueParmsVec[rev(order(uniqueParmsVec[which(uniqueParmsVec < parmRanges[1,rep])]))][1])){
+			parmRangesExtendedTEMP[1,rep]<-parmRanges[1,rep]
+		}else{
+			parmRangesExtendedTEMP[1,rep]<-uniqueParmsVec[rev(order(uniqueParmsVec[which(uniqueParmsVec < parmRanges[1,rep])]))][1]
+		}
+		if(is.na(uniqueParmsVec[which(uniqueParmsVec > parmRanges[2,rep])][1])){
+			parmRangesExtendedTEMP[2,rep]<-parmRanges[2,rep]
+		}else{
+			parmRangesExtendedTEMP[2,rep]<-uniqueParmsVec[which(uniqueParmsVec > parmRanges[2,rep])][1]	
+		}
+									
+		#Using the above range extentions, define grid ranges for each parameter
+		parmRangesExtended[1,rep]<-parmRanges[1,rep] - ((parmRanges[1,rep] - parmRangesExtendedTEMP[1,rep]) / 2) 
+		parmRangesExtended[2,rep]<-parmRanges[2,rep] + ((parmRangesExtendedTEMP[2,rep] - parmRanges[2,rep]) / 2) 
+
+		#Now create vectors of new grid values for each parameter
+		#First, define the number of grid points based on the type of parameter
+		if(length(grep("collapse",colnames(parmRangesExtended)[rep])) != 0){
+			gridSize<-gridSizeVector[1]
+		}
+		if(length(grep("n0multiplier",colnames(parmRangesExtended)[rep])) != 0){
+			gridSize<-gridSizeVector[2]
+		}
+		if(length(grep("migration",colnames(parmRangesExtended)[rep])) != 0){
+			gridSize<-gridSizeVector[3]
+		}
+									
+		#Calculate internal grid values	
+		gridInterval<-(parmRangesExtended[2,rep] - parmRangesExtended[1,rep]) / (gridSizeVector[1] - 1)
+		gridInternalVals<-array()
+		currentValue<-parmRangesExtended[1,rep]
+		for(rep1 in 1:(gridSizeVector[1] - 2)){
+			gridInternalVals<-c(gridInternalVals,(currentValue + gridInterval))
+			currentValue<-tail(gridInternalVals,n=1)
+		}
+		gridInternalVals<-gridInternalVals[!is.na(gridInternalVals)]
+		#Concatenate min, max, and internal values and add to the grid list
+		fineGrid[[length(fineGrid) + 1]]<-c(parmRangesExtended[1,rep],gridInternalVals,parmRangesExtended[2,rep])
+		names(fineGrid)[length(fineGrid)]<-colnames(parmRangesExtended)[rep]
+		startGrid<-list()
+		startGrid[[1]]<-log(expand.grid(fineGrid))									
+	}
+	return(fineGrid)
+}
+
+#This takes vectors of parameter values and constructs a grid containing all possible combinations of parameter values.
+#This grid is outputted in the form of a list which can be used to obtain AIC values using SearchContinuousModelSpaceNLoptr 
+CreateStartGrid<-function(fineGrid){
+	startGrid<-list()
+	startGrid[[1]]<-log(expand.grid(fineGrid))
+	return(startGrid)
 }
