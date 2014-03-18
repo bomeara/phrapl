@@ -149,7 +149,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 }
 
 #maxParameterValue prevents MS from going nuts (not finishing) with really high migration or other rates
-ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1)) {
+ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1, subsamplesPerGene=1)) {
   parameterVector<-exp(par)
   #now have to stitch in n0 being 1, always, for the first population
   positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationIndividual)))
@@ -170,7 +170,7 @@ ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
     print(parameterVector) 
   }
   likelihoodVector<-PipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug)
-  lnLValue<-ConvertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)))
+  lnLValue<-ConvertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)), subsamplesPerGene= subsamplesPerGene)
   AICValue<-2*(-lnLValue + KAll(migrationIndividual))
   if(print.results) {
     resultsVector<-c(AICValue,lnLValue,parameterVector)
