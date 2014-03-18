@@ -909,12 +909,37 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 }
 
 #idea is that you scale the prob of missing by the number of possible trees
-ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector)))) {
+#if multiple subsamples per locus is to be passed in, they should be arranged in observed.tre as
+#Gene1_subsample1
+#Gene1_subsample2
+#...
+#Gene1_lastsubsample
+#Gene2_subsample1
+#Gene2_subsample2
+#...
+#Gene2_lastsubsample
+#i.e., grouped by gene first, then by subsamples
+#the values for the subsamples are summarized (by default, median)
+#to get median likelihood per gene
+#and then these median subsamples per gene are summed to get overall likelihood of the data
+ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector))), subsamplesPerGene=1, summaryFn=median) {
 	outputVector<-as.numeric(outputVector)
 	outputVector[which(outputVector==0)]<-probOfMissing
 	outputVector<-outputVector/nTrees
 	outputVector<-log(outputVector)
-	lnL<-sum(outputVector)
+	lnL<-0
+	localVector<-rep(NA, subsamplesPerGene)
+	baseIndex<-1
+	for (i in sequence(length(outputVector))) {
+		localVector[baseIndex]<-outputVector[i]
+		print(localVector)
+		baseIndex <- baseIndex+1
+		if(i%%subsamplesPerGene == 0) {
+			lnL<-lnL+summaryFn(localVector)
+			localVector<-rep(NA, subsamplesPerGene)
+			baseIndex<-1
+		}
+	}
 	return(lnL)
 }
 
