@@ -52,7 +52,7 @@
 
 
 #TO DO: Add a starting grid (expand.grid()). Calculate AIC at each point, start at the Nstart best ones. If the optimal value is outside the bounds of the grid, offer warning or option to restart search centered at new grid
-SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=2e5, nTreesGrid=NULL ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=startGrid, collapseStarts=c(0.1, 0.5, 1, 2, 4, 8, 12, 16, 20), n0Starts=c(0.1, 0.5, 1, 2, 4), migrationStarts=c(0.05, 0.1, 0.25, 0.5, 1, 2), gridSave=NULL,gridSaveFile=NULL, subsamplesPerGene=1, ...) {
+SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=2e5, nTreesGrid=NULL ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=startGrid, collapseStarts=c(0.1, 0.5, 1, 2, 4, 8, 12, 16, 20), n0Starts=c(0.1, 0.5, 1, 2, 4), migrationStarts=c(0.05, 0.1, 0.25, 0.5, 1, 2), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -68,30 +68,39 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     paramNames<-MsIndividualParameters(migrationArray[[modelID]])
     if(is.null(startGrid)) { #need to make our own grid
     	startingVectorList<-list()
+    	nameCount<-1
     	numCollapse <- sum(grepl("collapse",paramNames))
     	if (numCollapse > 0) {
     		for (i in sequence(numCollapse)) {
     			startingVectorList<-append(startingVectorList, list(collapseStarts))
+    			names(startingVectorList)[nameCount]<-grep("collapse",paramNames,value=TRUE)[i]
+    			nameCount<-nameCount + 1
     		} 
     	}
         numn0 <- sum(grepl("n0multiplier",paramNames))-1 #-1 since one is fixed to be 1
     	if (numn0 > 0) {
     		for (i in sequence(numn0)) {
     			startingVectorList<-append(startingVectorList, list(n0Starts))
+    			names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
+    			nameCount<-nameCount + 1
     		} 
     	}	
     	numMigration <- sum(grepl("migration",paramNames))
     	if (numMigration > 0) {
     		for (i in sequence(numMigration)) {
     			startingVectorList<-append(startingVectorList, list(migrationStarts))
+    			names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
+    			nameCount<-nameCount + 1
     		} 
     	}
-    	startGrid <- log(expand.grid(startingVectorList)) #since optimize in log space
+    	startGrid <- CreateStartGrid(startingVectorList)
+    	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
     }
+
     if(is.null(nTreesGrid)) {
     	nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
     }
-    initial.AIC <- simplify2array(apply(startGrid, 1, ReturnAIC, migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTreesGrid,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds, subsamplesPerGene= subsamplesPerGene))
+    initial.AIC <- simplify2array(apply(startGrid, 1, ReturnAIC, migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTreesGrid,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds, subsamplesPerGene=subsamplesPerGene))
     if(debug) {
     	print(cbind(initial.AIC, exp(startGrid)))
     }
@@ -180,7 +189,7 @@ ExhaustiveSearchOptim<-function(migrationArrayMap, migrationArray, popVector, ba
   return(AIC.values)
 }
 
-ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, ncores=1, results.file=NULL, maxtime=0, maxeval=0, return.all=TRUE, modelVector=NULL, startGrid=NULL, ...) {
+ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, ncores=1, results.file=NULL, maxtime=0, maxeval=0, return.all=TRUE, modelVector=NULL, startGrid=NULL, subsamplesPerGene=1,...) {
   AIC.values<-rep(NA,length(migrationArray))
   gridList<-list() #for storing model grids
   results.list<-list()
@@ -193,7 +202,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popVector, b
  			currentStartGrid=NULL
  		}
   		result.indiv<-NULL
-  		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, startGrid=currentStartGrid, gridSave=NULL,  ...))
+  		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p, migrationArrayMap, migrationArray, popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees, msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all, startGrid=currentStartGrid, gridSave=NULL, subsamplesPerGene=subsamplesPerGene, ...))
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
   		print(result.indiv[[1]])
   		if(!is.null(result.indiv[[1]])) {
