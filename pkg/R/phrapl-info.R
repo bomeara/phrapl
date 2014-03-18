@@ -278,7 +278,7 @@ CreateStartGrid<-function(fineGrid){
 	startGrid<-list()
 	startGrid[[1]]<-expand.grid(fineGrid)
 	howManyCollapses<-length(grep("collapse",names(startGrid[[1]])))
-	if(howManyCollapses > 0){
+	if(howManyCollapses > 1){
 		for(rep in 1:(howManyCollapses - 1)){
 			startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,rep] < startGrid[[1]][,(rep+1)]),]
 		}
