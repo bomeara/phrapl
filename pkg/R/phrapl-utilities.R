@@ -795,7 +795,7 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 #or an assignment file for each locus and replicate (if finalPopVector=NULL).   
 	#Read in and prep the assignment file constructed from all loci
 	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
-	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:length(assignFrameOriginal)))
+	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:nrow(assignFrameOriginal)))
 	colnames(assignFrameOriginal)<-c("indiv","popLabel","indivTotal")
 	#Read in tree file
 	phy.file <- paste(subsamplePath,treesFile,sep="")
@@ -876,10 +876,7 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 			}
 			
 			#Export output
-			if (!file.exists(paste(subsamplePath,"trees",sep=""))){
-				dir.create(paste(subsamplePath,"trees",sep=""))
-			}
-			write.tree(newphy,file=paste(subsamplePath,"trees/observed",rep,".tre",sep=""),append=TRUE)
+			write.tree(newphy,file=paste(subsamplePath,"observed.tre",sep=""),append=TRUE)
 			if(is.null(finalPopVector)){
 				if (!file.exists(paste(subsamplePath,"assignments",sep=""))){
 				dir.create(paste(subsamplePath,"assignments",sep=""))
