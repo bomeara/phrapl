@@ -1560,3 +1560,313 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	
 	return(list(parameterValues,parameterIndexes))
 }
+
+
+
+###############################Post-analysis Functions####################
+
+#This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models
+ConcatenateResults<-function(rdaFilesVec=NULL,addAICweights=TRUE,rmNaParameters=TRUE){
+	totalData<-data.frame()
+	for (rep in 1:length(rdaFiles)){
+		load(rdaFiles[rep]) #Read model objects
+
+		#Combine results from the rda into dataframe
+		overall.results<-overall.results[order(overall.results[,1]),] #sort by model number (same order as parameters)
+		current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],parameters[[1]],parameters[[2]])
+		totalData<-rbind(totalData,current.results) #Add current.results to totalData
+		totalData<-totalData[order(totalData$models),] #Make sure totalData is all sorted by model
+	}		
+	#Add model ranks, dAIC, and wAIC
+	if(addAICweights==TRUE){
+		dAICRankWeights<-GetAICweights(totalData)
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])					
+	}
+		
+	#Remove Parameters that only have NAs for values
+	if(rmNaParameters==TRUE){
+		totalData<-RemoveParameterNAs(totalData)
+	}
+	return(totalData)
+}
+
+#Add specific descriptor columns to results (specific for simulation checking)
+AddDescriptors<-function(dataframe=totalData){           
+	#Get treatment descriptor columns
+   	whichdataframe<-as.matrix(rep(datasetsVec[dataset],length(nrow(dataframe)))) #make dataframe descriptor column
+   	migTreat<-as.matrix(rep(migVec[dataset],length(nrow(dataframe)))) #make migration column
+   	divTreat<-as.matrix(rep(divVec[divRep],length(nrow(dataframe)))) #make divergence column
+   	treeTreat<-as.matrix(rep(treeVec[treeRep],length(nrow(dataframe)))) #make tree number column
+   	subnumTreat<-as.matrix(rep(subsampleNumVec[subsampleNumRep],length(nrow(dataframe)))) #make simulation rep column
+   	subsampleTreat<-as.matrix(rep(subsampleRep,length(nrow(dataframe)))) #make subsample rep column
+
+	#Combine dataframe across models with treatment descriptor columns
+	dataframe<-cbind(whichdataframe,migTreat,divTreat,treeTreat,subnumTreat,subsampleTreat,dataframe)
+	colnames(dataframe)<-c("dataset","migration","divTime","nTrees","subNum","subsample",colnames(dataframe[,7:ncol(dataframe)]))
+    return(dataframe)
+}   	            
+	
+#Function used for calculating AIC weights
+getExponent<-function(x){
+	return(exp(-0.5 * x))
+	}
+
+#Remove parameter columns that contain only NAs
+RemoveParameterNAs<-function(totalData){
+	columnsLeft=ncol(totalData) #update number of remaining columns
+	continue=TRUE #Not to last column?
+	colnum=1 #Present column
+	while(continue){
+		NAlist<-is.na(totalData[,colnum])
+		proceed<-TRUE
+		if(length(NAlist[which(NAlist==TRUE)])==length(NAlist)){ #if there are only NAs in column
+			totalData<-totalData[,-colnum] #prune column from dataset
+			columnsLeft<-ncol(totalData)
+			colnum<-colnum #don't proceed to increase current column (because just tossed one)
+			proceed<-FALSE
+		}
+		if(colnum >= columnsLeft){
+			continue=FALSE
+		}
+		if(proceed==TRUE){
+			colnum<-colnum + 1
+		}
+	}
+	return(totalData)
+}
+
+#Calculate dAICs, model ranks, and model weights
+GetAICweights<-function(totalData=totalData){
+	#Calculate change in AIC values from best model
+	totalData<-totalData[order(totalData$AIC,totalData$models),] #sort by AIC, then by model
+	dAIC=array(0)
+	for(rep4 in 2:nrow(totalData)){
+		dAIC<-c(dAIC,round((totalData$AIC[rep4] - totalData$AIC[1]),digits=3))
+	}
+	
+	#Add a model rank column				
+	rank=array(1)
+	for(rep3 in 2:nrow(totalData)){
+		if(totalData$AIC[rep3]==totalData$AIC[rep3-1]){
+			rank=c(rank,rank[rep3-1])
+		}else{
+			rank=c(rank,rank[rep3-1]+1)
+		}
+	}
+
+	#Calculate Weights across subsamples
+	currentExp<-sapply(dAIC,getExponent)
+	wAIC<-currentExp / sum(currentExp)
+	dAICRankWeights<-data.frame(cbind(rank,dAIC,wAIC))
+	return(dAICRankWeights)
+}
+
+#Get weights for three model types (Isolation only, migration only, isolation + migration)
+#based on AIC weights
+GetTrianglePlotWeights<-function(totalData=totalData){	
+	#Get datasets containing isolation AND migration parameters
+	currentIsoMig<-grepl(".*collapse.*migration.*",totalData$params.vector)
+
+	#Get datasets containing ONLY isolation or ONLY migration
+	currentIsoAll<-grepl(".*collapse.*",totalData$params.vector)
+	currentMigAll<-grepl(".*migration.*",totalData$params.vector)
+	currentIso<-array()
+	currentMig<-array()
+	for(rep in 1:length(totalData$params.vector)){
+		if(currentIsoAll[rep]==TRUE && currentMigAll[rep]==FALSE){
+			currentIso[rep]<-TRUE
+		}else{
+			currentIso[rep]<-FALSE
+		}
+		
+		if(currentMigAll[rep]==TRUE && currentIsoAll[rep]==FALSE){
+			currentMig[rep]<-TRUE
+		}else{
+			currentMig[rep]<-FALSE
+		}
+	}
+	allWeights<-data.frame(cbind(currentIso,currentMig,currentIsoMig))
+	colnames(allWeights)<-c("iso","mig","isoANDmig")
+	
+	#calculate model type weights by summing weights under the three types of weighted models
+	weightIso<-sum(totalData$wAIC[which(allWeights$iso==TRUE)])
+	weightMig<-sum(totalData$wAIC[which(allWeights$mig==TRUE)])
+	weightIsoMig<-sum(totalData$wAIC[which(allWeights$isoANDmig==TRUE)])
+	plotWeights<-data.frame(cbind(weightIso,weightMig,weightIsoMig))
+	return(plotWeights) #same as old currentPlotWeights
+}
+
+#Calculate model averaged parameter values across a set of models
+CalculateModelAverages<-function(totalData=totalData,parmStartCol=10){
+	#Add model averaged parameter estimates to a dataframe
+	totalData<-totalData[order(totalData$AIC,totalData$models),] #sort parameters by AIC to match totalData
+	totalData<-totalData[,grep(".*_I",colnames(totalData),invert=TRUE)] #Remove parameter index columns
+										
+	#Remove parameter columns that contain only NAs
+	totalData<-RemoveParameterNAs(totalData)
+		
+	#Calculate model averaged parameter estimates (NA's are ignored if present in some models)					
+	modelAverages<-na.pass(totalData[,parmStartCol:ncol(totalData)] * totalData$wAIC)
+	modelAverages<-apply(modelAverages,2,sum,na.rm=TRUE)
+					
+	#Convert modelAverages into a dataframe
+	modelAveragesMat<-data.frame(matrix(modelAverages,nrow=1,ncol=length(names(modelAverages))))
+	colnames(modelAveragesMat)<-names(modelAverages)
+	modelAverages<-modelAveragesMat
+	return(modelAverages)
+}
+
+
+
+################Functions summarizing phrapl results across subsamples, models, and treatments
+
+#This function summarizes (mean, median, and standard deviation) triangle plot weights and model-averaged parameter
+#estimates across subsamples of the same treatment. treatmentVec gives a vector of treatments assigned to each model. 
+#paramColVec gives the column numbers that are to be summarized with mean, median, and standard deviation.
+SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramColVec=c(7:ncol(plotWeights)),treatmentVec=NULL){
+	
+	#Define all unique treatments (if any)
+	if(!is.null(treatmentVec)){
+		utreat=unique(treatmentVec)
+	}else{
+		treatmentVec<-rep("treat",nrow(plotWeights))
+		utreat<-unique(treatmentVec)
+	}
+
+	#Calculate mean, median, and sd across subsamples for each treatment
+	medianWeights<-data.frame()
+	meanWeights<-data.frame()
+	sdWeights<-data.frame()
+
+	for(rep10 in 1:length(utreat)){
+		currentPlotWeights<-plotWeights[which(treatmentVec==utreat[rep10]),paramColVec]
+		currentDescriptors<-plotWeights[which(treatmentVec==utreat[rep10]),1:(paramColVec[1] - 1)]
+	
+		currentMedianWeights<-sapply(currentPlotWeights,median,na.rm=TRUE)
+		currentMedianWeightsDF<-data.frame(matrix(currentMedianWeights,nrow=1,ncol=length(names(currentMedianWeights))))
+		colnames(currentMedianWeightsDF)<-names(currentMedianWeights)
+		currentMedianWeights<-cbind(currentDescriptors[1,],currentMedianWeightsDF)
+		medianWeights<-rbind(medianWeights,currentMedianWeights)
+	
+		currentMeanWeights<-sapply(currentPlotWeights,mean,na.rm=TRUE)
+		currentMeanWeightsDF<-data.frame(matrix(currentMeanWeights,nrow=1,ncol=length(names(currentMeanWeights))))
+		colnames(currentMeanWeightsDF)<-names(currentMeanWeights)
+		currentMeanWeights<-cbind(currentDescriptors[1,],currentMeanWeightsDF)
+		meanWeights<-rbind(meanWeights,currentMeanWeights)
+
+		currentSdWeights<-sapply(currentPlotWeights,sd,na.rm=TRUE)
+		currentSdWeightsDF<-data.frame(matrix(currentSdWeights,nrow=1,ncol=length(names(currentSdWeights))))
+		colnames(currentSdWeightsDF)<-names(currentSdWeights)
+		currentSdWeights<-cbind(currentDescriptors[1,],currentSdWeightsDF)
+		sdWeights<-rbind(sdWeights,currentSdWeights)
+	}
+	summaryWeights<-list(medianWeights,meanWeights,sdWeights)
+}
+
+#This function summarizes (e.g., mean, median, and standard deviation) parameter values for each model across subsamples
+#treatmentVec gives a vector of treatments assigned to each model. paramColVec gives the column numbers that are to be
+#summarized with mean, median, and standard deviation. timeColVec gives the column numbers that are to be summarized by 
+#taking the sum across subsamples (e.g., for elapsed time per model). descriptionColVec gives the column numbers for
+#columns that should be included in the new table, but which aren't to be summarized. This function also adusts the model 
+#rank column based on the mean and median AIC weight across subsamples. Output for this function is a list of three
+#dataframes for mean, median, and standard deviation values.
+SummarizeParametersAcrossSubsamples<-function(totalData=allData,treatmentVec=NULL,paramColVec=c(8:13,16:ncol(allData)),
+	timeColVec=c(15),descriptionColVec=c(1:7,14)){
+	
+	#Define all unique treatments (if any)
+	if(!is.null(treatmentVec)){
+		utreat=unique(treatmentVec)
+	}else{
+		treatmentVec<-rep("treatment",nrow(allData))
+		utreat<-unique(treatmentVec)
+	}
+
+	#Calculate mean, median, and sd across subsamples for each model within each treatment
+	medianModel<-data.frame()
+	meanModel<-data.frame()
+	sdModel<-data.frame()
+
+	for(rep11 in 1:length(utreat)){ #for each treatment
+		currentData<-totalData[which(treatmentVec==utreat[rep11]),]
+		for(rep12 in 1:length(unique(currentData$models))){ #for each model
+			currentModel<-currentData[which(currentData$models==unique(currentData$models)[rep12]),]
+		
+			#isolate columns to average
+			currentModelAv<-currentModel[,paramColVec]		
+
+			#sum up elapsed time for each model
+			elapsedTime<-sapply(currentModel[,timeColVec],sum,na.rm=TRUE)
+			elapsedTimeDF<-data.frame(matrix(elapsedTime,nrow=1,ncol=length(names(elapsedTime))))
+			colnames(elapsedTimeDF)<-names(elapsedTime)		
+		
+			#Get median
+			currentMedianModel<-sapply(currentModelAv,median,na.rm=TRUE)
+			currentMedianModelDF<-data.frame(matrix(currentMedianModel,nrow=1,ncol=length(names(currentMedianModel))))
+			colnames(currentMedianModelDF)<-names(currentMedianModel)
+			currentMedianModel<-cbind(currentModel[1,descriptionColVec],elapsedTimeDF,currentMedianModelDF)
+			medianModel<-rbind(medianModel,currentMedianModel)
+
+			#Get mean
+			currentMeanModel<-sapply(currentModelAv,mean,na.rm=TRUE)
+			currentMeanModelDF<-data.frame(matrix(currentMeanModel,nrow=1,ncol=length(names(currentMeanModel))))
+			colnames(currentMeanModelDF)<-names(currentMeanModel)
+			currentMeanModel<-cbind(currentModel[1,descriptionColVec],elapsedTimeDF,currentMeanModelDF)
+			meanModel<-rbind(meanModel,currentMeanModel)
+		
+			#Get sd
+			currentSdModel<-sapply(currentModelAv,sd,na.rm=TRUE)
+			currentSdModelDF<-data.frame(matrix(currentSdModel,nrow=1,ncol=length(names(currentSdModel))))
+			colnames(currentSdModelDF)<-names(currentSdModel)
+			currentSdModel<-cbind(currentModel[1,descriptionColVec],elapsedTimeDF,currentSdModelDF)
+			sdModel<-rbind(sdModel,currentSdModel)
+		}
+	}
+	
+	#########Add rank columns to median and mean weights (based on model Averaged AIC weights)########
+	#If treatmentVec=NULL, re-define utreat
+	if(length(utreat)==1){
+		treatmentVec<-rep("treatment",nrow(meanModel))
+	}
+
+	#Fill in ranks
+	rankColNum<-match("rank",names(meanModel)) #get the column number where rank is stored
+	meanModelRankSort<-data.frame()
+	medianModelRankSort<-data.frame()
+	for(rep13 in 1:length(utreat)){
+		currentMeanModelRank<-meanModel[which(treatmentVec==utreat[rep13]),]
+		currentMeanModelRankSort<-currentMeanModelRank[rev(order(currentMeanModelRank$wAIC)),]
+	
+		currentMedianModelRank<-medianModel[which(treatmentVec==utreat[rep13]),]
+		currentMedianModelRankSort<-currentMedianModelRank[rev(order(currentMedianModelRank$wAIC)),]
+
+		#Calculate ranks based on averaged AIC weights
+		#Mean
+		rank=array(1)
+		for(rep14 in 2:nrow(currentMeanModelRankSort)){
+			if(currentMeanModelRankSort$wAIC[rep14]==currentMeanModelRankSort$wAIC[rep14 - 1]){
+				rank=rbind(rank,rank[rep14 - 1])
+			}else{
+				rank=rbind(rank,rank[rep14 - 1] + 1)
+			}
+		}	
+		currentMeanModelRankSort[,rankColNum]<-rank
+		meanModelRankSort<-rbind(meanModelRankSort,currentMeanModelRankSort)
+	
+		#Median
+		rank=array(1)
+		for(rep14 in 2:nrow(currentMedianModelRankSort)){
+			if(currentMedianModelRankSort$wAIC[rep14]==currentMedianModelRankSort$wAIC[rep14 - 1]){
+				rank=rbind(rank,rank[rep14 - 1])
+			}else{
+				rank=rbind(rank,rank[rep14 - 1] + 1)
+			}
+		}	
+		currentMedianModelRankSort[,rankColNum]<-rank
+		medianModelRankSort<-rbind(medianModelRankSort,currentMedianModelRankSort)
+	}
+
+	meanModel<-meanModelRankSort
+	medianModel<-medianModelRankSort
+	
+	summaryModels<-list(medianModel,meanModel,sdModel)
+}
