@@ -1284,7 +1284,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 	for(eachCol in 1:nrow(collapseParms)){ 
 	
 		#First, make matrix of the collapse estimates
-		currentSol<-exp(result[[eachCol]]$solution) #back-transform the logged parameter estimates
+		currentSol<-exp(result[[1]][[eachCol]]$solution) #back-transform the logged parameter estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 				
 			#Because different collapse parameters are denoted by different columns rather than by different index values,
@@ -1657,13 +1657,15 @@ GetAICweights<-function(totalData=totalData){
 	#Calculate Weights across subsamples
 	currentExp<-sapply(dAIC,getExponent)
 	wAIC<-currentExp / sum(currentExp)
-	dAICRankWeights<-data.frame(cbind(rank,dAIC,wAIC))
-	return(dAICRankWeights)
+	dAICRankWeights<-data.frame(cbind(models=totalData$models,rank,dAIC,wAIC))
+	dAICRankWeights<-dAICRankWeights[order(dAICRankWeights$models),]
+	return(dAICRankWeights[,-1])
 }
 
 #Get weights for three model types (Isolation only, migration only, isolation + migration)
-#based on AIC weights
-GetTrianglePlotWeights<-function(totalData=totalData){	
+#based on AIC weights. Output can either be "indexes" or "weights" (where the indexes are logical
+#columns for the three model types).
+GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){	
 	#Get datasets containing isolation AND migration parameters
 	currentIsoMig<-grepl(".*collapse.*migration.*",totalData$params.vector)
 
@@ -1685,15 +1687,19 @@ GetTrianglePlotWeights<-function(totalData=totalData){
 			currentMig[rep]<-FALSE
 		}
 	}
-	allWeights<-data.frame(cbind(currentIso,currentMig,currentIsoMig))
-	colnames(allWeights)<-c("iso","mig","isoANDmig")
+	modelIndexes<-data.frame(cbind(currentIso,currentMig,currentIsoMig))
+	colnames(modelIndexes)<-c("iso","mig","isoANDmig")
 	
 	#calculate model type weights by summing weights under the three types of weighted models
-	weightIso<-sum(totalData$wAIC[which(allWeights$iso==TRUE)])
-	weightMig<-sum(totalData$wAIC[which(allWeights$mig==TRUE)])
-	weightIsoMig<-sum(totalData$wAIC[which(allWeights$isoANDmig==TRUE)])
-	plotWeights<-data.frame(cbind(weightIso,weightMig,weightIsoMig))
-	return(plotWeights) #same as old currentPlotWeights
+	if(output=="weights"){
+		weightIso<-sum(totalData$wAIC[which(allWeights$iso==TRUE)])
+		weightMig<-sum(totalData$wAIC[which(allWeights$mig==TRUE)])
+		weightIsoMig<-sum(totalData$wAIC[which(allWeights$isoANDmig==TRUE)])
+		plotWeights<-data.frame(cbind(weightIso,weightMig,weightIsoMig))
+		return(plotWeights) #same as old currentPlotWeights
+	}else{
+		return(modelIndexes)
+	}	
 }
 
 #Calculate model averaged parameter values across a set of models
@@ -1717,8 +1723,7 @@ CalculateModelAverages<-function(totalData=totalData,parmStartCol=10){
 }
 
 
-
-################Functions summarizing phrapl results across subsamples, models, and treatments
+################Functions summarizing across subsamples, models, and treatments
 
 #This function summarizes (mean, median, and standard deviation) triangle plot weights and model-averaged parameter
 #estimates across subsamples of the same treatment. treatmentVec gives a vector of treatments assigned to each model. 
@@ -1869,4 +1874,61 @@ SummarizeParametersAcrossSubsamples<-function(totalData=allData,treatmentVec=NUL
 	medianModel<-medianModelRankSort
 	
 	summaryModels<-list(medianModel,meanModel,sdModel)
+}
+
+#This function takes model AIC weights for three major model types (isolation only, migration only, 
+#and isolation + migration) and adjusts these weights based on the assumption that the null expected weights
+#(i.e., equal weights, scaled by the number of parameters in each model and the number of model types 
+#represented in the given model set) are in the center of the triangle plot.The plot is centered around this
+#null point and a correction is applied to the observed model type weights. Inputs are 1) the model weights file from phrapl, 2) the main results file from phrapl (which contains model K values), and 3) the column numbers in the model
+#weights file that contain the three model type weights. Outputted are the adjusted model weights (where null
+#weights are added in a new row). These weights can be used in a triangle plot
+CalculateNullWeights<-function(modelWeights=NULL,modelKs=NULL,weightsColVec=c(7:9)){
+
+##First, add datapoint based on null expectations (based only on K, and the proportion of
+##each model type in the list of tested models)
+
+	#Extract a single dataset from the total Dataframe
+	#Calculate number of different models
+	nModels<-length(unique(modelKs$models))
+	sampleDataset<-modelKs[1:nModels,]
+	
+	#Make AICs based on 2 * number of parameters
+	nullkAIC<-(2 * sampleDataset$params.K)
+	nullkDiffAIC<-(nullkAIC - min(nullkAIC))
+	nullkExpCol<-sapply(nullkDiffAIC,getExponent)
+	nullkWeights<-nullkExpCol / sum(nullkExpCol)
+	sampleDataset<-cbind(sampleDataset,nullkWeights)
+
+	#calculate triangle plot weights for the current dataset by summing weights under the 
+	#three types of weighted models
+	modelIndexes<-GetTrianglePlotWeights(totalData=sampleDataset,output="indexes") #get model type indexes
+	sampleDataset<-cbind(sampleDataset,modelIndexes) #concatenate these to sample dataset
+	weightIsoNullk<-sum(sampleDataset$nullkWeights[which(sampleDataset$iso==1)])
+	weightMigNullk<-sum(sampleDataset$nullkWeights[which(sampleDataset$mig==1)])
+	weightIsoMigNullk<-sum(sampleDataset$nullkWeights[which(sampleDataset$isoANDmig==1)])
+
+	#Add plot weights to a dataframe
+	nullkPlotWeights<-cbind(weightIsoNullk,weightMigNullk,weightIsoMigNullk)
+	nullkPlotWeightsDF<-modelWeights[NA,]
+	nullkPlotWeightsDF<-nullkPlotWeightsDF[1,]
+	nullkPlotWeightsDF[,weightsColVec]<-nullkPlotWeights
+
+	#Add these null datapoints to the plotWeights dataframe
+	modelWeights<-rbind(modelWeights,nullkPlotWeightsDF) 
+
+	
+	##Second, scale model weights to the centered null weights
+
+	#Now scale the triangle plot such that the nullkPlotWeights is in the center
+	nullkDev<-(1 / 3) / nullkPlotWeights[,1:3] #calculate proportional deviation of null from plot center
+	modelWeightsScaled<-modelWeights[0,weightsColVec] #create empty dataframe
+	for(datasets in 1:nrow(modelWeights)){ #scale old weights to proportional deviation
+		modelWeightsScaled[datasets,]<-(modelWeights[datasets,weightsColVec] * nullkDev) / sum(modelWeights[datasets,
+			weightsColVec] * nullkDev)
+	}
+	modelWeightsScaled<-cbind(modelWeights[,1:(weightsColVec[1] - 1)],modelWeightsScaled,
+		modelWeights[,(weightsColVec[3] +1):ncol(modelWeights)])
+
+return(modelWeightsScaled)
 }
