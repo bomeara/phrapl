@@ -145,6 +145,13 @@ PassBounds <- function(parameterVector, parameterBounds) {
 			}
 		}
 	}
+	if(length(collapseParameters)>1) { #have at least two
+		for(i in sequence(length(collapseParameters)-1)){
+			if(collapseParameters[i] > collapseParameters[i+1]){
+				return(FALSE)
+			}
+		}	
+	}
 	return(TRUE)
 }
 
