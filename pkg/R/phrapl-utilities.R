@@ -1692,9 +1692,9 @@ GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 	
 	#calculate model type weights by summing weights under the three types of weighted models
 	if(output=="weights"){
-		weightIso<-sum(totalData$wAIC[which(allWeights$iso==TRUE)])
-		weightMig<-sum(totalData$wAIC[which(allWeights$mig==TRUE)])
-		weightIsoMig<-sum(totalData$wAIC[which(allWeights$isoANDmig==TRUE)])
+		weightIso<-sum(totalData$wAIC[which(modelIndexes$iso==TRUE)])
+		weightMig<-sum(totalData$wAIC[which(modelIndexes$mig==TRUE)])
+		weightIsoMig<-sum(totalData$wAIC[which(modelIndexes$isoANDmig==TRUE)])
 		plotWeights<-data.frame(cbind(weightIso,weightMig,weightIsoMig))
 		return(plotWeights) #same as old currentPlotWeights
 	}else{
