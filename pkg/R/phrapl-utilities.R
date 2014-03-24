@@ -785,13 +785,13 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,nSamplesDesired,minPerPop=1,finalPopVector=NULL,
+PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,subsamplesPerGene,minPerPop=1,finalPopVector=NULL,
 	outgroupPrune=TRUE) {
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file containing a tree for each locus.
 #For each locus, subsampling can be done either by iteratively sampling nIndividualsDesired from the entire dataset (with a minimum sample per 
 #population specified by minPerPop), or, if a finalPopVector is specified, can be done by sampling a specified number of individuals per population.
 #A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is placed in a specified subsamplePath and includes 
-#1) a nSamplesDesired number of tree files with subsampled trees from each locus and 2) a single assignment file (if a finalPopVector is specified) 
+#1) a subsamplesPerGene number of tree files with subsampled trees from each locus and 2) a single assignment file (if a finalPopVector is specified) 
 #or an assignment file for each locus and replicate (if finalPopVector=NULL).   
 	#Read in and prep the assignment file constructed from all loci
 	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
@@ -844,8 +844,8 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 		colnames(assignFrame) <- c("popLabel","indivTotal")	
 		
 		#Begin the subsampling
-		retainedTaxaMatrix<-matrix(NA,nrow=nSamplesDesired,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
-		for (rep in 1:nSamplesDesired) {
+		retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
+		for (rep in 1:subsamplesPerGene) {
 			keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,finalPopVector) #subsample assignFrame
 			retainedTaxaMatrix[rep,]<-keepTaxa
 			prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
@@ -919,7 +919,7 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 #the values for the subsamples are summarized (by default, median)
 #to get median likelihood per gene
 #and then these median subsamples per gene are summed to get overall likelihood of the data
-ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector))), subsamplesPerGene=1, summaryFn=median) {
+ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector))), subsamplesPerGene=1, summaryFn="median",totalPopVector=NULL,subNum=4,whichSampSize=min) {
 	outputVector<-as.numeric(outputVector)
 	outputVector[which(outputVector==0)]<-probOfMissing
 	outputVector<-outputVector/nTrees
@@ -932,7 +932,11 @@ ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/h
 #		print(localVector)
 		baseIndex <- baseIndex+1
 		if(i%%subsamplesPerGene == 0) {
-			lnL<-lnL+summaryFn(localVector)
+			if(summaryFn=="SumDivScaledNreps"){
+				lnL<-lnL+get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+			}else{
+				lnL<-lnL+get(summaryFn)(localVector)
+			}
 			localVector<-rep(NA, subsamplesPerGene)
 			baseIndex<-1
 		}
@@ -1098,6 +1102,52 @@ MergeTrees <- function(treesPath){
 	for (treeRep in 1:length(vecotr)){
 		write.table(vecotr[[treeRep]],file=paste(treesPath,"trees.tre",sep=""),append=TRUE,row.names=FALSE,col.names=FALSE,quote=FALSE)
 	}
+}
+
+#This function calculates a scaled number of subsample replicates that
+#is corrected based on the original sample sizes from which subsamples
+#are taken. The larger the original sample sizes, the more independent
+#that subsamples are, and the more that each subsample should contribute
+#to the information value in a dataset (and thus to the lnL). Inputs are subNum (the number
+#of individuals subsampled per population), totalPopVector (the number of samples per
+#population from which subsamples are taken), subsamplesPerGene (the number of subsamples), 
+#and whichSampSize (whether the min, mean, or max population size should be used 
+#to calculate the scaled nreps). The minumum possible scaled nreps = subsamplesPerGene,
+#which results when the total sample size is equal to subNum (in this case, matches among
+#subsamples are simply averaged).
+GetScaledNreps<-function(subNum=4,totalPopVector=NULL,subsamplesPerGene=1,whichSampSize=min){
+	#Get effective number of independent samples possible
+	effectiveNumSamples<- whichSampSize(totalPopVector) / subNum
+
+	#Get effective sample size scaler (e.g., the proportion of a subsample replicate
+	#that is possibly 'independent')
+	eSamplesPerSubsample<-effectiveNumSamples / subsamplesPerGene
+
+	#If the effective number of independent samples is greater than the number
+	#of subsample replicates, set scalar to one (if this is the case, one
+	#should probably increase the number of subsamples to allow all the
+	#potentially unique subsamples to be sampled
+	if(eSamplesPerSubsample > 1){
+		eSamplesPerSubsample<- 1
+	}
+
+	#Calculate scaled nreps by taking the reciprocal of the effective 
+	#sample scalar. This is the number by which you divide matches summed
+	#across subsamples for each locus
+	eNreps<- 1 / eSamplesPerSubsample
+
+	#Return the scaled nreps (default is based on the smallest population size)
+	return(eNreps)
+}
+
+#SummaryFn function (When we want to sum lnLs across subsamples and divide by the scaled number
+#of replicates)
+SumDivScaledNreps<-function(localVector=localVector,subNum=4,totalPopVector=totalPopVector,
+	subsamplesPerGene=1,whichSampSize=min){
+	eNreps<-GetScaledNreps(subNum=subNum,totalPopVector=totalPopVector,subsamplesPerGene=subsamplesPerGene,
+			whichSampSize=whichSampSize)
+	summaryFn<-sum(localVector) / eNreps 
+	return(summaryFn)
 }
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
