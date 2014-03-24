@@ -155,7 +155,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 	return(TRUE)
 }
 
-ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1),subsamplesPerGene=1,summaryFn=median) {
+ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1),subsamplesPerGene=1,summaryFn="median",totalPopVector=NULL,subNum=4,whichSampSize=min) {
   parameterVector<-exp(par)
   #now have to stitch in n0 being 1, always, for the first population
   positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationIndividual)))
@@ -176,40 +176,43 @@ ReturnAIC<-function(par,popVector,migrationIndividual,nTrees=1,msLocation="/usr/
     print(parameterVector) 
   }
   likelihoodVector<-PipeMS(popVector=popVector,migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest,print.ms.string=print.ms.string, debug=debug)
-  lnLValue<-ConvertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)),subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn)
+  lnLValue<-ConvertOutputVectorToLikelihood(likelihoodVector, nTrees=nTrees, probOfMissing=1/howmanytrees(sum(popVector)),subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,totalPopVector=totalPopVector,subNum=subNum,whichSampSize=whichSampSize)
   AICValue<-2*(-lnLValue + KAll(migrationIndividual))
-  if(print.results) {
-    resultsVector<-c(AICValue,lnLValue,parameterVector)
-    names(resultsVector)<-c("AIC","lnL",MsIndividualParameters(migrationIndividual))
-    print(resultsVector)
-    print(paste(likelihoodVector,collapse=" ",sep="")) #print matches for each observed tree
+	if(print.results) {
+  		resultsVector<-c(AICValue,lnLValue,parameterVector)
+    	names(resultsVector)<-c("AIC","lnL",MsIndividualParameters(migrationIndividual))
+	    print(resultsVector)
+ 	   print(paste(likelihoodVector,collapse=" ",sep="")) #print matches for each observed tree
 
-	#print total number of matches
-#    matches<-sum(as.numeric(likelihoodVector))
-#    names(matches)<-"matchSum"
-#    print(matches)
+		#print total number of matches
+# 	   matches<-sum(as.numeric(likelihoodVector))
+# 	   names(matches)<-"matchSum"
+# 	   print(matches)
 
-	#print number of matches per locus (summarized across subsamples)
-    vector2print<-as.numeric(likelihoodVector)
-    matches<-0
-    matchesVec<-array()
-	localVector<-rep(NA, subsamplesPerGene)
-	print("matches per locus")
-	baseIndex<-1
-	for (i in sequence(length(vector2print))) {
-		localVector[baseIndex]<-vector2print[i]
-		baseIndex <- baseIndex+1
-		if(i%%subsamplesPerGene == 0) {
-			matchesVec<-rbind(matchesVec,summaryFn(localVector))
-			localVector<-rep(NA, subsamplesPerGene)
-			baseIndex<-1
+		#print number of matches per locus (summarized across subsamples)
+	    vector2print<-as.numeric(likelihoodVector)
+   		matches<-0
+    	matchesVec<-array()
+		localVector<-rep(NA, subsamplesPerGene)
+		print("matches per locus")
+		baseIndex<-1
+		for (i in sequence(length(vector2print))) {
+			localVector[baseIndex]<-vector2print[i]
+			baseIndex <- baseIndex+1
+			if(i%%subsamplesPerGene == 0) {
+				if(summaryFn=="SumDivScaledNreps"){
+					matchesVec<-rbind(matchesVec,get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene,whichSampSize=min))
+				}else{
+					matchesVec<-rbind(matchesVec,get(summaryFn)(localVector))
+				}
+				localVector<-rep(NA, subsamplesPerGene)
+				baseIndex<-1
+			}
 		}
+    	print(matchesVec[-1])
 	}
-    print(matchesVec[-1])
-  }
-  return(AICValue)
+  	return(AICValue)
 }
-
 
 #This takes an outputted grid from initial.AIC search and produces ranges of values for each parameter that can be constructed into
 #a new, finer-grained grid. This new grid is based on the range of values contained in the best supported combinations of parameter values
