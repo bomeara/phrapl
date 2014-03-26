@@ -905,6 +905,16 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 	return(assignFrame[taxaRetained,])
 }
 
+#uses Kish's effective sample size formula
+GetKishESS<-function(popVector, nsamples) {
+	group.weights<-nsamples/popVector
+	actual.weights<-c()
+	for (i in sequence(length(group.weights))) {
+		actual.weights<-c(actual.weights, rep(group.weights[i], popVector[i]))	
+	}
+	return(((sum(actual.weights))^2)/sum(actual.weights ^2))
+}
+
 #idea is that you scale the prob of missing by the number of possible trees
 #if multiple subsamples per locus is to be passed in, they should be arranged in observed.tre as
 #Gene1_subsample1
