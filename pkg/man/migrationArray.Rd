@@ -105,7 +105,7 @@ data(migrationArray_FullyResolvedCollapse_npop2_maxK6)
   Note that a popVector is also included, but you should overwrite it with your own.
 }
 \examples{
-data(migrationArray_FullyResolvedCollapse_npop2_maxK6)
-print(length(migrationArray))
+#data(migrationArray_FullyResolvedCollapse_npop2_maxK6)
+#print(length(migrationArray))
 }
 \keyword{datasets}
