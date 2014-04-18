@@ -726,11 +726,11 @@ PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 }
 
 
-TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,finalPopVector=NULL) {
-	#if "finalPopVector" has not been specified, then iteratively randomly sample "nIndividualsDesired" from the 
-	#entire dataset "attemptsCutoff" times until at least "minPerPop" individuals are represented per population 
-	#within "toRetain"	
-	if(is.null(finalPopVector)) {
+#if "popAssignments" has not been specified, then iteratively randomly sample "nIndividualsDesired" from the 
+#entire dataset "attemptsCutoff" times until at least "minPerPop" individuals are represented per population 
+#within "toRetain"	
+TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,popAssignments=NULL) {
+	if(is.null(popAssignments)) {
 		samplesGood<-FALSE
 		toRetain<-c()
 		attempts<-0
@@ -752,23 +752,23 @@ TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutof
 			}
 		}
 	} else {
-		#if finalPopVector has been specified, then randomly sample according to the population-specific sample sizes
-		#indicated within finalPopVector
-		nIndividualsDesired<-sum(finalPopVector)
+		#if popAssignments has been specified, then randomly sample according to the population-specific sample sizes
+		#indicated within popAssignments
+		nIndividualsDesired<-sum(popAssignments)
 		toRetain <- array()
 		#for each population...
-		for(numLevel in 1:length(levels(assignFrame[,1])))
+		for(numLevel in 1:length(unique(assignFrame[,1])))
 		{
 			thisPopSamples <- assignFrame[which(assignFrame[,1] == unique(assignFrame[,1])[numLevel]),][[2]]
 			#...if the there is more than one individual in the population...
 			if (length(thisPopSamples) > 1)
 			{
-				#...randomly sample "finalPopVector[numLevel]" individuals and add them to "toRetain"
-				toRetainTemp <- sample(thisPopSamples,finalPopVector[numLevel],replace=FALSE)
+				#...randomly sample "popAssignments[numLevel]" individuals and add them to "toRetain"
+				toRetainTemp <- sample(thisPopSamples,popAssignments[numLevel],replace=FALSE)
 				toRetain <- c(toRetain,toRetainTemp)[!is.na(c(toRetain,toRetainTemp))]
 			} else {
 				#But if there is only one individual in the population (and one sample is to be drawn)...
-				if(finalPopVector[numLevel] == 1)
+				if(popAssignments[numLevel] == 1)
 				{
 					#Then add that sample to "toRetain"
 					toRetain <- c(toRetain,thisPopSamples)[!is.na(c(toRetain,thisPopSamples))]
@@ -781,18 +781,18 @@ return(toRetain[sort.list(toRetain)])
 
 TaxaToDrop<-function(assignFrame,taxaRetained) {
 	allTaxa<-c(1:dim(assignFrame)[1])
-	taxaToDrop<-allTaxa[-taxaRetained]
+	taxaToDrop<-allTaxa[-as.numeric(taxaRetained)]
 	return(taxaToDrop)
 }
 
-PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,subsamplesPerGene,minPerPop=1,finalPopVector=NULL,
+PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,subsamplesPerGene,minPerPop=1,popAssignments=NULL,
 	outgroupPrune=TRUE) {
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file containing a tree for each locus.
 #For each locus, subsampling can be done either by iteratively sampling nIndividualsDesired from the entire dataset (with a minimum sample per 
-#population specified by minPerPop), or, if a finalPopVector is specified, can be done by sampling a specified number of individuals per population.
+#population specified by minPerPop), or, if a popAssignments is specified, can be done by sampling a specified number of individuals per population.
 #A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is placed in a specified subsamplePath and includes 
-#1) a subsamplesPerGene number of tree files with subsampled trees from each locus and 2) a single assignment file (if a finalPopVector is specified) 
-#or an assignment file for each locus and replicate (if finalPopVector=NULL).   
+#1) a subsamplesPerGene number of tree files with subsampled trees from each locus and 2) a single assignment file (if a popAssignments is specified) 
+#or an assignment file for each locus and replicate (if popAssignments=NULL).   
 	#Read in and prep the assignment file constructed from all loci
 	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
 	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:nrow(assignFrameOriginal)))
@@ -845,8 +845,9 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 		
 		#Begin the subsampling
 		retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
+		newphyVector<-list()
 		for (rep in 1:subsamplesPerGene) {
-			keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,finalPopVector) #subsample assignFrame
+			keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,popAssignments[[1]]) #subsample assignFrame
 			retainedTaxaMatrix[rep,]<-keepTaxa
 			prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
 			delTaxa<-TaxaToDrop(assignFrame,keepTaxa)
@@ -877,18 +878,49 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 			
 			#Export output
 			write.tree(newphy,file=paste(subsamplePath,"observed.tre",sep=""),append=TRUE)
-			if(is.null(finalPopVector)){
+			#Save current subsample in master list
+			newphyVector[[length(newphyVector) + 1]]<-newphy
+			
+			if(is.null(popAssignments)){
 				if (!file.exists(paste(subsamplePath,"assignments",sep=""))){
-				dir.create(paste(subsamplePath,"assignments",sep=""))
-			}
-			write.table(prunedAF,file=paste(subsamplePath,"assignments/locus",tree,".assign",rep,".txt",sep=""),quote=FALSE,sep="\t",
+					dir.create(paste(subsamplePath,"assignments",sep=""))
+				}
+				write.table(prunedAF,file=paste(subsamplePath,"assignments/locus",tree,".assign",rep,".txt",sep=""),quote=FALSE,sep="\t",
 				row.names=FALSE,col.names=FALSE,append=FALSE)
 			}
 		}
-		if(!is.null(finalPopVector)){
-			write.table(prunedAF,file=paste(subsamplePath,"assign.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
-				col.names=FALSE,append=FALSE)
+		
+		#Subsample further if specified by popAssignments, printing to the tree file each time
+		if(length(popAssignments > 1)){
+			assignFrame<-prunedAF
+			for(i in 2:(length(popAssignments))){
+				currentSampleSize=sum(popAssignments[[i]])
+				retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=sum(popAssignments[[i]])) #matrix storing subsamples from each iteration	
+				for(j in 1:subsamplesPerGene){
+					keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired=currentSampleSize,
+						minPerPop,attemptsCutoff=100000,popAssignments=popAssignments[[i]]) #subsample assignFrame
+					retainedTaxaMatrix[j,]<-keepTaxa
+					prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
+					delTaxa<-TaxaToDrop(assignFrame,taxaRetained=keepTaxa)
+					newphy<-drop.tip(newphyVector[[j]],as.character(delTaxa)) #toss non-sampled individuals from the tree
+					prunedAF<-cbind(prunedAF[order(prunedAF[,1],prunedAF[,2]),],new.label=c(1:nrow(prunedAF)))
+					for (tipIndex in 1:length(newphy$tip.label)) { #rename tips in tree to be consecutive
+						old.label<-newphy$tip.label[tipIndex]
+						new.label<-as.character(prunedAF[,3][which(prunedAF[,2]==old.label)])
+						newphy$tip.label[tipIndex]<-new.label
+					}
+					write.tree(newphy,file=paste(subsamplePath,"observed.tre",sep=""),append=TRUE)
+					newphyVector[[j]]<-newphy
+				}
+				assignFrame<-CreateAssignment.df(popAssignments[[i]])
+			}
 		}
+
+#		Export Assign file
+#		if(!is.null(popAssignments)){
+#			write.table(prunedAF,file=paste(subsamplePath,"assign.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
+#				col.names=FALSE,append=FALSE)
+#		}
 	}
 }
 
@@ -902,7 +934,7 @@ PrunedPopVector<-function(assignFrame,taxaRetained) {
 }
 
 PrunedAssignFrame<-function(assignFrame,taxaRetained) {
-	return(assignFrame[taxaRetained,])
+	return(assignFrame[as.numeric(taxaRetained),])
 }
 
 #uses Kish's effective sample size formula
@@ -929,32 +961,32 @@ GetKishESS<-function(popVector, nsamples) {
 #the values for the subsamples are summarized (by default, median)
 #to get median likelihood per gene
 #and then these median subsamples per gene are summed to get overall likelihood of the data
-ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector))), subsamplesPerGene=1, summaryFn="median",totalPopVector=NULL,subNum=4,whichSampSize=min) {
-	outputVector<-as.numeric(outputVector)
-	outputVector[which(outputVector==0)]<-probOfMissing
-	outputVector<-outputVector/nTrees
-	outputVector<-log(outputVector)
-	lnL<-0
-	localVector<-rep(NA, subsamplesPerGene)
-	baseIndex<-1
-	for (i in sequence(length(outputVector))) {
-		localVector[baseIndex]<-outputVector[i]
+#ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector))), subsamplesPerGene=1, summaryFn="median",totalPopVector=NULL,subNum=4,whichSampSize=min) {
+#	outputVector<-as.numeric(outputVector)
+#	outputVector[which(outputVector==0)]<-probOfMissing
+#	outputVector<-outputVector/nTrees
+#	outputVector<-log(outputVector)
+#	lnL<-0
+#	localVector<-rep(NA, subsamplesPerGene)
+#	baseIndex<-1
+#	for (i in sequence(length(outputVector))) {
+#		localVector[baseIndex]<-outputVector[i]
 #		print(localVector)
-		baseIndex <- baseIndex+1
-		if(i%%subsamplesPerGene == 0) {
-			if(summaryFn=="SumDivScaledNreps"){
-				lnL<-lnL+get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
-			}else{
-				lnL<-lnL+get(summaryFn)(localVector)
-			}
-			localVector<-rep(NA, subsamplesPerGene)
-			baseIndex<-1
-		}
-	}
-	return(lnL)
-}
+#		baseIndex <- baseIndex+1
+#		if(i%%subsamplesPerGene == 0) {
+#			if(summaryFn=="SumDivScaledNreps"){
+#				lnL<-lnL+get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+#			}else{
+#				lnL<-lnL+get(summaryFn)(localVector)
+#			}
+#			localVector<-rep(NA, subsamplesPerGene)
+#			baseIndex<-1
+#		}
+#	}
+#	return(lnL)
+#}
 
-#Uses ln lik
+#Uses ln likelihood
 CombineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.popVector) {
 	originalSize<-sum(orig.popVector)
 	originalNumberTrees<-howmanytrees(originalSize)
