@@ -937,6 +937,167 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 	return(assignFrame[as.numeric(taxaRetained),])
 }
 
+#Get weights for each subsample based on the number of matches per permutation
+GetPermutationWeightsAcrossSubsamples<-function(observed,popAssignments,subsamplesPerGene){
+	treesPerLocus<-subsamplesPerGene * length(popAssignments)
+	nLoci<-length(observed) / treesPerLocus
+	treeCounter<-1
+	subsampleWeights<-c()
+	
+	for(y in 1:nLoci){
+		subsampleSizeCounter<-1
+		for(z in 1:(length(observed) / nLoci)){
+			subsampleWeights<-append(subsampleWeights,GetPermutationWeights(phy=observed[[treeCounter]],
+				popVector=popAssignments[[subsampleSizeCounter]]))
+			treeCounter<-treeCounter + 1
+			if(z%%subsamplesPerGene == 0){ #increase to next popAssignments size class
+				subsampleSizeCounter<-subsampleSizeCounter + 1
+			}
+		}
+	}
+	return(subsampleWeights)
+}
+
+#Get weights for a given tree based on the number of matches per permutation
+GetPermutationWeights<-function(phy,popVector){
+	assignFrame<-CreateAssignment.df(popVector)
+	popLabels<-unique(assignFrame[,1])
+	tips.permute<-list()
+	for(i in 1:length(popLabels)){
+		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] == 
+			popLabels[i])])))
+		tips.permute[[i]]<-tips.permute[[i]] + (((assignFrame[,2][which(assignFrame[,1] == popLabels[i])])[1]) - 1)
+	}
+	numberOfPermutations<-0
+	phyOriginal<-phy
+	cladesMS<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+	matches<-0
+	if(length(popLabels) > 10){
+#		print("This function can only handle 10 populations")
+		stop("This function can only handle 10 populations")
+	}
+
+	for(j in 1:ncol(tips.permute[[1]])){
+		try.label<-tips.permute[[1]][,j]
+		phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[1])] <- try.label 
+					
+		if(length(popLabels) > 1){	
+			for(k in 1:ncol(tips.permute[[2]])){
+				try.label<-tips.permute[[2]][,k]
+				phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[2])] <- try.label				
+
+				if(length(popLabels) > 2){	
+					for(l in 1:ncol(tips.permute[[3]])){
+						try.label<-tips.permute[[3]][,l]
+						phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[3])] <- try.label	
+
+						if(length(popLabels) > 3){
+							for(m in 1:ncol(tips.permute[[4]])){
+								try.label<-tips.permute[[4]][,m]
+								phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[4])] <- try.label 
+							
+								if(length(popLabels) > 4){	
+									for(n in 1:ncol(tips.permute[[5]])){
+										try.label<-tips.permute[[5]][,n]
+										phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[5])] <- try.label				
+									
+										if(length(popLabels) > 5){	
+											for(o in 1:ncol(tips.permute[[6]])){
+												try.label<-tips.permute[[6]][,o]
+												phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[6])] <- try.label	
+											
+												if(length(popLabels) > 6){	
+													for(p in 1:ncol(tips.permute[[7]])){
+														try.label<-tips.permute[[7]][,p]
+														phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[7])] <- try.label				
+														
+														if(length(popLabels) > 7){	
+															for(q in 1:ncol(tips.permute[[8]])){
+																try.label<-tips.permute[[8]][,q]
+																phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[8])] <- try.label	
+																
+																if(length(popLabels) > 8){
+																	for(r in 1:ncol(tips.permute[[9]])){
+																		try.label<-tips.permute[[9]][,r]
+																		phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[9])] <- try.label 
+																		
+																		if(length(popLabels) > 9){	
+																			for(s in 1:ncol(tips.permute[[10]])){
+																				try.label<-tips.permute[[10]][,s]
+																				phy$tip.label[order(phy$tip.label)][which(assignFrame[,1] == popLabels[10])] <- try.label				
+																				if(length(popLabels) == 10){
+																					cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+																					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+																					numberOfPermutations<-numberOfPermutations + 1
+																				}
+																			}
+																		}
+																		if(length(popLabels) == 9){
+																			cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+																			matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+																			numberOfPermutations<-numberOfPermutations + 1
+																		}
+																	}
+																}
+																if(length(popLabels) == 8){
+																	cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+																	matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+																	numberOfPermutations<-numberOfPermutations + 1
+																}
+															}
+														}
+														if(length(popLabels) == 7){
+															cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+															matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+															numberOfPermutations<-numberOfPermutations + 1
+														}
+													}
+												}
+												if(length(popLabels) == 6){
+													cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+													matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+													numberOfPermutations<-numberOfPermutations + 1
+												}
+											}
+										}
+										if(length(popLabels) == 5){
+											cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+											matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+											numberOfPermutations<-numberOfPermutations + 1
+										}
+									}
+								}
+								if(length(popLabels) == 4){
+									cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+									matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+									numberOfPermutations<-numberOfPermutations + 1
+								}
+							}
+						}
+						if(length(popLabels) == 3){
+							cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+							matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+							numberOfPermutations<-numberOfPermutations + 1
+						}
+					}
+				}
+				if(length(popLabels) == 2){
+					cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+					numberOfPermutations<-numberOfPermutations + 1
+				}
+			}
+		}
+		if(length(popLabels) == 1){
+			cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+			matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+			numberOfPermutations<-numberOfPermutations + 1
+		}
+	}
+	weight<-matches / numberOfPermutations
+	return(weight)
+}		
+
 #uses Kish's effective sample size formula
 GetKishESS<-function(popVector, nsamples) {
 	group.weights<-nsamples/popVector

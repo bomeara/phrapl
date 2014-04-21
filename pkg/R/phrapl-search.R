@@ -239,7 +239,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   	} else {
   		try(AIC.values[i]<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
   		maxParameterValue=maxParameterValue,nTrees=nTrees,msLocation=msLocation,observed=observed,print.ms.string=print.ms.string,
-  		print.results=print.results,debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all
+  		print.results=print.results,debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,
   		numReps=numReps,startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector, ...))
   	}
   	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
