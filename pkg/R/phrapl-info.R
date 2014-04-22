@@ -371,7 +371,7 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 			cladesGene <- simplify2array(sapply(subtrees(observed[[r]]), GetAndBindLabel)) #get clades for all the observed trees
 			for(s in 1:length(currentPhy)){ #for each simulated tree
 				matches<-matches + GetScoreOfSingleTree(cladesMS=cladesAllPhy[[s]], phyMS=currentPhy[[s]],
-					cladesGene=cladesGene, phyGene=observed[[r]])
+					cladesGene=cladesGene, phyGene=observed[[r]],polytomyCorrection=TRUE)
 			}
 			outputVector[r]<-matches
 		}
