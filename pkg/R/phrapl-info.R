@@ -402,7 +402,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 		beginSizeClass<-1
 		endSizeClass<-length(localVector) / length(popAssignments)
 		for(g in 1:length(popAssignments)){ #for each subsample size class
-			probOfMissing<-1/howmanytrees(sum(popAssignments[[g]]))
+			probOfMissing<-1/((howmanytrees(sum(popAssignments[[g]]))) * 1000000)
 			localVector[beginSizeClass:endSizeClass][which(localVector[beginSizeClass:endSizeClass]==0)]<-probOfMissing
 			beginSizeClass<-beginSizeClass + subsamplesPerGene
 			endSizeClass<-endSizeClass + subsamplesPerGene
