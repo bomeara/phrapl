@@ -786,13 +786,18 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 }
 
 PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,subsamplesPerGene,minPerPop=1,popAssignments=NULL,
-	outgroupPrune=TRUE) {
+	outgroup=TRUE,outgroupPrune=TRUE) {
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file containing a tree for each locus.
 #For each locus, subsampling can be done either by iteratively sampling nIndividualsDesired from the entire dataset (with a minimum sample per 
 #population specified by minPerPop), or, if a popAssignments is specified, can be done by sampling a specified number of individuals per population.
 #A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is placed in a specified subsamplePath and includes 
 #1) a subsamplesPerGene number of tree files with subsampled trees from each locus and 2) a single assignment file (if a popAssignments is specified) 
 #or an assignment file for each locus and replicate (if popAssignments=NULL).   
+	#If outgroup present, add this to the first popAssignments vector
+	if(outgroup==TRUE){
+		popAssignments[[1]]<-c(popAssignments[[1]],1)
+		nIndividualsDesired<-nIndividualsDesired + 1
+	}
 	#Read in and prep the assignment file constructed from all loci
 	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
 	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:nrow(assignFrameOriginal)))
@@ -891,7 +896,7 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 		}
 		
 		#Subsample further if specified by popAssignments, printing to the tree file each time
-		if(length(popAssignments > 1)){
+		if(length(popAssignments) > 1){
 			assignFrame<-prunedAF
 			for(i in 2:(length(popAssignments))){
 				currentSampleSize=sum(popAssignments[[i]])
@@ -916,7 +921,6 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 			}
 		}
 
-#		Export Assign file
 #		if(!is.null(popAssignments)){
 #			write.table(prunedAF,file=paste(subsamplePath,"assign.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
 #				col.names=FALSE,append=FALSE)
@@ -935,6 +939,27 @@ PrunedPopVector<-function(assignFrame,taxaRetained) {
 
 PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 	return(assignFrame[as.numeric(taxaRetained),])
+}
+
+#Get weights for each subsample based on the number of matches per permutation
+GetPermutationWeightsAcrossSubsamples<-function(observed,popAssignments,subsamplesPerGene){
+	treesPerLocus<-subsamplesPerGene * length(popAssignments)
+	nLoci<-length(observed) / treesPerLocus
+	treeCounter<-1
+	subsampleWeights<-c()
+	
+	for(y in 1:nLoci){
+		subsampleSizeCounter<-1
+		for(z in 1:(length(observed) / nLoci)){
+			subsampleWeights<-append(subsampleWeights,GetPermutationWeights(phy=observed[[treeCounter]],
+				popVector=popAssignments[[subsampleSizeCounter]]))
+			treeCounter<-treeCounter + 1
+			if(z%%subsamplesPerGene == 0){ #increase to next popAssignments size class
+				subsampleSizeCounter<-subsampleSizeCounter + 1
+			}
+		}
+	}
+	return(subsampleWeights)
 }
 
 #Get weights for each subsample based on the number of matches per permutation
@@ -1095,8 +1120,10 @@ GetPermutationWeights<-function(phy,popVector){
 		}
 	}
 	weight<-matches / numberOfPermutations
+	write.table(weight,file=paste(subsamplePath,"subsampleWeights.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
+				col.names=FALSE,append=TRUE)
 	return(weight)
-}		
+}						
 
 #uses Kish's effective sample size formula
 GetKishESS<-function(popVector, nsamples) {
