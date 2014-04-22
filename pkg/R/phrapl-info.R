@@ -155,7 +155,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 }
 
 #Return AIC for a given model and tree
-ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1),subsamplesPerGene=1,totalPopVector,popAssignments) {
+ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1),subsamplesPerGene=1,totalPopVector,popAssignments,subsampleWeights=NULL) {
   parameterVector<-exp(par)
   #now have to stitch in n0 being 1, always, for the first population
   positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationIndividual)))
@@ -175,7 +175,13 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/
   if(debug) {
     print(parameterVector) 
   }
+  #Get matches
   likelihoodVector<-MatchingTrees(migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msLocation=msLocation,observed=observed,print.ms.string=print.ms.string, debug=debug)
+  #Apply weights to matches
+  if(!is.null(subsampleWeights)){
+  	likelihoodVector<-likelihoodVector * read.table(subsampleWeights)[,1]
+  }
+  #Convert matches to likelihoods
   lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,popAssignments=popAssignments)
   AICValue<-2*(-lnL.mat[1] + KAll(migrationIndividual))
   colnames(AICValue)<-"AIC"
@@ -506,7 +512,7 @@ GetOutDegreeOfPolytomies <- function(phy) {
 #assumes:
 #1. You have already run ConvertAlleleNumbersToPopulationLetters so these trees have letters
 #2. You have already made them have the same size (do SubsampleMSTree if needed)
-GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene) {
+GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyCorrection=FALSE) {
 	#cladesMS <- simplify2array(sapply(subtrees(phyMS), GetAndBindLabel))
 	#cladesGene <- simplify2array(sapply(subtrees(phyGene), GetAndBindLabel))
 	numberCladesInMSOnly <- sum(!cladesMS%in%cladesGene)
@@ -515,7 +521,7 @@ GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene) {
 	if(numberCladesInMSOnly == 0 && numberCladesInGeneOnly==0) {
 		matchCount <- 1
 	}
-	if (numberCladesInMSOnly > 0 && numberCladesInGeneOnly == 0) {
+	if (numberCladesInMSOnly > 0 && numberCladesInGeneOnly == 0 && polytomyCorrection == TRUE) {
 		descendantCounts <- GetOutDegreeOfPolytomies(phyGene)
 		correction <- 1
 		for (i in sequence(length(descendantCounts))) {
