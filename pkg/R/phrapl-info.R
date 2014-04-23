@@ -362,14 +362,11 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 
 	#Calculate number of matches for each observed tree
 	currentPhy<-phy
-	GetClades <- function(phy) {
-		return(simplify2array(sapply(subtrees(phy), GetAndBindLabel)))
-	}
 	for(q in 1:length(popAssignments)){ #for each popAssignment size class
 		for(r in which(outputVector==q)){ #for each subsample within a size class
-			cladesAllPhy<-lapply(currentPhy, GetClades) #get clades for each simulated tree for this size class
+			cladesAllPhy<-lapply(currentPhy, GetCladesQuickly) #get clades for each simulated tree for this size class
 			matches<-0
-			cladesGene <- simplify2array(sapply(subtrees(observed[[r]]), GetAndBindLabel)) #get clades for all the observed trees
+			cladesGene <- GetCladesQuickly(observed[[r]]) #get clades for all the observed trees
 			for(s in 1:length(currentPhy)){ #for each simulated tree
 				matches<-matches + GetScoreOfSingleTree(cladesMS=cladesAllPhy[[s]], phyMS=currentPhy[[s]],
 					cladesGene=cladesGene, phyGene=observed[[r]],polytomyCorrection=TRUE)
@@ -496,13 +493,17 @@ SubsampleMSTree <- function(phy, popVectorOrig, popVectorFinal) {
 	return(phy)
 }
 
-#Gets a list of all clades in the tree. For the taxa descended from each clade, sorts alphabetically and then makes them a string
+#GetAndBindLabel and GetClades together get a list of all clades in the tree. For the taxa descended from each clade, 
+#sorts alphabetically and then makes them a string. These are slow, and have since been replaced by GetCladesQuickly
 GetAndBindLabel <- function(phy) { 
 	#note the sorting here
 	return( paste( sort( phy$tip.label ), collapse="_" ) )
 }
 
-#Gets degree of polytomies in order to apply a correction when matching trees
+GetClades <- function(phy) {
+	return(simplify2array(sapply(subtrees(phy), GetAndBindLabel)))
+}
+
 GetOutDegreeOfPolytomies <- function(phy) {
 	descendantCounts <- table(phy$edge[,1])
 	descendantCounts <- unname(descendantCounts[which(descendantCounts>2)])
@@ -514,8 +515,6 @@ GetOutDegreeOfPolytomies <- function(phy) {
 #1. You have already run ConvertAlleleNumbersToPopulationLetters so these trees have letters
 #2. You have already made them have the same size (do SubsampleMSTree if needed)
 GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyCorrection=FALSE) {
-	#cladesMS <- simplify2array(sapply(subtrees(phyMS), GetAndBindLabel))
-	#cladesGene <- simplify2array(sapply(subtrees(phyGene), GetAndBindLabel))
 	numberCladesInMSOnly <- sum(!cladesMS%in%cladesGene)
 	numberCladesInGeneOnly <- sum(!cladesGene%in%cladesMS)
 	matchCount <- 0
@@ -532,4 +531,22 @@ GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyC
 		#only one of these ways would match the given phyMS tree. So we figure out the number of ways to resolve polytomy 1, multiply that by the number of ways to resolve polytomy 2, etc. A polytomy with three descendant edges has 3 ways to resolve it, one with 4 descendant edges has 3 * 5 = 15, etc.
 	}
 	return(matchCount)
+}
+
+SplitAndSort <- function(x) {
+	return(paste(sort(strsplit(x, "_")[[1]]), collapse="_"))
+}
+
+##Fast way to get a vector of clades in a tree
+GetCladesQuickly <- function(phy, do.reorder=TRUE) {
+	if(do.reorder) {
+		phy<-reorder.phylo(phy, order="postorder")
+	}
+	phy$edge[which(phy$edge[,2]<=Ntip(phy)),2]<-phy$tip.label[phy$edge[which(phy$edge[,2]<=Ntip(phy)),2]]
+	internal.ordered.nodes<-unique(phy$edge[,1])
+	for (node.index in sequence(length(internal.ordered.nodes))) {
+		phy$edge[which(phy$edge[,2]==internal.ordered.nodes[node.index]),2]<-paste(phy$edge[which(phy$edge[,1]==internal.ordered.nodes[node.index]),2], collapse="_")
+	}
+	clades<-sapply(c(unique(phy$edge[which(grepl("_", phy$edge[,2])),2]),paste(phy$tip.label, collapse="_")), SplitAndSort, USE.NAMES=FALSE)
+	return(clades)
 }
