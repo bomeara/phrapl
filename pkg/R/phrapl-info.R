@@ -186,7 +186,8 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/
   AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
   colnames(AICValue)<-"AIC"
 	if(print.results) {
-  		resultsVector<-c(AICValue,lnLValue[1],parameterVector)
+		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))
+		resultsVector<-cbind(AICValue,lnLValue[1],parameterVector)
     	names(resultsVector)<-c("AIC","lnL",MsIndividualParameters(migrationIndividual))
 	    print(resultsVector)
  	  	print(paste(likelihoodVector,collapse=" ",sep="")) #print matches for each observed tree

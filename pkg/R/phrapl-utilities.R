@@ -1743,11 +1743,13 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 
 		#First, make matrix of the collapse estimates
 		#Make vector of top parameter estimates from the grid (based on the mean of the top five estimates for each parm)
-		currentSol<-array()
-		for(rep in 2:(ncol(result[[2]][[eachCol]]))){
-			currentSol<-c(currentSol,mean(result[[2]][[eachCol]][1:5,rep]))
+		currentSol<-c()
+		positionOfNonParameters <- grep("lnL", colnames(result[[2]][[eachCol]]))[1] #find slopes
+		currentResult<-result[[2]][[eachCol]][2:(positionOfNonParameters - 1)] #toss slopes
+
+		for(rep in 1:ncol(currentResult)){
+			currentSol<-append(currentSol,mean(currentResult[1:5,rep])) #Note that grid prams are already back-transformed (i.e., logged)
 		}
-		currentSol<-currentSol[!is.na(currentSol)] #Note that grid prams are already back-transformed (i.e., logged)
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 				
 			#Because different collapse parameters are denoted by different columns rather than by different index values,
@@ -1819,7 +1821,6 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	
 	return(list(parameterValues,parameterIndexes))
 }
-
 
 
 ###############################Post-analysis Functions####################
