@@ -110,7 +110,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
   	#Get and store AIC for each set of grid values
   	initial.AIC<-data.frame()
   	for(i in 1:nrow(startGrid)){
-    	currentAIC<-ReturnAIC(par=startGrid[i,],migrationIndividual=migrationArray[[modelID]],badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTreesGrid,msLocation=msLocation,observed=observed,print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds, subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights=subsampleWeights)
+    	currentAIC<-ReturnAIC(par=as.numeric(startGrid[i,]),migrationIndividual=migrationArray[[modelID]],badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTreesGrid,msLocation=msLocation,observed=observed,print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds, subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights=subsampleWeights)
     	initial.AIC<-rbind(initial.AIC,currentAIC)
     }
  
