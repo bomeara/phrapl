@@ -115,12 +115,12 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     }
  
     if(debug) {
-    	print(cbind(initial.AIC[1], exp(startGrid)))
+    	print(cbind(AIC=initial.AIC[,1], exp(startGrid)))
     }
 
 	#Save the grid as object
     positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
-    thisGrid<-cbind(initial.AIC[1],exp(startGrid),initial.AIC[2:length(initial.AIC)])
+    thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
     thisGrid<-thisGrid[order(thisGrid$AIC),]
     #Save grid to file
     if(!is.null(gridSave)) {
@@ -233,7 +233,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   		numReps=numReps,startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
   		subsampleWeights=subsampleWeights, ...))
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
-  		print(result.indiv[[1]])
+#  		print(result.indiv[[1]])
   		if(!is.null(result.indiv[[1]])) {
   			AIC.values[i]<-result.indiv[[1]]$objective	
   		}
@@ -245,7 +245,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   		numReps=numReps,startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
   		subsampleWeights=subsampleWeights, ...))
   	}
-  	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
+#  	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
 
   	if(!is.null(results.file)) {
 		save(list=ls(), file=results.file)
