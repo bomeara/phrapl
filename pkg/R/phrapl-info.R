@@ -183,7 +183,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/
   }
   #Convert matches to likelihoods
   lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,popAssignments=popAssignments)
-  AICValue<-2*(-lnL.mat[1] + KAll(migrationIndividual))
+  AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
   colnames(AICValue)<-"AIC"
 	if(print.results) {
   		resultsVector<-c(AICValue,lnLValue[1],parameterVector)
@@ -329,7 +329,7 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 	}	
 	
 	#Swap observed individual labels with population labels
-	observed<-read.tree("observed.tre")
+	observed<-read.tree(observed)
 	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
 	nLoci<-length(observed) / treesPerLocus #number of loci
 	treeCounter<-1
