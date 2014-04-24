@@ -325,8 +325,9 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 	
 	#Swap simulated individual labels with population labels
 	phy<-read.tree("mstrees.txt")
+	assignFrame<-CreateAssignment.df(popAssignments[[1]])
 	for(i in 1:length(phy)){
-		phy[[i]]$tip.label<-ConvertAlleleNumbersToPopulationLetters(phy=phy[[i]],popVector=popAssignments[[1]])
+		phy[[i]]$tip.label<-ConvertAlleleNumbersToPopulationLetters(phy=phy[[i]],assignFrame=assignFrame)
 	}	
 	
 	#Swap observed individual labels with population labels
@@ -335,13 +336,15 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 	nLoci<-length(observed) / treesPerLocus #number of loci
 	treeCounter<-1
 	for(e in 1:nLoci){ #for each locus
-		subsampSizeCounter<-1
+		subsampleSizeCounter<-1
+		assignFrame<-CreateAssignment.df(popAssignments[[subsampleSizeCounter]])
 		for(f in 1:(length(observed) / nLoci)){ #for each locus
 			#Swap observed labels
-			observed[[treeCounter]]$tip.label<-ConvertAlleleNumbersToPopulationLetters(phy=observed[[treeCounter]],popVector=popAssignments[[subsampSizeCounter]])
+			observed[[treeCounter]]$tip.label<-ConvertAlleleNumbersToPopulationLetters(phy=observed[[treeCounter]],
+				assignFrame=assignFrame)
 			treeCounter<-treeCounter + 1
 			if(f%%subsamplesPerGene == 0){ #increase to next popAssignments size class
-				subsampSizeCounter<-subsampSizeCounter + 1
+				subsampleSizeCounter<-subsampleSizeCounter + 1
 			}
 		}
 	}
@@ -363,10 +366,10 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 	#Calculate number of matches for each observed tree
 	currentPhy<-phy
 	for(q in 1:length(popAssignments)){ #for each popAssignment size class
-		for(r in which(outputVector==q)){ #for each subsample within a size class
-			cladesAllPhy<-lapply(currentPhy, GetCladesQuickly) #get clades for each simulated tree for this size class
+		cladesAllPhy<-lapply(currentPhy, GetCladesQuickly) #get clades for each simulated tree for this size class
+		for(r in which(outputVector==q)){ #for each observed subsample within a size class
 			matches<-0
-			cladesGene <- GetCladesQuickly(observed[[r]]) #get clades for all the observed trees
+			cladesGene <- GetCladesQuickly(observed[[r]]) #get clades for the current observed tree
 			for(s in 1:length(currentPhy)){ #for each simulated tree
 				matches<-matches + GetScoreOfSingleTree(cladesMS=cladesAllPhy[[s]], phyMS=currentPhy[[s]],
 					cladesGene=cladesGene, phyGene=observed[[r]],polytomyCorrection=TRUE)
@@ -468,8 +471,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 	return(lnL.mat)
 }
 
-ConvertAlleleNumbersToPopulationLetters <- function(phy, popVector) {
-	assignFrame <- CreateAssignment.df(popVector)
+ConvertAlleleNumbersToPopulationLetters <- function(phy,assignFrame){
 	phy$tip.label <- as.character(assignFrame$popLabel[match(phy$tip.label, assignFrame$indivTotal)])
 }
 
