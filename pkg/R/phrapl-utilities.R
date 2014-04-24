@@ -975,7 +975,7 @@ GetPermutationWeights<-function(phy,popVector,subsamplePath){
 	}
 	numberOfPermutations<-0
 	phyOriginal<-phy
-	cladesMS<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+	cladesMS<-GetCladesQuickly(phy)
 	matches<-0
 	if(length(popLabels) > 10){
 		stop("This function can only handle 10 populations")
@@ -1030,70 +1030,70 @@ GetPermutationWeights<-function(phy,popVector,subsamplePath){
 																				try.label<-tips.permute[[10]][,s]
 																				phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[10])] <- try.label				
 																				if(length(popLabels) == 10){
-																					cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+																					cladesGene<-GetCladesQuickly(phy)
 																					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 																					numberOfPermutations<-numberOfPermutations + 1
 																				}
 																			}
 																		}
 																		if(length(popLabels) == 9){
-																			cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+																			cladesGene<-GetCladesQuickly(phy)
 																			matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 																			numberOfPermutations<-numberOfPermutations + 1
 																		}
 																	}
 																}
 																if(length(popLabels) == 8){
-																	cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+																	cladesGene<-GetCladesQuickly(phy)
 																	matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 																	numberOfPermutations<-numberOfPermutations + 1
 																}
 															}
 														}
 														if(length(popLabels) == 7){
-															cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+															cladesGene<-GetCladesQuickly(phy)
 															matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 															numberOfPermutations<-numberOfPermutations + 1
 														}
 													}
 												}
 												if(length(popLabels) == 6){
-													cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+													cladesGene<-GetCladesQuickly(phy)
 													matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 													numberOfPermutations<-numberOfPermutations + 1
 												}
 											}
 										}
 										if(length(popLabels) == 5){
-											cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+											cladesGene<-GetCladesQuickly(phy)
 											matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 											numberOfPermutations<-numberOfPermutations + 1
 										}
 									}
 								}
 								if(length(popLabels) == 4){
-									cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+									cladesGene<-GetCladesQuickly(phy)
 									matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 									numberOfPermutations<-numberOfPermutations + 1
 								}
 							}
 						}
 						if(length(popLabels) == 3){
-							cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+							cladesGene<-GetCladesQuickly(phy)
 							matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 							numberOfPermutations<-numberOfPermutations + 1
 						}
 					}
 				}
 				if(length(popLabels) == 2){
-					cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+					cladesGene<-GetCladesQuickly(phy)
 					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 					numberOfPermutations<-numberOfPermutations + 1
 				}
 			}
 		}
 		if(length(popLabels) == 1){
-			cladesGene<-simplify2array(sapply(subtrees(phy),GetAndBindLabel))
+			cladesGene<-GetCladesQuickly(phy)
 			matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 			numberOfPermutations<-numberOfPermutations + 1
 		}
@@ -1102,7 +1102,7 @@ GetPermutationWeights<-function(phy,popVector,subsamplePath){
 	write.table(weight,file=paste(subsamplePath,"subsampleWeights.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
 				col.names=FALSE,append=TRUE)
 	return(weight)
-}						
+}											
 
 #uses Kish's effective sample size formula
 GetKishESS<-function(popVector, nsamples) {
