@@ -155,36 +155,50 @@ PassBounds <- function(parameterVector, parameterBounds) {
 }
 
 #Return AIC for a given model and tree
-ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1),subsamplesPerGene=1,totalPopVector,popAssignments,subsampleWeights=NULL) {
-  parameterVector<-exp(par)
-  #now have to stitch in n0 being 1, always, for the first population
-  positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
-  parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
-  parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
-  if((1+length(parameterVectorFirstPart)) > length(parameterVector)) {
-  	parameterVectorSecondPart<-c()
-  }
-  parameterVector<-c(parameterVectorFirstPart, 1, parameterVectorSecondPart)
-  names(parameterVector)<-MsIndividualParameters(migrationIndividual)
-  if(!PassBounds(parameterVector, parameterBounds)) {
-  	return(badAIC)
-  }
-  if(max(parameterVector)>maxParameterValue) {
-  	return(badAIC)
-  }
-  if(debug) {
-    print(parameterVector) 
-  }
-  #Get matches
-  likelihoodVector<-MatchingTrees(migrationIndividual=migrationIndividual,parameterVector=parameterVector,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msLocation=msLocation,observed=observed,print.ms.string=print.ms.string, debug=debug)
-  #Apply weights to matches
-  if(!is.null(subsampleWeights)){
-  	likelihoodVector<-likelihoodVector * read.table(subsampleWeights)[,1]
-  }
-  #Convert matches to likelihoods
-  lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,popAssignments=popAssignments)
-  AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
-  colnames(AICValue)<-"AIC"
+ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",
+		print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, 
+		parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, 
+		minMigrationRatio=0.1),subsamplesPerGene=1,totalPopVector,popAssignments,subsampleWeights=NULL,
+		summaryFn,whichSampSize=min) {
+	parameterVector<-exp(par)
+	#now have to stitch in n0 being 1, always, for the first population
+	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
+	parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
+	parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
+	if((1+length(parameterVectorFirstPart)) > length(parameterVector)) {
+		parameterVectorSecondPart<-c()
+  	}
+  	parameterVector<-c(parameterVectorFirstPart, 1, parameterVectorSecondPart)
+  	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
+  	if(!PassBounds(parameterVector, parameterBounds)) {
+  		return(badAIC)
+ 	 }
+	  if(max(parameterVector)>maxParameterValue) {
+  		return(badAIC)
+	  }
+ 	 if(debug) {
+ 	   print(parameterVector) 
+ 	 }
+ 	 #Get matches
+	likelihoodVector<-MatchingTrees(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
+		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msLocation=msLocation,
+		observed=observed,print.ms.string=print.ms.string,debug=debug)
+ 	 #Apply weights to matches
+ 	 if(!is.null(subsampleWeights)){
+	  	likelihoodVector<-likelihoodVector * read.table(subsampleWeights)[,1]
+  	}
+  	#Convert matches to likelihoods
+ 	 if(length(popAssignments) > 1){
+  		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
+  			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector) 
+  		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
+  		colnames(AICValue)<-"AIC"		
+  	}else{
+  		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
+  			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
+  			totalPopVector=totalPopVector,summaryFn=summaryFn,whichSampSize=whichSampSize)	
+  		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))		
+	}
 	if(print.results) {
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))
 		resultsVector<-cbind(AICValue,lnLValue[1],parameterVector)
@@ -332,8 +346,12 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 	for(i in 1:length(phy[,])){
 		phy[i,1]<-ConvertAlleleNumbersToPopulationLetters.raw(phy=phy[i,1],assignFrame=assignFrame)
 	}
-	write.table(phy,"mstrees.txt",quote=FALSE,row.names=FALSE,col.names=FALSE,eol=";\n")
-	phy.pops<-read.tree("mstrees.txt")
+
+	#If going to subsample these trees, convert to phylo objects
+	if(length(popAssignments) > 1){
+		write.table(phy,"mstrees.txt",quote=FALSE,row.names=FALSE,col.names=FALSE,eol=";\n")
+		phy.pops<-read.tree("mstrees.txt")
+	}
 
 #	phy.phylo<-read.tree("mstrees.txt") #Also load as phylo, so can drop tips later on if necessary
 #	phy.phylo$tip.label<-ConvertAlleleNumbersToPopulationLetters.phylo(phy.phylo,assignFrame)
@@ -419,7 +437,6 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 	#Convert to log space
 	outputVector<-outputVector/nTrees
 	outputVector<-log(outputVector)
-	
 	#Calculate coefficients for ntaxa-lnL relationship to calculate lnL of full dataset
 	beginLocus<-1
 	whichLocus<-1
@@ -472,6 +489,36 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 	colnames(lnL.mat)<-names(lnL)
 
 	return(lnL.mat)
+}
+
+#If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
+#although effective subsample sizes can be considered by using SumDivScaledNreps
+ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
+		totalPopVector,summaryFn="mean",whichSampSize=min) {
+	probOfMissing=1/((howmanytrees(sum(popAssignments[[1]]))) * 1000000)
+	outputVector<-as.numeric(outputVector)
+	outputVector[which(outputVector==0)]<-probOfMissing
+	outputVector<-outputVector/nTrees
+	outputVector<-log(outputVector)
+	lnL<-0
+	localVector<-rep(NA, subsamplesPerGene)
+	baseIndex<-1
+	for (i in sequence(length(outputVector))) {
+		localVector[baseIndex]<-outputVector[i]
+#		print(localVector)
+		baseIndex <- baseIndex+1
+		if(i%%subsamplesPerGene == 0) {
+			if(summaryFn=="SumDivScaledNreps"){
+				lnL<-lnL+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector,
+					subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+			}else{
+				lnL<-lnL+get(summaryFn)(localVector)
+			}
+			localVector<-rep(NA, subsamplesPerGene)
+			baseIndex<-1
+		}
+	}
+	return(lnL)
 }
 
 #Drops tips from the simulated trees (to be used in accordance with popAssignments)
