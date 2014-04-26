@@ -158,7 +158,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1),subsamplesPerGene=1,totalPopVector,popAssignments,subsampleWeights=NULL) {
   parameterVector<-exp(par)
   #now have to stitch in n0 being 1, always, for the first population
-  positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationIndividual)))
+  positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
   parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
   parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
   if((1+length(parameterVectorFirstPart)) > length(parameterVector)) {
@@ -320,41 +320,35 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
   }
 
 	#Simulate trees in MS
-	outputstringMS<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' > mstrees.txt", sep=" ") 
+	outputstringMS<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
+		" | grep ';' > mstrees.txt", sep=" ") 
 	system(outputstringMS,intern=TRUE)
 	
-	#Swap simulated individual labels with population labels
-	phy<-read.tree("mstrees.txt")
+	#Retrieve simulated trees and population assignments
+	phy<-read.table("mstrees.txt",stringsAsFactors=FALSE)
 	assignFrame<-CreateAssignment.df(popAssignments[[1]])
-	for(i in 1:length(phy)){
-		phy[[i]]$tip.label<-ConvertAlleleNumbersToPopulationLetters(phy=phy[[i]],assignFrame=assignFrame)
-	}	
-	
-	#Swap observed individual labels with population labels
-	observed<-read.tree(observed)
-	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
-	nLoci<-length(observed) / treesPerLocus #number of loci
-	treeCounter<-1
-	for(e in 1:nLoci){ #for each locus
-		subsampleSizeCounter<-1
-		assignFrame<-CreateAssignment.df(popAssignments[[subsampleSizeCounter]])
-		for(f in 1:(length(observed) / nLoci)){ #for each locus
-			#Swap observed labels
-			observed[[treeCounter]]$tip.label<-ConvertAlleleNumbersToPopulationLetters(phy=observed[[treeCounter]],
-				assignFrame=assignFrame)
-			treeCounter<-treeCounter + 1
-			if(f%%subsamplesPerGene == 0){ #increase to next popAssignments size class
-				subsampleSizeCounter<-subsampleSizeCounter + 1
-			}
-		}
+
+	#Convert individual numbers to population letters and export 
+	for(i in 1:length(phy[,])){
+		phy[i,1]<-ConvertAlleleNumbersToPopulationLetters.raw(phy=phy[i,1],assignFrame=assignFrame)
 	}
+	write.table(phy,"mstrees.txt",quote=FALSE,row.names=FALSE,col.names=FALSE,eol=";\n")
+	phy.pops<-read.tree("mstrees.txt")
+
+#	phy.phylo<-read.tree("mstrees.txt") #Also load as phylo, so can drop tips later on if necessary
+#	phy.phylo$tip.label<-ConvertAlleleNumbersToPopulationLetters.phylo(phy.phylo,assignFrame)
+
+	#Get observed trees
+	observed<-read.table(observed,stringsAsFactors=FALSE)
 
 	#Calculate popAssignment indexes for the matching vector
-	outputVector<-array(NA,length(observed))
+	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
+	nLoci<-length(observed[,]) / treesPerLocus #number of loci
+	outputVector<-array(NA,length(observed[,]))
 	counter1<-1
 	for(n in 1:nLoci){
 		counter2<-1
-		for(m in 1:(length(observed) / subsamplesPerGene)){
+		for(m in 1:(length(observed[,]) / subsamplesPerGene)){
 			outputVector[counter1]<-counter2
 			counter1<-counter1+1	
 			if(m%%subsamplesPerGene==0){
@@ -363,23 +357,32 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 		}
 	}
 
-	#Calculate number of matches for each observed tree
+	#Calculate number of matches for each observed tree to each simulated tree
 	currentPhy<-phy
 	for(q in 1:length(popAssignments)){ #for each popAssignment size class
-		cladesAllPhy<-lapply(currentPhy, GetCladesQuickly) #get clades for each simulated tree for this size class
+		#get clades for each simulated tree for this size class and convert indiv numbers to pop letters
+		#Don't need to convert numbers to letter here as it was done above
+		cladesAllPhy<-lapply(currentPhy[,],GetCladeNamesFromNewickString,assignFrame=assignFrame)
 		for(r in which(outputVector==q)){ #for each observed subsample within a size class
 			matches<-0
-			cladesGene <- GetCladesQuickly(observed[[r]]) #get clades for the current observed tree
-			for(s in 1:length(currentPhy)){ #for each simulated tree
-				matches<-matches + GetScoreOfSingleTree(cladesMS=cladesAllPhy[[s]], phyMS=currentPhy[[s]],
-					cladesGene=cladesGene, phyGene=observed[[r]],polytomyCorrection=TRUE)
+			cladesGene<-GetCladeNamesFromNewickString(observed[r,1],assignFrame=assignFrame,
+				convertIndivNumsToPopLetters=TRUE,getOutDegreeOfPolytomies=TRUE) #get clades for current obs tree
+			for(s in 1:length(currentPhy[,])){ #for each simulated tree
+				matches<-matches + GetScoreOfSingleTree(cladesMS=cladesAllPhy[[s]], phyMS=currentPhy[s,1],
+					cladesGene=cladesGene[[1]], phyGene=observed[r,1],polytomyDegreesForCorrection=cladesGene[[2]])
 			}
 			outputVector[r]<-matches
-		}
-		if(q < length(popAssignments)){
-			for(t in 1:length(currentPhy)){
-				currentPhy[[t]]<-SubsampleMSTree(phy=currentPhy[[t]],popVectorOrig=popAssignments[[q]],popVectorFinal=popAssignments[[q+1]])
+		}		
+		##When we reach the next size class, drop tips from simulated trees (to do this, need to convert trees to phylo)
+		if(q < length(popAssignments)){ 
+			currentPhy<-phy.pops
+			for(t in 1:length(currentPhy)){			
+				currentPhy[[t]]<-SubsampleMSTree(phy=currentPhy[[t]],popVectorOrig=popAssignments[[q]],
+					popVectorFinal=popAssignments[[q+1]])
 			}
+			write.tree(currentPhy,file="mstrees.txt")
+			currentPhy<-read.table("mstrees.txt",stringsAsFactors=FALSE)
+			assignFrame<-CreateAssignment.df(popAssignments[[q+1]])
 		}
 	}
 	
@@ -471,75 +474,75 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 	return(lnL.mat)
 }
 
-ConvertAlleleNumbersToPopulationLetters <- function(phy,assignFrame){
-	phy$tip.label <- as.character(assignFrame$popLabel[match(phy$tip.label, assignFrame$indivTotal)])
-}
-
 #Drops tips from the simulated trees (to be used in accordance with popAssignments)
-SubsampleMSTree <- function(phy, popVectorOrig, popVectorFinal) {
-	taxaToDrop <- c()
-	minSample <- 1
-	maxSample <- 0
+#Relies on using phylo objects, which makes it slow
+SubsampleMSTree.phylo<-function(phy,popVectorOrig,popVectorFinal) {
+	taxaToDrop<-c()
+	minSample<-1
+	maxSample<-0
 	uniquePops<-unique(phy$tip.label)
-	for (population in 1:length(uniquePops)) {		
-		maxSample <- minSample + popVectorOrig[population] - 1
-		sampleSizeDiff <- popVectorOrig[population] - popVectorFinal[population]
-		if (sampleSizeDiff > 0) {
-			taxaToDrop <- append(taxaToDrop, 
+	for(population in 1:length(uniquePops)){		
+		maxSample<-minSample + popVectorOrig[population] - 1
+		sampleSizeDiff<-popVectorOrig[population] - popVectorFinal[population]
+		if(sampleSizeDiff > 0){
+			taxaToDrop<-append(taxaToDrop, 
 				which(phy$tip.label==uniquePops[population])[c(1:sampleSizeDiff)])
 		}
-		minSample <- maxSample + 1
+		minSample<-maxSample + 1
 	}
-	phy <- drop.tip(phy, taxaToDrop)
+	phy<-drop.tip(phy,taxaToDrop)
 
 	return(phy)
 }
 
+#Converts individual numbers to population labels when trees are phylo
+ConvertAlleleNumbersToPopulationLetters.phylo <- function(phy,assignFrame){
+	phy$tip.label <- as.character(assignFrame$popLabel[match(phy$tip.label, assignFrame$indivTotal)])
+}
+
+#Converts individual numbers to population labels when trees are raw strings
+ConvertAlleleNumbersToPopulationLetters.raw<-function(phy,assignFrame){
+	phy<-gsub(pattern=";", replacement="", x=gsub(pattern='\\:\\d+\\.*\\d*', replacement="", 
+		x= phy, perl=TRUE)) #remove branch lengths
+	split.tree<-strsplit(phy,"")[[1]]
+	#split.tree<-strsplit(phy, "[^\\d]", perl=TRUE)[[1]]
+	#split.tree<-split.tree[which(nchar(split.tree)>0)]
+	counter=1
+	#Put together double digit numbers
+	for(i in 1:length(split.tree)){
+		if(counter<length(split.tree)){
+			if(sum((grep("\\d",split.tree[counter])),(grep("\\d",split.tree[counter+1]))) == 2){
+				split.tree[counter]<-paste(split.tree[counter],split.tree[counter+1],sep="")
+				split.tree<-split.tree[-(counter+1)]
+				counter<-counter+2
+			}else{
+				counter<-counter+1
+			}
+		}
+	}
+	allele.indexes<-grep("\\d",split.tree,perl=TRUE) #indexes of taxa to transform
+	#split.tree <- as.character(assignFrame$popLabel[match(split.tree,assignFrame$indivTotal)])
+	for(i in allele.indexes){
+		split.tree[i]<-as.character(assignFrame$popLabel[match(split.tree[i],assignFrame$indivTotal)])
+	}
+	return(paste(split.tree,collapse=""))
+}
+
 #GetAndBindLabel and GetClades together get a list of all clades in the tree. For the taxa descended from each clade, 
 #sorts alphabetically and then makes them a string. These are slow, and have since been replaced by GetCladesQuickly
+GetClades <- function(phy) {
+	return(simplify2array(sapply(subtrees(phy), GetAndBindLabel)))
+}
+
+#Used with GetClades
 GetAndBindLabel <- function(phy) { 
 	#note the sorting here
 	return( paste( sort( phy$tip.label ), collapse="_" ) )
 }
 
-GetClades <- function(phy) {
-	return(simplify2array(sapply(subtrees(phy), GetAndBindLabel)))
-}
-
-GetOutDegreeOfPolytomies <- function(phy) {
-	descendantCounts <- table(phy$edge[,1])
-	descendantCounts <- unname(descendantCounts[which(descendantCounts>2)])
-	return(descendantCounts)
-}
-
-#Match clades of two trees
-#assumes:
-#1. You have already run ConvertAlleleNumbersToPopulationLetters so these trees have letters
-#2. You have already made them have the same size (do SubsampleMSTree if needed)
-GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyCorrection=FALSE) {
-	numberCladesInMSOnly <- sum(!cladesMS%in%cladesGene)
-	numberCladesInGeneOnly <- sum(!cladesGene%in%cladesMS)
-	matchCount <- 0
-	if(numberCladesInMSOnly == 0 && numberCladesInGeneOnly==0) {
-		matchCount <- 1
-	}
-	if (numberCladesInMSOnly > 0 && numberCladesInGeneOnly == 0 && polytomyCorrection == TRUE) {
-		descendantCounts <- GetOutDegreeOfPolytomies(phyGene)
-		correction <- 1
-		for (i in sequence(length(descendantCounts))) {
-			correction <- correction * howmanytrees(descendantCounts[i], rooted=TRUE, binary=TRUE, labeled=TRUE)
-		}
-		matchCount <- 1 / correction #idea here is that the gene tree could have been resolved at each polytomy multiple ways
-		#only one of these ways would match the given phyMS tree. So we figure out the number of ways to resolve polytomy 1, multiply that by the number of ways to resolve polytomy 2, etc. A polytomy with three descendant edges has 3 ways to resolve it, one with 4 descendant edges has 3 * 5 = 15, etc.
-	}
-	return(matchCount)
-}
-
-SplitAndSort <- function(x) {
-	return(paste(sort(strsplit(x, "_")[[1]]), collapse="_"))
-}
-
-##Fast way to get a vector of clades in a tree
+##Much faster way to get a vector of clades in a tree than "GetClades (doesn't use Ape's slow 
+##"subtrees" function). However, this is still too slow (treating trees as
+##phylo objects requires too much processing time). This function is no longer used.
 GetCladesQuickly <- function(phy, do.reorder=TRUE) {
 	if(do.reorder) {
 		phy<-reorder.phylo(phy, order="postorder")
@@ -551,4 +554,349 @@ GetCladesQuickly <- function(phy, do.reorder=TRUE) {
 	}
 	clades<-sapply(c(unique(phy$edge[which(grepl("_", phy$edge[,2])),2]),paste(phy$tip.label, collapse="_")), SplitAndSort, USE.NAMES=FALSE)
 	return(clades)
+}
+
+#Used with GetCladesQuickly
+SplitAndSort <- function(x) {
+	return(paste(sort(strsplit(x, "_")[[1]]), collapse="_"))
+}
+
+#This extracts clades from raw newick trees (implemented for efficiency). It also allows for
+#relabeling of individuals with population letters. Thus, this replaces GetCladesQuickly (7 times
+#slower) and ConvertAlleleNumbersToPopulationLetters
+GetCladeNamesFromNewickString <- function(newick.string,assignFrame,convertIndivNumsToPopLetters=FALSE,
+		getOutDegreeOfPolytomies=FALSE) {
+	descendantCounts<-c() #for saving the degree of ploytomies
+	nobrlen.tree <- gsub(pattern=";", replacement="", x=gsub(pattern='\\:\\d+\\.*\\d*', replacement="", 
+		x= newick.string, perl=TRUE)) #remove branch lengths
+	clade.names<-rep(NA, sum(grepl("\\(", strsplit(nobrlen.tree,"")[[1]]))) #num of clades=num of parentheses/2
+	
+	#Start the culling of clades
+	for(clade.count in sequence(length(clade.names))) {
+		m<-regexpr(pattern="\\([^(^)]+\\)", text=nobrlen.tree, perl=TRUE) #find location of first set of closed parentheses
+		clade<-gsub("\\)", "", gsub("\\(","",regmatches(x=nobrlen.tree, m))) #everything in between is a clade
+		taxa<-strsplit(clade, ",")[[1]]
+
+		#Get the degree of ploytomies for each clade with more than two taxa
+		if(getOutDegreeOfPolytomies){
+			if(length(taxa) > 2){ #if there are more than 2 members a new clade...
+				descendantCounts<-append(descendantCounts,length(taxa)) #record the degree
+			}
+		}
+		
+		#Convert numbers to letters
+		if(convertIndivNumsToPopLetters){
+			which.untransformed.alleles<-which(grepl("\\d", taxa, perl=TRUE)) #number of untransformed
+			for(allele.index in sequence(length(which.untransformed.alleles))) {
+				taxon.index<-which.untransformed.alleles[allele.index]
+				taxa[taxon.index]<-as.character(assignFrame$popLabel[match(taxa[taxon.index],assignFrame$indivTotal)])
+			}
+		}
+		
+		clade.name<-paste(sort(taxa),collapse="-")
+		regmatches(x=nobrlen.tree, m)<-clade.name
+		clade.names[clade.count]<-clade.name	
+	}
+	if(getOutDegreeOfPolytomies){
+		return(list(clade.names,descendantCounts))
+	}else{
+		return(clade.names)
+	}
+}	
+
+GetOutDegreeOfPolytomies <- function(phy) {
+	descendantCounts <- table(phy$edge[,1])
+	descendantCounts <- unname(descendantCounts[which(descendantCounts>2)])
+	return(descendantCounts)
+}
+
+#Match clades of two trees
+#assumes:
+#1. You have already run ConvertAlleleNumbersToPopulationLetters so these trees have letters
+#2. You have already made them have the same size (do SubsampleMSTree if needed)
+GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyDegreesForCorrection=NULL) {
+	numberCladesInMSOnly <- sum(!cladesMS%in%cladesGene)
+	numberCladesInGeneOnly <- sum(!cladesGene%in%cladesMS)
+	matchCount <- 0
+	if(numberCladesInMSOnly == 0 && numberCladesInGeneOnly==0) {
+		matchCount <- 1
+	}
+	if(!is.null(polytomyDegreesForCorrection)){
+		if(numberCladesInMSOnly > 0 && numberCladesInGeneOnly == 0){
+			descendantCounts<-polytomyDegreesForCorrection
+			correction <- 1
+			for (i in sequence(length(descendantCounts))) {
+				correction <- correction * howmanytrees(descendantCounts[i], rooted=TRUE, binary=TRUE, labeled=TRUE)
+			}
+			matchCount <- 1 / correction #idea here is that the gene tree could have been resolved at each polytomy multiple ways
+			#only one of these ways would match the given phyMS tree. So we figure out the number of ways to resolve polytomy 1, 
+			#multiply that by the number of ways to resolve polytomy 2, etc. A polytomy with three descendant edges has 3 ways to 
+			#resolve it, one with 4 descendant edges has 3 * 5 = 15, etc.
+		}
+	}
+	return(matchCount)
+}
+
+#Drop tips from newick string. This is not presently working
+SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
+	#Get taxon labels from tree
+	taxonLabels<-strsplit(phy, "[^\\w]", perl=TRUE)[[1]]
+	taxonLabels<-taxonLabels[which(nchar(taxonLabels)>0)]
+
+	#Get tree positions for labels to drop
+	uniquePops<-unique(taxonLabels)
+	
+	#Split tree into characters and match to old taxon label positions
+	split.tree<-split.tree<-strsplit(phy,"")[[1]]
+	labelPositions<-c()
+	for(i in 1:length(uniquePops)){
+		labelPositions<-append(labelPositions,which(split.tree==uniquePops[i]))
+	}
+	
+	#Select positions in the split tree of taxa to drop
+	taxaToDrop<-c()
+	startPos<-1
+	endPos<-popVectorOrig[population]
+	for(population in 1:length(uniquePops)){		
+		sampleSizeDiff<-popVectorOrig[population] - popVectorFinal[population]
+		if(sampleSizeDiff > 0){
+			currentLabels<-labelPositions[startPos:endPos]
+			taxaToDrop<-append(taxaToDrop,currentLabels[c(sample(1:popVectorOrig[population],sampleSizeDiff,replace=FALSE))])
+			startPos<-startPos + popVectorOrig[population]
+			endPos<-endPos + popVectorOrig[population]
+		}
+	}
+
+	#Drop one tip at a time (must be fully-resolved)	
+	#Toss the label and adjacent commas and opening brackets
+	for(h in 1:length(taxaToDrop)){
+		split.tree[taxaToDrop[h]]<-"drop"
+		if(split.tree[taxaToDrop[h] - 1] == "("){
+			split.tree[taxaToDrop[h] - 1]<-"drop"
+			bracket="left"
+		}
+		if(split.tree[taxaToDrop[h] - 1] == ","){
+			split.tree[taxaToDrop[h] - 1]<-"drop"
+		}
+		if(split.tree[taxaToDrop[h] + 1] == ")"){
+			split.tree[taxaToDrop[h] + 1]<-"drop"
+			bracket="right"
+		}
+		if(split.tree[taxaToDrop[h] + 1] == ","){
+			split.tree[taxaToDrop[h] + 1]<-"drop"
+		}
+		
+		#Find and toss the closing bracket
+		if(bracket=="right"){
+			leftCount<- 0 #when leftCount exceeds rightCount, drop parenthesis
+			rightCount<- 0
+			currentRemainder<-split.tree[1:(taxaToDrop[h] - 2)]
+			rightPos<-which(currentRemainder==")")
+			leftPos<-which(currentRemainder=="(")
+			continue<-TRUE
+			for(j in length(currentRemainder):1){
+				if(continue==TRUE){
+					if(j%in%leftPos){
+						leftCount<-leftCount + 1
+					}
+					if(j%in%rightPos){
+						rightCount<-rightCount + 1
+					}
+					if(leftCount > rightCount){
+						split.tree[j]<-"drop"
+						continue<-FALSE
+					}
+				}
+			}
+		}else{
+			leftCount<-0 #when rightCount exceeds leftCount, drop parenthesis
+			rightCount<-0
+			currentRemainder<-split.tree[(taxaToDrop[h] + 2):length(split.tree)]
+			positionRemainder<-length(split.tree[1:(taxaToDrop[h] + 2)])
+			rightPos<-which(currentRemainder==")")
+			leftPos<-which(currentRemainder=="(")
+			continue<-TRUE
+			for(j in 1:length(currentRemainder)){
+				if(continue==TRUE){
+					if(j%in%leftPos){
+						leftCount<-leftCount + 1
+					}
+					if(j%in%rightPos){
+						rightCount<-rightCount + 1
+					}
+					if(rightCount > leftCount){
+						split.tree[j + (positionRemainder - 1)]<-"drop"
+						continue<-FALSE
+					}
+				}
+			}
+		}
+	}
+
+	#Drop tips
+	split.tree<-split.tree[which(split.tree != "drop")]
+
+	#Get rid of extra commas
+	if(split.tree[1]==","){
+		split.tree[1]<-"drop"
+	}
+	if(split.tree[length(split.tree)]==","){
+		split.tree[length(split.tree)]<-"drop"
+	}
+	for(l in 1:2){ #twice to be sure
+		for(k in 1:(length(split.tree) - 1)){
+			if(split.tree[k]=="(" && split.tree[k+1]==","){
+				split.tree[k+1]<-"drop"
+			}
+			if(split.tree[k]=="," && split.tree[k+1]==")"){
+				split.tree[k]<-"drop"
+			}
+			if(split.tree[k]=="," && split.tree[k+1]==","){
+				split.tree[k]<-"drop"
+			}
+		}
+		split.tree<-split.tree[which(split.tree != "drop")]
+	}
+	split.tree<-split.tree[which(split.tree != "drop")]
+	split.tree.cat<-paste(split.tree,collapse="")
+
+
+	save<-split.tree.cat #for troubleshooting
+	split.tree.cat<-save #for troubleshooting
+
+	#Get rid of brackets around singletons
+	while(length(grep("\\(\\(\\w\\)",split.tree.cat)) == 1){
+		m<-regexpr(pattern="\\(\\(\\w\\)",text=split.tree.cat, perl=TRUE)
+		new.clade<-gsub("\\)","",regmatches(x=split.tree.cat, m))
+		if((m[1] + 3) < length(split.tree)){
+			split.tree<-c(split.tree[1:(m[1] - 1)],strsplit(new.clade,"")[[1]],
+				split.tree[(m[1] + 4):length(split.tree)])
+		}else{
+			split.tree<-c(split.tree[1:(m[1] - 1)],strsplit(new.clade,"")[[1]])
+		}
+		split.tree.cat<-paste(split.tree,collapse="")
+	}
+
+	while(length(grep("\\(\\w\\)\\)",split.tree.cat)) == 1){
+		m<-regexpr(pattern="\\(\\w\\)\\)",text=split.tree.cat,perl=TRUE)
+		new.clade<-gsub("\\(","",regmatches(x=split.tree.cat,m))
+		split.tree<-strsplit(split.tree.cat,"")[[1]]
+		if((m[1]) > 1){
+			split.tree<-c(split.tree[1:(m[1] - 1)],strsplit(new.clade,"")[[1]],
+				split.tree[(m[1] + 4):length(split.tree)])
+		}else{
+			split.tree<-c(strsplit(new.clade,"")[[1]],split.tree[2:length(split.tree)])
+		}
+		split.tree.cat<-paste(split.tree,collapse="")
+	}
+
+	while(length(grep("\\(\\w\\)",split.tree.cat)) == 1){
+		m<-regexpr(pattern="\\(\\w\\)",text=split.tree.cat,perl=TRUE)[1]
+		split.tree.temp<-strsplit(split.tree.cat,"")[[1]]
+		opening.l<-length(split.tree.temp[1:(m-1)][which(split.tree.temp=="(")])
+		closing.l<-length(split.tree.temp[(m+3):length(split.tree.temp)][which(split.tree.temp==")")])
+		if(opening.l > closing.l || m==length(split.tree)){
+			split.tree.temp<-split.tree.temp[-m]
+		}
+		if(closing.l > opening.l || m==1){
+			split.tree.temp<-split.tree.temp[-(m+2)]
+		}
+		split.tree.cat<-paste(split.tree.temp,collapse="")
+	}	
+	
+	#Get rid of double brackets	
+	#First get positions of double brackets
+	openBracket<-c()
+	closeBracket<-c()
+	split.tree<-strsplit(split.tree.cat,"")[[1]]
+	for(m in 1:(length(split.tree) - 1)){
+		if(split.tree[m]=="(" && split.tree[m+1]=="("){
+			openBracket<-append(openBracket,m)
+		}
+		if(split.tree[m]==")" && split.tree[m+1]==")"){
+			closeBracket<-append(closeBracket,m + 1)
+		}
+	}
+	
+	#For different pairs, if there are as many or more brackets as taxa, toss them
+	end<-FALSE
+	while((length(grep("\\(",split.tree)) >= length(grep("\\w",split.tree)) || 
+			length(grep("\\)",split.tree)) >= length(grep("\\w",split.tree))) &&
+			end==FALSE){	
+		if(openBracket[length(openBracket)] > closeBracket[1]){
+			substring<-split.tree[openBracket[1]:closeBracket[length(closeBracket)]]
+			if(length(grep("\\(",split.tree)) >= length(grep("\\w",split.tree))){
+				if(length(grep("\\(",substring)) >= length(grep("\\w",substring))){
+					substring<-substring[-1]
+					removed<-TRUE
+				}
+			}
+			
+			if(length(grep("\\)",split.tree)) >= length(grep("\\w",split.tree))){
+				if(length(grep("\\)",substring)) >= length(grep("\\w",substring))){
+					substring<-substring[-length(substring)]
+					removed<-TRUE
+				}
+			}
+			if(removed==TRUE){		
+				split.tree<-split.tree[-c(openBracket[1]:closeBracket[length(closeBracket)])]
+				if(openBracket[1] > 1){
+					split.tree<-c(split.tree[1:openBracket[1] - 1],substring,
+						split.tree[openBracket[1]:length(split.tree)])
+				}else{
+					split.tree<-c(substring,split.tree)
+				}
+				if(length(openBracket) > 1 && length(closeBracket) > 1){
+					openBracket<-openBracket[-1]
+					closeBracket<-closeBracket[-(length(openBracket))]	
+				}else{
+					end<-TRUE
+				}
+			}else{
+				end<-TRUE
+			}
+			
+		}else{
+			removed<-FALSE
+			substring<-split.tree[openBracket[length(openBracket)]:closeBracket[1]]
+			if(length(grep("\\(",split.tree)) >= length(grep("\\w",split.tree))){
+				if(length(grep("\\(",substring)) >= length(grep("\\w",substring))){
+					substring<-substring[-1]
+					removed<-TRUE
+				}
+			}
+			if(length(grep("\\)",split.tree)) >= length(grep("\\w",split.tree))){
+				if(length(grep("\\)",substring)) >= length(grep("\\w",substring))){
+					substring<-substring[-length(substring)]
+					removed<-TRUE
+					reduce<-TRUE
+				}
+			}
+			
+			if(removed==TRUE){	
+				split.tree<-split.tree[-c(openBracket[length(openBracket)]:closeBracket[1])]
+				if(openBracket[length(openBracket)] > 1){
+					split.tree<-c(split.tree[1:openBracket[length(openBracket)] - 1],substring,
+					split.tree[openBracket[length(openBracket)]:length(split.tree)])
+				}else{
+					split.tree<-c(substring,split.tree)
+				}
+				if(length(openBracket) > 1 && length(closeBracket) > 1){
+					openBracket<-openBracket[-(length(openBracket))]
+					closeBracket<-closeBracket[-1]
+					if(reduce==TRUE){
+						closeBracket<-closeBracket - 1
+						reduce==FALSE
+					}
+				}else{
+					end<-TRUE
+				}
+			}else{
+				end<-TRUE
+			}
+		}
+	}	
+	split.tree.cat<-paste(split.tree,collapse="")
+	
+	return(split.tree.cat)
 }
