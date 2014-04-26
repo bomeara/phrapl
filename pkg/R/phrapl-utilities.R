@@ -1114,45 +1114,6 @@ GetKishESS<-function(popVector, nsamples) {
 	return(((sum(actual.weights))^2)/sum(actual.weights ^2))
 }
 
-#idea is that you scale the prob of missing by the number of possible trees
-#if multiple subsamples per locus is to be passed in, they should be arranged in observed.tre as
-#Gene1_subsample1
-#Gene1_subsample2
-#...
-#Gene1_lastsubsample
-#Gene2_subsample1
-#Gene2_subsample2
-#...
-#Gene2_lastsubsample
-#i.e., grouped by gene first, then by subsamples
-#the values for the subsamples are summarized (by default, median)
-#to get median likelihood per gene
-#and then these median subsamples per gene are summed to get overall likelihood of the data
-#ConvertOutputVectorToLikelihood<-function(outputVector,nTrees,probOfMissing=(1/howmanytrees(sum(popVector))), subsamplesPerGene=1, summaryFn="median",totalPopVector=NULL,subNum=4,whichSampSize=min) {
-#	outputVector<-as.numeric(outputVector)
-#	outputVector[which(outputVector==0)]<-probOfMissing
-#	outputVector<-outputVector/nTrees
-#	outputVector<-log(outputVector)
-#	lnL<-0
-#	localVector<-rep(NA, subsamplesPerGene)
-#	baseIndex<-1
-#	for (i in sequence(length(outputVector))) {
-#		localVector[baseIndex]<-outputVector[i]
-#		print(localVector)
-#		baseIndex <- baseIndex+1
-#		if(i%%subsamplesPerGene == 0) {
-#			if(summaryFn=="SumDivScaledNreps"){
-#				lnL<-lnL+get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
-#			}else{
-#				lnL<-lnL+get(summaryFn)(localVector)
-#			}
-#			localVector<-rep(NA, subsamplesPerGene)
-#			baseIndex<-1
-#		}
-#	}
-#	return(lnL)
-#}
-
 #Uses ln likelihood
 CombineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.popVector) {
 	originalSize<-sum(orig.popVector)
@@ -1324,9 +1285,9 @@ MergeTrees <- function(treesPath){
 #to calculate the scaled nreps). The minumum possible scaled nreps = subsamplesPerGene,
 #which results when the total sample size is equal to subNum (in this case, matches among
 #subsamples are simply averaged).
-GetScaledNreps<-function(subNum=4,totalPopVector=NULL,subsamplesPerGene=1,whichSampSize=min){
+GetScaledNreps<-function(popAssignments,subsamplesPerGene=1,totalPopVector,whichSampSize=min){
 	#Get effective number of independent samples possible
-	effectiveNumSamples<- whichSampSize(totalPopVector) / subNum
+	effectiveNumSamples<- whichSampSize(totalPopVector) / mean(popAssignments[[1]])
 
 	#Get effective sample size scaler (e.g., the proportion of a subsample replicate
 	#that is possibly 'independent')
@@ -1351,10 +1312,9 @@ GetScaledNreps<-function(subNum=4,totalPopVector=NULL,subsamplesPerGene=1,whichS
 
 #SummaryFn function (When we want to sum lnLs across subsamples and divide by the scaled number
 #of replicates)
-SumDivScaledNreps<-function(localVector=localVector,subNum=4,totalPopVector=totalPopVector,
-	subsamplesPerGene=1,whichSampSize=min){
-	eNreps<-GetScaledNreps(subNum=subNum,totalPopVector=totalPopVector,subsamplesPerGene=subsamplesPerGene,
-			whichSampSize=whichSampSize)
+SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,totalPopVector,whichSampSize=min){
+	eNreps<-GetScaledNreps(popAssignments=popAssignments,subsamplesPerGene=subsamplesPerGene,
+		totalPopVector=totalPopVector,whichSampSize=whichSampSize)
 	summaryFn<-sum(localVector) / eNreps 
 	return(summaryFn)
 }
@@ -1449,18 +1409,17 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 		allMigs[[length(allMigs)+1]] <- currentMigs #add it to the master list
 	}
 	#Fill in an array with migration parameter headers
-	migColnames=array()
+	migColnames=c()
 	for(thisMatrix in 1:length(allMigs)){ #for each migration matrix in the model
 		presentMatrix<-allMigs[[1]]
 		for(migFrom in 1:length(presentMatrix[,1])){ #for each row
 			for(migTo in 1:length(presentMatrix[1,])){ #for each column
 				if(migFrom !=migTo){ #skip diagonal migrations
-					migColnames<-c(migColnames,paste("m",thisMatrix,"_",migFrom,".",migTo,sep=""))
+					migColnames<-append(migColnames,paste("m",thisMatrix,"_",migFrom,".",migTo,sep=""))
 				}
 			}
 		}
 	}	
-	migColnames<-migColnames[!is.na(migColnames)]	
 	
 	
 	############MAKE COLUMN HEADERS FOR COLLAPSE AND N0MULTI BASED ON FULLY RESOLVED TREE
@@ -1468,16 +1427,14 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 	allCollapses<-array(NA,dim=c(npop,npop - 1))
 	
 	#Fill in arrays with parameter headers
-	collapseColnames=array()
-	n0multiColnames=array()
+	collapseColnames=c()
+	n0multiColnames=c()
 	for(cols in 1:length(allCollapses[1,])){ #for each column
 		for(rows in 1:length(allCollapses[,1])){ #for each row
-			collapseColnames<-c(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
-			n0multiColnames<-c(n0multiColnames,paste("n_t",cols,".",rows,sep=""))
+			collapseColnames<-append(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
+			n0multiColnames<-append(n0multiColnames,paste("n_t",cols,".",rows,sep=""))
 		}
 	}	
-	collapseColnames<-collapseColnames[!is.na(collapseColnames)]	
-	n0multiColnames<-n0multiColnames[!is.na(n0multiColnames)]	
 	
 	
 	#############FILL IN A MATRIX WITH THE MIGRATION PARAMETER INDEXES
@@ -1641,7 +1598,9 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 	return(list(parameterValues,parameterIndexes))
 }
 
-#This function takes output from a grid "search" and assembles parameter indexes and estimates
+
+
+#This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
 ExtractGridParameters<-function(migrationArray=migrationArray,result=result,modelVector=modelVector,npop=npop){
@@ -1656,18 +1615,17 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 		allMigs[[length(allMigs)+1]] <- currentMigs #add it to the master list
 	}
 	#Fill in an array with migration parameter headers
-	migColnames=array()
+	migColnames=c()
 	for(thisMatrix in 1:length(allMigs)){ #for each migration matrix in the model
 		presentMatrix<-allMigs[[1]]
 		for(migFrom in 1:length(presentMatrix[,1])){ #for each row
 			for(migTo in 1:length(presentMatrix[1,])){ #for each column
 				if(migFrom !=migTo){ #skip diagonal migrations
-					migColnames<-c(migColnames,paste("m",thisMatrix,"_",migFrom,".",migTo,sep=""))
+					migColnames<-append(migColnames,paste("m",thisMatrix,"_",migFrom,".",migTo,sep=""))
 				}
 			}
 		}
 	}	
-	migColnames<-migColnames[!is.na(migColnames)]	
 	
 	
 	############MAKE COLUMN HEADERS FOR COLLAPSE BASED ON FULLY RESOLVED TREE
@@ -1675,13 +1633,12 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	allCollapses<-array(NA,dim=c(npop,npop - 1))
 	
 	#Fill in arrays with parameter headers
-	collapseColnames=array()
+	collapseColnames=c()
 	for(cols in 1:length(allCollapses[1,])){ #for each column
 		for(rows in 1:length(allCollapses[,1])){ #for each row
-			collapseColnames<-c(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
+			collapseColnames<-append(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
 		}
 	}	
-	collapseColnames<-collapseColnames[!is.na(collapseColnames)]	
 	
 	
 	#############FILL IN A MATRIX WITH THE MIGRATION PARAMETER INDEXES
@@ -1745,7 +1702,11 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 		#Make vector of top parameter estimates from the grid (based on the mean of the top five estimates for each parm)
 		currentSol<-c()
 		positionOfNonParameters <- grep("lnL", colnames(result[[2]][[eachCol]]))[1] #find slopes
-		currentResult<-result[[2]][[eachCol]][2:(positionOfNonParameters - 1)] #toss slopes
+		if(!is.na(positionOfNonParameters)){
+			currentResult<-result[[2]][[eachCol]][2:(positionOfNonParameters - 1)] #toss slopes
+		}else{
+			currentResult<-result[[2]][[eachCol]][2:length(result[[2]][[eachCol]])] #if only 1 popAssignment used
+		}
 
 		for(rep in 1:ncol(currentResult)){
 			currentSol<-append(currentSol,mean(currentResult[1:5,rep])) #Note that grid prams are already back-transformed (i.e., logged)
