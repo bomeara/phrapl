@@ -682,50 +682,6 @@ SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	return(returnCode)
 }
 
-PipeMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,print.ms.string=FALSE,ncores=1) {
-	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,ceiling(nTrees/ncores))
-	
-	systemMS<-function(stringname=NULL){
-		outputVectorMS<-system(stringname,intern=TRUE)
-		return(outputVectorMS)
-	}
-	systemPerl<-function(stringname=NULL){
-		outputVectorPerl<-system(stringname,intern=TRUE)
-		return(outputVectorPerl)
-	}
-	
-  if(print.ms.string) {
-    print(msCallInfo) 
-  }
-  if(debug) {
-    print("parameterVector")
-    print(parameterVector)
-  }
-	unresolvedFlag<-"-u"
-	if (unresolvedTest==FALSE) {
-		unresolvedFlag<-""
-	}
-	#MS and perl called separately to facilitate profiling
-	outputstringMS<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' > mstrees.txt", sep=" ") 
-	outputstringPerl<- paste("cat mstrees.txt | perl",compareLocation, unresolvedFlag, paste("-a",assign,sep=""), paste("-o",observed,sep=""), sep=" ")
-	if (debug) {
-		print(paste(outputstringMS,outputstringPerl,sep=" "))
-	}
-	#if (ncores==1) {
-		outputVectorMS<-systemMS(stringname=outputstringMS)
-		outputVectorPerl<-systemPerl(stringname=outputstringPerl)
-		outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
-		return(outputVector)
-	#} else {
-	#	wrapOutput<-function(x,outputstring) {
-	#		as.numeric(system(outputstring,intern=TRUE))
-	#	}
-	#	outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=outputstring,mc.cores=ncores)),1,sum)
-	#	return(outputVector)
-	#}
-}
-
-
 #if "popAssignments" has not been specified, then iteratively randomly sample "nIndividualsDesired" from the 
 #entire dataset "attemptsCutoff" times until at least "minPerPop" individuals are represented per population 
 #within "toRetain"	
