@@ -155,11 +155,11 @@ PassBounds <- function(parameterVector, parameterBounds) {
 }
 
 #Return AIC for a given model and tree
-ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",
-		print.results=FALSE, print.ms.string=FALSE, debug=FALSE, badAIC=100000000000000, maxParameterValue=100, 
-		parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, 
-		minMigrationRatio=0.1),subsamplesPerGene=1,totalPopVector,popAssignments,subsampleWeights=NULL,
-		summaryFn,whichSampSize=min) {
+ReturnAIC<-function(par,migrationIndividual,nTrees=1,msDir="/usr/local/bin/ms",compareDir="comparecladespipe.pl",
+		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
+		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
+		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
+		totalPopVector,popAssignments,subsampleWeights=NULL,summaryFn,whichSampSize=min,saveNoExtrap=FALSE){
 	parameterVector<-exp(par)
 	#now have to stitch in n0 being 1, always, for the first population
 	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
@@ -172,27 +172,40 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/
   	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
   	if(!PassBounds(parameterVector, parameterBounds)) {
   		return(badAIC)
- 	 }
-	  if(max(parameterVector)>maxParameterValue) {
+ 	}
+	if(max(parameterVector)>maxParameterValue) {
   		return(badAIC)
-	  }
- 	 if(debug) {
+	}
+ 	if(print.results) {
  	   print(parameterVector) 
- 	 }
- 	 #Get matches
-	likelihoodVector<-MatchingTrees(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
-		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msLocation=msLocation,
-		observed=observed,print.ms.string=print.ms.string,debug=debug)
- 	 #Apply weights to matches
- 	 if(!is.null(subsampleWeights)){
-	  	likelihoodVector<-likelihoodVector * read.table(subsampleWeights)[,1]
+ 	}
+ 	 
+ 	#Do tree matching
+ 	likelihoodVector<-c()
+	for(i in 1:length(popAssignments)){ #Do separately for each subsample size class
+		currentPopAssign<-i
+		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
+		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msDir=msDir,compareDir=compareDir,
+		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest)
+ 	 	#Apply weights to matches
+ 	 	if(!is.null(subsampleWeights)){
+	  		likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * 
+	  			read.table(paste("subsampleWeights",i,".txt",sep=""))[,1]
+		}
+	  	likelihoodVector<-append(likelihoodVector,likelihoodVectorCurrent)
   	}
+
   	#Convert matches to likelihoods
- 	 if(length(popAssignments) > 1){
+ 	if(length(popAssignments) > 1){
   		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
-  			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector) 
+  			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,saveNoExtrap=saveNoExtrap,
+  			summaryFn=summaryFn) 
   		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
-  		colnames(AICValue)<-"AIC"		
+  		colnames(AICValue)<-"AIC"
+  		if(saveNoExtrap==TRUE){
+  			AICValue.noExtrap<-2*(-lnLValue[2] + KAll(migrationIndividual))
+  			colnames(AICValue.noExtrap)<-"AIC.lnL.noExtrap"
+  		}		
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
@@ -203,10 +216,15 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))
 		resultsVector<-cbind(AICValue,lnLValue[1],parameterVector)
     	names(resultsVector)<-c("AIC","lnL",MsIndividualParameters(migrationIndividual))
-	    print(resultsVector)
- 	  	print(paste(likelihoodVector,collapse=" ",sep="")) #print matches for each observed tree
+#	    print(resultsVector)
+		print(resultsVector[1:2])
+		if(print.matches){
+ 	  		cat("\nmatches\n")
+ 	  		print(paste(round(likelihoodVector,1),collapse=" ",sep="")) #print matches for each observed tree
+ 	  	}
+		cat("End Run\n\n") #Separator of different simulation runs
 
-		#print total number of matches
+	   #print total number of matches
 # 	   matches<-sum(as.numeric(likelihoodVector))
 # 	   names(matches)<-"matchSum"
 # 	   print(matches)
@@ -233,7 +251,11 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msLocation="/usr/local/bin/
 #		}
  #   	print(matchesVec[-1])
 	}
-  	return(cbind(AICValue,lnLValue))
+	if(length(popAssignments) > 1 && saveNoExtrap==TRUE){
+		return(cbind(AICValue,AICValue.noExtrap,lnLValue))
+	}else{
+  		return(cbind(AICValue,lnLValue))
+  	}
 }
 
 #This takes an outputted grid from initial.AIC search and produces ranges of values for each parameter that can be constructed into
@@ -318,6 +340,205 @@ CreateStartGrid<-function(fineGrid){
 	startGrid[[1]]<-log(startGrid[[1]]) #since we are optimizing in log space
 	return(startGrid)
 }
+
+##Match simulated trees to observed trees and export vector of matches
+PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msDir="/usr/local/bin/ms",
+		compareDir="comparecladespipe.pl",unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
+		print.ms.string=FALSE,ncores=1,currentPopAssign=1){
+	
+	observed<-paste("observed",currentPopAssign,".tre",sep="")
+	assign<-paste("assign",currentPopAssign,".txt",sep="")
+	msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual,
+		parameterVector,ceiling(nTrees/ncores))
+	
+	systemMS<-function(stringname){
+		outputVectorMS<-system(stringname,intern=TRUE)
+		return(outputVectorMS)
+	}
+	systemPerl<-function(stringname){
+		outputVectorPerl<-system(stringname,intern=TRUE)
+		return(outputVectorPerl)
+	}
+
+	if(print.ms.string) {
+    	print(msCallInfo) 
+  	}
+
+	unresolvedFlag<-"-u"
+	if (unresolvedTest==FALSE) {
+		unresolvedFlag<-""
+	}
+	
+	#Simulate trees in MS and do matching in perl
+	outputstringMS<-paste(msDir,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
+		" | grep ';' > mstrees.txt", sep=" ") 
+	outputstringPerl<-paste("cat mstrees.txt | perl",compareDir,unresolvedFlag,paste("-a",assign,sep=""), 
+		paste("-o",observed,sep=""),sep=" ")
+
+	if(ncores==1){
+		outputVectorMS<-systemMS(stringname=outputstringMS)
+		outputVectorPerl<-systemPerl(stringname=outputstringPerl)
+		outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
+		return(outputVector)
+	}else{
+		wrapOutput<-function(x,outputstring) {
+			as.numeric(system(outputstring,intern=TRUE))
+		}
+		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=outputstring,mc.cores=ncores)),1,sum)
+		return(outputVector)
+	}
+}
+
+#This function calculates lnL based on number of matches for each subsample. Then the likelihood of the
+#full dataset is estimated from the subsampled dataset based on a linear relationship between sample size
+#and lnL.
+ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1,totalPopVector,
+		saveNoExtrap=FALSE,summaryFn){
+	nLoci<-length(outputVector) / length(popAssignments) / subsamplesPerGene #number of loci
+		
+	#Adjust zero matches to equal probability of getting match
+	start<-1
+	end<-length(outputVector) / length(popAssignments)
+	for(g in sequence(length(popAssignments))){ #for each subsample size class
+		currentPopAssignments<-popAssignments[[g]]
+		outputVector[start:end]<-as.numeric(outputVector[start:end])
+		probOfMissing<-1/((howmanytrees(sum(popAssignments[[g]]))) * 1000000)
+		outputVector[start:end][which(outputVector[start:end]==0)]<-probOfMissing
+		start<-start + end
+		end<-end + end
+	}
+	
+	#Convert to log space
+	outputVector<-as.numeric(outputVector)/nTrees
+	outputVector<-log(outputVector)
+
+	#If the option to save non-extrapolated likelihood using the largest subsample size, do this
+	if(saveNoExtrap==TRUE){
+		lnL.noExtrap<-0
+		localVector.noExtrap<-rep(NA,subsamplesPerGene)
+		baseIndex<-1
+		for (i in 1:(length(outputVector) / length(popAssignments))) {
+			localVector.noExtrap[baseIndex]<-outputVector[i]
+			baseIndex <- baseIndex+1
+			if(i%%subsamplesPerGene == 0) {
+				if(summaryFn=="SumDivScaledNreps"){
+					lnL.noExtrap<-lnL.noExtrap+get(summaryFn)(localVector=localVector.noExtrap,popAssignments,
+						totalPopVector=totalPopVector,subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+				}else{
+					lnL.noExtrap<-lnL.noExtrap+get(summaryFn)(localVector.noExtrap)
+				}
+				localVector.noExtrap<-rep(NA, subsamplesPerGene)
+				baseIndex<-1
+			}
+		}
+	}
+		
+	#Index locations of loci within outputVector
+	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
+	outputIndex<-array(NA,length(outputVector))
+	counter1<-1
+	for(n in 1:length(popAssignments)){
+		counter2<-1
+		for(m in sequence(length(outputIndex) / length(popAssignments))){
+			outputIndex[counter1]<-counter2
+			counter1<-counter1+1	
+			if(m%%subsamplesPerGene==0){
+				counter2<-counter2+1
+			}
+		}
+	}
+
+	#Calculate coefficients for ntaxa-lnL relationship to calculate lnL of full dataset
+	slopes<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))
+	intercepts<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))	
+	#For each locus	
+	for(i in 1:nLoci){
+		localVector<-outputVector[which(outputIndex==i)]
+		currentSlopes<-data.frame()
+		currentIntercepts<-data.frame()
+		#For each subsample (but across different subsample size classes)
+		for(j in 1:(length(localVector) / length(popAssignments))){
+			#Get indexes to find a given subsampled tree of different sizes
+			currentSubsample<-array(NA,length(popAssignments))
+			currentSubsampleSize<-j
+			for(k in 1:length(popAssignments)){
+				currentSubsample[k]<-currentSubsampleSize
+				currentSubsampleSize<-currentSubsampleSize + subsamplesPerGene
+			}
+			#Get the slopes and intercepts for each subsample within the current locus
+			slopes[j,i]<-coef(lm(localVector[currentSubsample]~sapply(popAssignments,sum)))[2]
+			intercepts[j,i]<-coef(lm(localVector[currentSubsample]~sapply(popAssignments,sum)))[1]
+		}
+		colnames(slopes)[i]<-paste("slopes.L",i,sep="")
+		colnames(intercepts)[i]<-paste("intercepts.L",i,sep="")
+	}
+	
+	#Get mean and 95%CI of coefficients
+	meanSlopes<-sapply(slopes,mean,simplify = "array")
+	meanIntercepts<-sapply(intercepts,mean,simplify = "array")	
+	coeffsOrdered<-sapply(cbind(slopes,intercepts),sort)
+	if(subsamplesPerGene>1){
+		coeffs95Lower<-coeffsOrdered[(round(subsamplesPerGene*0.025) + 1),]
+		coeffs95Upper<-coeffsOrdered[round(subsamplesPerGene*0.975),]
+	}else{
+		coeffs95Lower<-unname(coeffsOrdered)
+		coeffs95Upper<-unname(coeffsOrdered)		
+	}
+	names(coeffs95Lower)<-paste("L95.",c(names(slopes),names(intercepts)),sep="")
+	names(coeffs95Upper)<-paste("U95.",c(names(slopes),names(intercepts)),sep="")
+	#Estimate lnL from full dataset
+	lnL.byLocus<-unname(meanIntercepts + (sum(totalPopVector) * meanSlopes))
+	names(lnL.byLocus)<-paste("lnL.L",c(1:length(lnL.byLocus)),sep="")
+	lnL<-sum(lnL.byLocus)
+	names(lnL)<-"lnL"
+	#Prep to return
+	if(saveNoExtrap==TRUE){
+		lnL<-c(lnL,lnL.noExtrap=lnL.noExtrap,lnL.byLocus,meanSlopes,meanIntercepts,coeffs95Lower,coeffs95Upper)
+	}else{
+		lnL<-c(lnL,lnL.byLocus,meanSlopes,meanIntercepts,coeffs95Lower,coeffs95Upper)
+	}
+	lnL.mat<-data.frame(matrix(nrow=1,ncol=length(lnL),lnL))
+	colnames(lnL.mat)<-names(lnL)
+
+	return(lnL.mat)
+}
+
+#If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
+#although effective subsample sizes can be considered by using SumDivScaledNreps
+ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
+		totalPopVector,summaryFn="mean",whichSampSize=min) {
+	probOfMissing=1/((howmanytrees(sum(popAssignments[[1]]))) * 1000000)
+	outputVector<-as.numeric(outputVector)
+	outputVector[which(outputVector==0)]<-probOfMissing
+	outputVector<-outputVector/nTrees
+	outputVector<-log(outputVector)
+	lnL<-0
+	localVector<-rep(NA, subsamplesPerGene)
+	baseIndex<-1
+	for (i in sequence(length(outputVector))) {
+		localVector[baseIndex]<-outputVector[i]
+#		print(localVector)
+		baseIndex <- baseIndex+1
+		if(i%%subsamplesPerGene == 0) {
+			if(summaryFn=="SumDivScaledNreps"){
+				lnL<-lnL+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector,
+					subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+			}else{
+				lnL<-lnL+get(summaryFn)(localVector)
+			}
+			localVector<-rep(NA, subsamplesPerGene)
+			baseIndex<-1
+		}
+	}
+	return(lnL)
+}
+
+
+
+
+
+################################UNUSED FUNCTIONS FOR REPLACING PERL WITH R##################################
+
 
 ##Match simulated trees to observed trees and export vector of matches
 MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",
@@ -408,140 +629,6 @@ MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTree
 
 }
 
-#This function calculates lnL based on number of matches for each subsample. Then the likelihood of the
-#full dataset is estimated from the subsampled dataset based on a linear relationship between sample size
-#and lnL.
-ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1,totalPopVector){
-	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
-	nLoci<-length(outputVector) / treesPerLocus #number of loci
-	
-	#Adjust zero matches to equal probability of getting match
-	beginLocus<-1
-	whichLocus<-1
-	outputVector<-as.numeric(outputVector)
-	for(f in 1:nLoci){ #for each locus
-		localVector<-outputVector[beginLocus:(whichLocus * treesPerLocus)]
-		beginSizeClass<-1
-		endSizeClass<-length(localVector) / length(popAssignments)
-		for(g in 1:length(popAssignments)){ #for each subsample size class
-			probOfMissing<-1/((howmanytrees(sum(popAssignments[[g]]))) * 1000000)
-			localVector[beginSizeClass:endSizeClass][which(localVector[beginSizeClass:endSizeClass]==0)]<-probOfMissing
-			beginSizeClass<-beginSizeClass + subsamplesPerGene
-			endSizeClass<-endSizeClass + subsamplesPerGene
-		}
-		outputVector[beginLocus:(whichLocus * treesPerLocus)]<-localVector
-		beginLocus<-beginLocus + treesPerLocus
-		whichLocus<-whichLocus + 1
-	}
-	
-	#Convert to log space
-	outputVector<-outputVector/nTrees
-	outputVector<-log(outputVector)
-	#Calculate coefficients for ntaxa-lnL relationship to calculate lnL of full dataset
-	beginLocus<-1
-	whichLocus<-1
-	slopes<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))
-	intercepts<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))
-	#For each locus	
-	for(i in 1:nLoci){
-		localVector<-outputVector[beginLocus:(whichLocus * treesPerLocus)]
-		beginLocus<-beginLocus + treesPerLocus
-		whichLocus<-whichLocus + 1
-		currentSlopes<-data.frame()
-		currentIntercepts<-data.frame()
-		#For each subsample (but across different subsample size classes)
-		for(j in 1:(length(localVector) / length(popAssignments))){
-			#Get indexes to find a given subsampled tree of different sizes
-			currentSubsample<-array(NA,length(popAssignments))
-			currentSubsampleSize<-j
-			for(k in 1:length(popAssignments)){
-				currentSubsample[k]<-currentSubsampleSize
-				currentSubsampleSize<-currentSubsampleSize + subsamplesPerGene
-			}
-			#Get the slopes and intercepts for each subsample within the current locus
-			slopes[j,i]<-coef(lm(localVector[currentSubsample]~sapply(popAssignments,sum)))[2]
-			intercepts[j,i]<-coef(lm(localVector[currentSubsample]~sapply(popAssignments,sum)))[1]
-		}
-		colnames(slopes)[i]<-paste("slopes.L",i,sep="")
-		colnames(intercepts)[i]<-paste("intercepts.L",i,sep="")
-	}
-	#Get mean and 95%CI of coefficients
-	meanSlopes<-sapply(slopes,mean,simplify = "array")
-	meanIntercepts<-sapply(intercepts,mean,simplify = "array")	
-	coeffsOrdered<-sapply(cbind(slopes,intercepts),sort)
-	if(subsamplesPerGene>1){
-		coeffs95Lower<-coeffsOrdered[(round(subsamplesPerGene*0.025) + 1),]
-		coeffs95Upper<-coeffsOrdered[round(subsamplesPerGene*0.975),]
-	}else{
-		coeffs95Lower<-unname(coeffsOrdered)
-		coeffs95Upper<-unname(coeffsOrdered)		
-	}
-	names(coeffs95Lower)<-paste("L95.",c(names(slopes),names(intercepts)),sep="")
-	names(coeffs95Upper)<-paste("U95.",c(names(slopes),names(intercepts)),sep="")
-	#Estimate lnL from full dataset
-	lnL.byLocus<-unname(meanIntercepts + (sum(totalPopVector) * meanSlopes))
-	names(lnL.byLocus)<-paste("lnL.L",c(1:length(lnL.byLocus)),sep="")
-	lnL<-sum(lnL.byLocus)
-	names(lnL)<-"lnL"
-	#Prep to return
-	lnL<-c(lnL,lnL.byLocus,meanSlopes,meanIntercepts,coeffs95Lower,coeffs95Upper)
-	lnL.mat<-data.frame(matrix(nrow=1,ncol=length(lnL),lnL))
-	colnames(lnL.mat)<-names(lnL)
-
-	return(lnL.mat)
-}
-
-#If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
-#although effective subsample sizes can be considered by using SumDivScaledNreps
-ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
-		totalPopVector,summaryFn="mean",whichSampSize=min) {
-	probOfMissing=1/((howmanytrees(sum(popAssignments[[1]]))) * 1000000)
-	outputVector<-as.numeric(outputVector)
-	outputVector[which(outputVector==0)]<-probOfMissing
-	outputVector<-outputVector/nTrees
-	outputVector<-log(outputVector)
-	lnL<-0
-	localVector<-rep(NA, subsamplesPerGene)
-	baseIndex<-1
-	for (i in sequence(length(outputVector))) {
-		localVector[baseIndex]<-outputVector[i]
-#		print(localVector)
-		baseIndex <- baseIndex+1
-		if(i%%subsamplesPerGene == 0) {
-			if(summaryFn=="SumDivScaledNreps"){
-				lnL<-lnL+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector,
-					subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
-			}else{
-				lnL<-lnL+get(summaryFn)(localVector)
-			}
-			localVector<-rep(NA, subsamplesPerGene)
-			baseIndex<-1
-		}
-	}
-	return(lnL)
-}
-
-#Drops tips from the simulated trees (to be used in accordance with popAssignments)
-#Relies on using phylo objects, which makes it slow
-SubsampleMSTree.phylo<-function(phy,popVectorOrig,popVectorFinal) {
-	taxaToDrop<-c()
-	minSample<-1
-	maxSample<-0
-	uniquePops<-unique(phy$tip.label)
-	for(population in 1:length(uniquePops)){		
-		maxSample<-minSample + popVectorOrig[population] - 1
-		sampleSizeDiff<-popVectorOrig[population] - popVectorFinal[population]
-		if(sampleSizeDiff > 0){
-			taxaToDrop<-append(taxaToDrop, 
-				which(phy$tip.label==uniquePops[population])[c(1:sampleSizeDiff)])
-		}
-		minSample<-maxSample + 1
-	}
-	phy<-drop.tip(phy,taxaToDrop)
-
-	return(phy)
-}
-
 #Converts individual numbers to population labels when trees are phylo
 ConvertAlleleNumbersToPopulationLetters.phylo <- function(phy,assignFrame){
 	phy$tip.label <- as.character(assignFrame$popLabel[match(phy$tip.label, assignFrame$indivTotal)])
@@ -585,27 +672,6 @@ GetClades <- function(phy) {
 GetAndBindLabel <- function(phy) { 
 	#note the sorting here
 	return( paste( sort( phy$tip.label ), collapse="_" ) )
-}
-
-##Much faster way to get a vector of clades in a tree than "GetClades (doesn't use Ape's slow 
-##"subtrees" function). However, this is still too slow (treating trees as
-##phylo objects requires too much processing time). This function is no longer used.
-GetCladesQuickly <- function(phy, do.reorder=TRUE) {
-	if(do.reorder) {
-		phy<-reorder.phylo(phy, order="postorder")
-	}
-	phy$edge[which(phy$edge[,2]<=Ntip(phy)),2]<-phy$tip.label[phy$edge[which(phy$edge[,2]<=Ntip(phy)),2]]
-	internal.ordered.nodes<-unique(phy$edge[,1])
-	for (node.index in sequence(length(internal.ordered.nodes))) {
-		phy$edge[which(phy$edge[,2]==internal.ordered.nodes[node.index]),2]<-paste(phy$edge[which(phy$edge[,1]==internal.ordered.nodes[node.index]),2], collapse="_")
-	}
-	clades<-sapply(c(unique(phy$edge[which(grepl("_", phy$edge[,2])),2]),paste(phy$tip.label, collapse="_")), SplitAndSort, USE.NAMES=FALSE)
-	return(clades)
-}
-
-#Used with GetCladesQuickly
-SplitAndSort <- function(x) {
-	return(paste(sort(strsplit(x, "_")[[1]]), collapse="_"))
 }
 
 #This extracts clades from raw newick trees (implemented for efficiency). It also allows for
@@ -684,7 +750,29 @@ GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyD
 	return(matchCount)
 }
 
-#Drop tips from newick string. This is not presently working
+#Drops tips from the simulated trees (to be used in accordance with popAssignments)
+#Relies on using phylo objects, which makes it slow
+SubsampleMSTree.phylo<-function(phy,popVectorOrig,popVectorFinal) {
+	taxaToDrop<-c()
+	minSample<-1
+	maxSample<-0
+	uniquePops<-unique(phy$tip.label)
+	for(population in 1:length(uniquePops)){		
+		maxSample<-minSample + popVectorOrig[population] - 1
+		sampleSizeDiff<-popVectorOrig[population] - popVectorFinal[population]
+		if(sampleSizeDiff > 0){
+			taxaToDrop<-append(taxaToDrop, 
+				which(phy$tip.label==uniquePops[population])[c(1:sampleSizeDiff)])
+		}
+		minSample<-maxSample + 1
+	}
+	phy<-drop.tip(phy,taxaToDrop)
+
+	return(phy)
+}
+
+#Drop tips from newick string. This is not presently working. If we just keep all the 
+#parentheses as is when deleting taxa and just drop labels and commas, this will be easy to get working.
 SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 	#Get taxon labels from tree
 	taxonLabels<-strsplit(phy, "[^\\w]", perl=TRUE)[[1]]

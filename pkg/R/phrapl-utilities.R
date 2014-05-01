@@ -785,14 +785,22 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesired,subsamplesPerGene,minPerPop=1,popAssignments=NULL,
-	outgroup=TRUE,outgroupPrune=TRUE) {
-#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file containing a tree for each locus.
-#For each locus, subsampling can be done either by iteratively sampling nIndividualsDesired from the entire dataset (with a minimum sample per 
-#population specified by minPerPop), or, if a popAssignments is specified, can be done by sampling a specified number of individuals per population.
-#A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is placed in a specified subsamplePath and includes 
-#1) a subsamplesPerGene number of tree files with subsampled trees from each locus and 2) a single assignment file (if a popAssignments is specified) 
-#or an assignment file for each locus and replicate (if popAssignments=NULL).   
+#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file 
+#containing a tree for each locus. For each locus, subsampling can be done either by iteratively sampling 
+#nIndividualsDesired from the entire dataset (with a minimum sample per population specified by minPerPop), 
+#or, if popAssignments is specified, can be done by sampling a specified number of individuals per population.
+#A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is 
+#placed in a specified subsamplePath and includes 1) a subsamplesPerGene number of tree files with subsampled trees 
+#from each locus and 2) a single assignment file (if popAssignments is specified) or an assignment file for each locus 
+#and replicate (if popAssignments=NULL). If more than one subsampling vector is included in popAssignments, subsampling
+#is done for each subsampling size class.  
+PrepSubsampling<-function(subsamplePath,assignFile="cladeAssignments.txt",treesFile="trees.tre",outputFile="observed.tre",
+	nIndividualsDesired=NULL,subsamplesPerGene,minPerPop=1,popAssignments,outgroup=TRUE,outgroupPrune=TRUE){
+	if(is.null(nIndividualsDesired)){
+		nIndividualsDesired<-sum(popAssignments[[1]])
+	}
+	#Create list for storing subsample trees
+	phyList<-list()
 	#If outgroup present, add this to the first popAssignments vector
 	if(outgroup==TRUE){
 		popAssignments[[1]]<-c(popAssignments[[1]],1)
@@ -808,6 +816,13 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 	if(class(phyOriginal)!="multiPhylo") { #if there is only one locus...
 		phyOriginal<-c(phyOriginal) #convert phy to a multiphylo class
 	}
+	#Creat list for storing subsampled trees
+	counters<-c()
+	for(i in sequence(length(popAssignments))){
+		phyList[[i]]<-rmtree(N=length(phyOriginal) * subsamplesPerGene,n=3)
+		counters<-append(counters,1)
+	}
+	
 	for (tree in 1:length(phyOriginal)){ #for each locus (i.e., tree)
 		phy<-phyOriginal #renew phy for each locus
 		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus	
@@ -881,8 +896,11 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 				prunedAF<-prunedAF[-length(prunedAF[,2]),] #prune outgroup from assignFrame
 			}
 			
-			#Export output
-			write.tree(newphy,file=paste(subsamplePath,"observed.tre",sep=""),append=TRUE)
+			#Save current subsample
+			phyList[[1]][[counters[1]]]<-newphy
+			counters[1]<-counters[1] + 1
+
+#			write.tree(newphy,file=paste(subsamplePath,"observed1.tre",sep=""),append=TRUE)
 			#Save current subsample in master list
 			newphyVector[[length(newphyVector) + 1]]<-newphy
 			
@@ -914,18 +932,32 @@ PrepSubsampling <- function(subsamplePath,assignFile,treesFile,nIndividualsDesir
 						new.label<-as.character(prunedAF[,3][which(prunedAF[,2]==old.label)])
 						newphy$tip.label[tipIndex]<-new.label
 					}
-					write.tree(newphy,file=paste(subsamplePath,"observed.tre",sep=""),append=TRUE)
+					#Save current subsample
+					phyList[[i]][[counters[i]]]<-newphy
+					counters[i]<-counters[i] + 1
+					
+#					write.tree(newphy,file=paste(subsamplePath,"observed",i,".tre",sep=""),append=TRUE)
 					newphyVector[[j]]<-newphy
 				}
 				assignFrame<-CreateAssignment.df(popAssignments[[i]])
 			}
 		}
-
-#		if(!is.null(popAssignments)){
-#			write.table(prunedAF,file=paste(subsamplePath,"assign.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
-#				col.names=FALSE,append=FALSE)
-#		}
 	}
+	
+	#Print subsampled trees
+	for(m in 1:length(phyList)){
+		write.tree(phyList[[m]],file=paste(subsamplePath,outputFile,sep=""),append=TRUE)
+	}
+	
+	#Print assign frames
+#	for(k in 1:length(popAssignments)){
+#		if(outgroup==TRUE){
+#			popAssignments[[1]]<-popAssignments[[1]][-length(popAssignments[[1]])]
+#		}
+#		write.table(CreateAssignment.df(popAssignments[[k]]),file=paste(subsamplePath,"assign",k,".txt",sep=""),
+#			quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE,append=FALSE)
+#	}
+#	unlink(paste(subsamplePath,"cladeAssignments.txt",sep=""))
 }
 
 PrunedPopVector<-function(assignFrame,taxaRetained) {
@@ -942,24 +974,19 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 }
 
 #Get weights for each subsample based on the number of matches per permutation
-GetPermutationWeightsAcrossSubsamples<-function(observed,popAssignments,subsamplesPerGene,subsamplePath){
-	treesPerLocus<-subsamplesPerGene * length(popAssignments)
-	nLoci<-length(observed) / treesPerLocus
-	treeCounter<-1
-	subsampleWeights<-c()
-	
-	for(y in 1:nLoci){
-		subsampleSizeCounter<-1
-		for(z in 1:(length(observed) / nLoci)){
-			subsampleWeights<-append(subsampleWeights,GetPermutationWeights(phy=observed[[treeCounter]],
-				popVector=popAssignments[[subsampleSizeCounter]],subsamplePath=subsamplePath))
-			treeCounter<-treeCounter + 1
-			if(z%%subsamplesPerGene == 0){ #increase to next popAssignments size class
-				subsampleSizeCounter<-subsampleSizeCounter + 1
-			}
+GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath,inputFile="observed.tre",
+		outputFile="subsampleWeights.txt"){
+	observed<-read.tree(paste(subsamplePath,inputFile,sep=""))
+	subsampleSizeCounter<-1
+	for(y in 1:length(observed)){
+		weight<-GetPermutationWeights(phy=observed[[y]],popVector=popAssignments[[subsampleSizeCounter]],
+			subsamplePath=subsamplePath)
+		write.table(weight,file=paste(subsamplePath,outputFile,sep=""),quote=FALSE,sep="\t",
+			row.names=FALSE,col.names=FALSE,append=TRUE)
+		if(y%%(length(observed) / length(popAssignments)) == 0){
+			subsampleSizeCounter<-subsampleSizeCounter + 1
 		}
 	}
-	return(subsampleWeights)
 }
 
 #Get weights for a given tree based on the number of matches per permutation
@@ -1099,14 +1126,33 @@ GetPermutationWeights<-function(phy,popVector,subsamplePath){
 		}
 	}
 	weight<-matches / numberOfPermutations
-	write.table(weight,file=paste(subsamplePath,"subsampleWeights.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
-				col.names=FALSE,append=TRUE)
+
 	return(weight)
-}											
+}						
 
+##Much faster way to get a vector of clades in a tree than "GetClades (doesn't use ape's slow 
+##"subtrees" function).This is currently being used with GetPermutationWeights
+GetCladesQuickly <- function(phy, do.reorder=TRUE) {
+	if(do.reorder) {
+		phy<-reorder.phylo(phy, order="postorder")
+	}
+	phy$edge[which(phy$edge[,2]<=Ntip(phy)),2]<-phy$tip.label[phy$edge[which(phy$edge[,2]<=Ntip(phy)),2]]
+	internal.ordered.nodes<-unique(phy$edge[,1])
+	for (node.index in sequence(length(internal.ordered.nodes))) {
+		phy$edge[which(phy$edge[,2]==internal.ordered.nodes[node.index]),2]<-paste(phy$edge[which(phy$edge[,1]==internal.ordered.nodes[node.index]),2], collapse="_")
+	}
+	clades<-sapply(c(unique(phy$edge[which(grepl("_", phy$edge[,2])),2]),paste(phy$tip.label, collapse="_")), SplitAndSort, USE.NAMES=FALSE)
+	return(clades)
+}
 
-#This following set of 3 functions imports and handles trees as newick strings in attempt to speed up the process of getting weights from subsamples.
-#This attempt has resulted in failure: this is actually slower than using ape phylo objects to accomplish this (see the non-raw analogue functions above).
+#Used with GetCladesQuickly
+SplitAndSort <- function(x) {
+	return(paste(sort(strsplit(x, "_")[[1]]), collapse="_"))
+}
+
+#This following set of 3 functions imports and handles trees as newick strings in attempt to speed up the 
+#process of getting weights from subsamples.This attempt has resulted in failure: this is actually slower
+#than using ape phylo objects to accomplish this (see the non-raw analogue functions above).
 #When the armageddon comes and ape is no longer available, these functions will be there to fill the void.
 
 #Get weights for each subsample based on the number of matches per permutation
@@ -1386,22 +1432,21 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
   return(newMigrationArray)
 }
 
-RunSeqConverter <- function(seqConvPath,inFilePath,inputFormat)
 #Function for running seqConverter to convert nexus, fasta, or se-al files to phylip
 #inputFormat can be "nex", "fasta", or "seal" (and files must use these as the file suffix)
-{
+RunSeqConverter <- function(seqConvPath,inFilePath,inputFormat){
 	filesList <- list.files(inFilePath,pattern=paste("*.",inputFormat,sep=""))
 	for(numLoci in 1:length(filesList)){
 		systemCall1 <-system(paste(seqConvPath,"seqConverter.pl -d",paste(inFilePath,filesList[numLoci],sep="")," -ope",sep=""))
 	}
 }
 
-RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,iterations,seed=sample(1:10000000,1),outputSeeds=TRUE,discard=FALSE)
 #Function for producing input string for RAxML and calling up the program (requires that RAxML be in your
 #designated path). It reads in all .phylip files in the designated path, and runs RAxML for each in turn.
 #Outgroups and mutation models can be specified either as a single string to be used for all loci or as a
 #vector which needs to match the order of the reading of the phylip files (i.e., alphabetic/numeric).
-{
+RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,iterations,seed=sample
+		(1:10000000,1),outputSeeds=TRUE,discard=FALSE){
 	phylipFilesList <- list.files(inputPath,pattern="*.phylip",full.names=FALSE)
 	seed.vec <- array()
 	for(numb in 1:length(phylipFilesList)){
@@ -1423,8 +1468,9 @@ RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,ite
 			thisOutgroup <-outgroup
 		}
 
- 		systemCall2 <- system(paste(raxmlPath,raxmlVersion," -w ",inputPath," -s ",inputPath,inputFile," -n ",outputFile," -m ",thisMutationModel,
-				" -o ",thisOutgroup," -f d -N ",iterations," -p ",currentSeed,sep=""))
+ 		systemCall2 <- system(paste(raxmlPath,raxmlVersion," -w ",inputPath," -s ",inputPath,inputFile," -n ",
+ 			outputFile," -m ",thisMutationModel," -o ",thisOutgroup," -f d -N ",iterations," -p ",
+ 			currentSeed,sep=""))
 
 		#Dicard inessential RAxML output
 		if(discard==TRUE){
@@ -1458,7 +1504,8 @@ MergeTrees <- function(treesPath){
 	filenames <- list.files(treesPath,pattern="*.tre",full.names=FALSE)
 	vecotr <- lapply(paste(treesPath,filenames,sep=""),read.table)
 	for (treeRep in 1:length(vecotr)){
-		write.table(vecotr[[treeRep]],file=paste(treesPath,"trees.tre",sep=""),append=TRUE,row.names=FALSE,col.names=FALSE,quote=FALSE)
+		write.table(vecotr[[treeRep]],file=paste(treesPath,"trees.tre",sep=""),append=TRUE,
+			row.names=FALSE,col.names=FALSE,quote=FALSE)
 	}
 }
 
@@ -1543,16 +1590,15 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(
 	return(overall.results)
 }
 
-#This function takes output from an grid "search" and assembles AICs and Likelihoods for a given set
+#This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
 #of models into a table
 ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(1:length(migrationArray))){
 
 	#Pull out best AIC for each model 
-	AIC<-array()
+	AIC<-c()
 	for(rep in 1:length(result[[2]])){
-		AIC<-c(AIC,result[[2]][[rep]]$AIC[1])
+		AIC<-append(AIC,result[[2]][[rep]]$AIC[1])
 	}
-	AIC<-AIC[!is.na(AIC)]
 	
 	#Construct dataframe consisting of AICs and model descriptions for each model
   	overall.results<-data.frame
