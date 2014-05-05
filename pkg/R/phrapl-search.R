@@ -61,7 +61,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=startGrid, 
 	collapseStarts=c(0.1, 0.5, 1, 2, 4, 8, 12, 16, 20), n0Starts=c(0.1, 0.5, 1, 2, 4), 
 	migrationStarts=c(0.05, 0.1, 0.25, 0.5, 1, 2), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,subsampleWeights=NULL,summaryFn,whichSampSize=min,saveNoExtrap=FALSE, ...) {
+	totalPopVector,subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -118,7 +118,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
     	ncores=ncores,debug=debug,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
     	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights=subsampleWeights,
-    	summaryFn=summaryFn,whichSampSize=whichSampSize,saveNoExtrap=saveNoExtrap)
+    	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap)
     	initial.AIC<-rbind(initial.AIC,currentAIC)
     }
  
@@ -155,7 +155,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug, parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights=subsampleWeights,popAssignments=popAssignments,
- 	   		whichSampSize=whichSampSize,saveNoExtrap=saveNoExtrap)
+ 	   		saveNoExtrap=saveNoExtrap)
  	  
 
   		#stitch the first N0multiplier (=1) into the final parameter vector
@@ -186,7 +186,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=5, modelVector=NULL, 
 		startGrid=NULL,subsamplesPerGene=1,totalPopVector=totalPopVector,subsampleWeights=NULL,summaryFn,
-		whichSampSize=min,saveNoExtrap=FALSE,...){
+		saveNoExtrap=FALSE,...){
 
   #Prepare temporary tree and assign files
 	observed<-read.tree(observedDir)
@@ -225,7 +225,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
   		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-  		subsampleWeights=subsampleWeights,summaryFn=summaryFn,whichSampSize=whichSampSize,saveNoExtrap=saveNoExtrap, ...))
+  		subsampleWeights=subsampleWeights,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
   		if(!is.null(result.indiv[[1]])) {
@@ -238,7 +238,7 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   		unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-  		subsampleWeights=subsampleWeights,summaryFn=summaryFn,whichSampSize=whichSampSize,saveNoExtrap=saveNoExtrap, ...))
+  		subsampleWeights=subsampleWeights,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
   	}
   	
   	#Toss temporary tree and assign files

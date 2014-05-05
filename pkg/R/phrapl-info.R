@@ -159,7 +159,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msDir="/usr/local/bin/ms",c
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,subsampleWeights=NULL,summaryFn,whichSampSize=min,saveNoExtrap=FALSE){
+		totalPopVector,popAssignments,subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE){
 	parameterVector<-exp(par)
 	#now have to stitch in n0 being 1, always, for the first population
 	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
@@ -209,7 +209,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msDir="/usr/local/bin/ms",c
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
-  			totalPopVector=totalPopVector,summaryFn=summaryFn,whichSampSize=whichSampSize)	
+  			totalPopVector=totalPopVector,summaryFn=summaryFn)	
   		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))		
 	}
 	if(print.results) {
@@ -241,7 +241,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msDir="/usr/local/bin/ms",c
 #			baseIndex <- baseIndex+1
 #			if(i%%subsamplesPerGene == 0) {
 #				if(summaryFn=="SumDivScaledNreps"){
-#					matchesVec<-rbind(matchesVec,get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene,whichSampSize=min))
+#					matchesVec<-rbind(matchesVec,get(summaryFn)(localVector=localVector,totalPopVector=totalPopVector,subNum=4,subsamplesPerGene=subsamplesPerGene))
 #				}else{
 #					matchesVec<-rbind(matchesVec,get(summaryFn)(localVector))
 #				}
@@ -417,18 +417,20 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 		lnL.noExtrap<-0
 		localVector.noExtrap<-rep(NA,subsamplesPerGene)
 		baseIndex<-1
-		for (i in 1:(length(outputVector) / length(popAssignments))) {
+		locusIndex<-1
+		for (i in 1:(length(outputVector) / length(popAssignments))){
 			localVector.noExtrap[baseIndex]<-outputVector[i]
 			baseIndex <- baseIndex+1
 			if(i%%subsamplesPerGene == 0) {
 				if(summaryFn=="SumDivScaledNreps"){
 					lnL.noExtrap<-lnL.noExtrap+get(summaryFn)(localVector=localVector.noExtrap,popAssignments,
-						totalPopVector=totalPopVector,subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+						totalPopVector=totalPopVector[locusIndex],subsamplesPerGene=subsamplesPerGene)
 				}else{
 					lnL.noExtrap<-lnL.noExtrap+get(summaryFn)(localVector.noExtrap)
 				}
 				localVector.noExtrap<-rep(NA, subsamplesPerGene)
 				baseIndex<-1
+				locusIndex<-locusIndex + 1
 			}
 		}
 	}
@@ -487,7 +489,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 	names(coeffs95Lower)<-paste("L95.",c(names(slopes),names(intercepts)),sep="")
 	names(coeffs95Upper)<-paste("U95.",c(names(slopes),names(intercepts)),sep="")
 	#Estimate lnL from full dataset
-	lnL.byLocus<-unname(meanIntercepts + (sum(totalPopVector) * meanSlopes))
+	lnL.byLocus<-unname(meanIntercepts + (totalPopVector * meanSlopes))
 	names(lnL.byLocus)<-paste("lnL.L",c(1:length(lnL.byLocus)),sep="")
 	lnL<-sum(lnL.byLocus)
 	names(lnL)<-"lnL"
@@ -506,7 +508,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
 #although effective subsample sizes can be considered by using SumDivScaledNreps
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
-		totalPopVector,summaryFn="mean",whichSampSize=min) {
+		totalPopVector,summaryFn="mean") {
 	probOfMissing=1/((howmanytrees(sum(popAssignments[[1]]))) * 1000000)
 	outputVector<-as.numeric(outputVector)
 	outputVector[which(outputVector==0)]<-probOfMissing
@@ -515,24 +517,25 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 	lnL<-0
 	localVector<-rep(NA, subsamplesPerGene)
 	baseIndex<-1
+	locusIndex<-1
 	for (i in sequence(length(outputVector))) {
 		localVector[baseIndex]<-outputVector[i]
 #		print(localVector)
 		baseIndex <- baseIndex+1
 		if(i%%subsamplesPerGene == 0) {
 			if(summaryFn=="SumDivScaledNreps"){
-				lnL<-lnL+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector,
-					subsamplesPerGene=subsamplesPerGene,whichSampSize=min)
+				lnL<-lnL+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector[locusIndex],
+					subsamplesPerGene=subsamplesPerGene)
 			}else{
 				lnL<-lnL+get(summaryFn)(localVector)
 			}
 			localVector<-rep(NA, subsamplesPerGene)
 			baseIndex<-1
+			locusIndex<-locusIndex + 1
 		}
 	}
 	return(lnL)
 }
-
 
 
 
