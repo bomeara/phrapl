@@ -1466,19 +1466,18 @@ MergeTrees <- function(treesPath){
 }
 
 #This function calculates a scaled number of subsample replicates that
-#is corrected based on the original sample sizes from which subsamples
+#is corrected based on the average original sample sizes from which subsamples
 #are taken. The larger the original sample sizes, the more independent
 #that subsamples are, and the more that each subsample should contribute
-#to the information value in a dataset (and thus to the lnL). Inputs are subNum (the number
+#to the information value in a dataset (and thus to the lnL). Inputs are popAssignments (the number
 #of individuals subsampled per population), totalPopVector (the number of samples per
-#population from which subsamples are taken), subsamplesPerGene (the number of subsamples), 
-#and whichSampSize (whether the min, mean, or max population size should be used 
-#to calculate the scaled nreps). The minumum possible scaled nreps = subsamplesPerGene,
-#which results when the total sample size is equal to subNum (in this case, matches among
+#locus from which subsamples are taken), and subsamplesPerGene. 
+#The minumum possible scaled nreps = subsamplesPerGene,
+#which results when the total sample size is equal to popAssignments[[1]] (in this case, matches among
 #subsamples are simply averaged).
-GetScaledNreps<-function(popAssignments,subsamplesPerGene=1,totalPopVector,whichSampSize=min){
+GetScaledNreps<-function(popAssignments,subsamplesPerGene=1,totalPopVector){
 	#Get effective number of independent samples possible
-	effectiveNumSamples<- whichSampSize(totalPopVector) / mean(popAssignments[[1]])
+	effectiveNumSamples<- (totalPopVector / length(popAssignments[[1]])) / mean(popAssignments[[1]])
 
 	#Get effective sample size scaler (e.g., the proportion of a subsample replicate
 	#that is possibly 'independent')
@@ -1503,9 +1502,9 @@ GetScaledNreps<-function(popAssignments,subsamplesPerGene=1,totalPopVector,which
 
 #SummaryFn function (When we want to sum lnLs across subsamples and divide by the scaled number
 #of replicates)
-SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,totalPopVector,whichSampSize=min){
+SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,totalPopVector){
 	eNreps<-GetScaledNreps(popAssignments=popAssignments,subsamplesPerGene=subsamplesPerGene,
-		totalPopVector=totalPopVector,whichSampSize=whichSampSize)
+		totalPopVector=totalPopVector)
 	summaryFn<-sum(localVector) / eNreps 
 	return(summaryFn)
 }
