@@ -59,8 +59,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, 
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=startGrid, 
-	collapseStarts=c(0.1, 0.5, 1, 2, 4, 8, 12, 16, 20), n0Starts=c(0.1, 0.5, 1, 2, 4), 
-	migrationStarts=c(0.05, 0.1, 0.25, 0.5, 1, 2), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
+	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
+	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
 	totalPopVector,subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
