@@ -381,6 +381,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msD
 		outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
 		return(outputVector)
 	}else{
+		stop("something is wrong here")
 		wrapOutput<-function(x,outputstring) {
 			as.numeric(system(outputstring,intern=TRUE))
 		}
