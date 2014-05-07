@@ -330,7 +330,7 @@ CompleteIntervals<-function(popIntervalsList) {
 }
 
 #This function will build a graph connecting populations with migration and pop coalescence. It then tests for connectivity
-CheckFiniteCoalescence <- function(migrationIndividual) {
+CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalRegime=FALSE) {
 	g <- graph.empty() + vertices(sequence(dim(migrationIndividual$collapseMatrix)[1]))
 	for (interval in sequence(dim(migrationIndividual$collapseMatrix)[2])) {
 		merges<-which(migrationIndividual$collapseMatrix[,interval]>0) 
@@ -345,13 +345,45 @@ CheckFiniteCoalescence <- function(migrationIndividual) {
 			for (k in sequence(dim(migrationIndividual$migrationArray)[3])) {
 				if(!is.na(migrationIndividual$migrationArray[i, j, k])) {
 					if(migrationIndividual$migrationArray[i, j, k]>0) {
-						g[i, k]<-1	
+						g[i, j]<-1	
 					}
 				}
 			}	
 		}
 	}
-	return(is.connected(g, mode="weak"))
+	numberWithoutConnection <- sum(!is.finite(RowMax(shortest.paths(g, mode="all"))))
+	finite = TRUE
+	if(numberWithoutConnection>0) {
+		finite=FALSE
+	}
+	if(finite && forceCoalescenceBasalRegime) { #here, we want to throw out models where in the rootmost regime, there is no possibility of coalescence (i.e., start with three pops with migration, two collapse, and then have no migration between the remaining 2. MS sometimes gets stuck in these cases: an allele that missed the coalescence in the first regime will just travel down the two remaining populations forever vainly seeking to coalesce with its mate in the other population, and MS doesn't detect this)
+		last.regime <- dim(migrationIndividual$migrationArray)[3]
+		last.populations <- which(apply(!apply(migrationIndividual$migrationArray[,, last.regime], 1, is.na), 1, sum)>0)
+		g.last<- graph.empty() + vertices(sequence(length(last.populations)))
+		relevant.collapseMatrix <- migrationIndividual$collapseMatrix[last.populations, last.regime]
+		merges<-which(relevant.collapseMatrix>0) 
+		if(length(merges)>1) {
+			for (i in c(2:length(merges))) {
+				g.last[merges[1], merges[i]] <- 1 #create an edge	
+			}				
+		}
+		relevant.migrationArray <- migrationIndividual$migrationArray[last.populations, last.populations, last.regime]
+		for (i in sequence(dim(relevant.migrationArray)[1])) {
+			for (j in sequence(dim(relevant.migrationArray)[2])) {
+				if(!is.na(relevant.migrationArray[i, j])) {
+					if(relevant.migrationArray[i, j]>0) {
+						g.last[i, j]<-1
+					}
+				}
+			}
+			
+		}
+		numberWithoutConnection <- sum(!is.finite(RowMax(shortest.paths(g.last, mode="all"))))
+		if(numberWithoutConnection>0) {
+			finite=FALSE
+		}
+	}
+	return(finite)
 }
 
 
