@@ -58,7 +58,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	maxParameterValue=100, nTrees=2e5, nTreesGrid=nTrees ,msDir="/usr/local/bin/ms",compareDir="comparecladespipe.pl",
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, 
-	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=5, startGrid=startGrid, 
+	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
 	totalPopVector,subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE, ...) {
@@ -179,14 +179,16 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
   }
 }
 
-#Added an specific grid name to pass through to the SearchContinuousModelSpaceNLoptr function for use in the naming of the grid
-ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=100000000000000, 
+#This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
+#nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
+GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=100000000000000, 
 		maxParameterValue=100,nTrees=1 ,msDir="/usr/local/bin/ms",compareDir="comparecladespip.pl",
 		observedDir="observed.tre",subsampleWeightsDir="subsampleWeights.txt",unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
-		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=5, modelVector=NULL, 
-		startGrid=NULL,subsamplesPerGene=1,totalPopVector=totalPopVector,subsampleWeights=NULL,summaryFn,
-		saveNoExtrap=FALSE,...){
+		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
+		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
+		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,totalPopVector=totalPopVector,
+		subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE,...){
 
   #Prepare temporary tree and assign files
 	observed<-read.tree(observedDir)
@@ -224,8 +226,9 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   		maxParameterValue=maxParameterValue,nTrees=nTrees,msDir=msDir,compareDir=compareDir,unresolvedTest=unresolvedTest,
   		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
   		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval, return.all=return.all,numReps=numReps,
-  		startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-  		subsampleWeights=subsampleWeights,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
+  		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
+  		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights=subsampleWeights,
+  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
   		if(!is.null(result.indiv[[1]])) {
@@ -237,8 +240,9 @@ ExhaustiveSearchNLoptr<-function(migrationArrayMap, migrationArray, popAssignmen
   		maxParameterValue=maxParameterValue, nTrees=nTrees, msDir=msDir,compareDir=compareDir,ncores=ncores,
   		unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
-  		startGrid=currentStartGrid,gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-  		subsampleWeights=subsampleWeights,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
+  		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
+  		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights=subsampleWeights,
+  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
   	}
   	
   	#Toss temporary tree and assign files

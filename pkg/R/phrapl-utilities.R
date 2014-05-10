@@ -1422,7 +1422,8 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
 
 #Function for running seqConverter to convert nexus, fasta, or se-al files to phylip
 #inputFormat can be "nex", "fasta", or "seal" (and files must use these as the file suffix)
-RunSeqConverter <- function(seqConvPath,inFilePath,inputFormat){
+RunSeqConverter <- function(seqConvPath=paste(getwd(),"/",sep=""),inFilePath=paste(getwd(),"/",sep=""),
+		inputFormat="nex"){
 	filesList <- list.files(inFilePath,pattern=paste("*.",inputFormat,sep=""))
 	for(numLoci in 1:length(filesList)){
 		systemCall1 <-system(paste(seqConvPath,"seqConverter.pl -d",paste(inFilePath,filesList[numLoci],sep="")," -ope",sep=""))
@@ -1433,8 +1434,9 @@ RunSeqConverter <- function(seqConvPath,inFilePath,inputFormat){
 #designated path). It reads in all .phylip files in the designated path, and runs RAxML for each in turn.
 #Outgroups and mutation models can be specified either as a single string to be used for all loci or as a
 #vector which needs to match the order of the reading of the phylip files (i.e., alphabetic/numeric).
-RunRaxml <- function(raxmlPath,raxmlVersion,inputPath,mutationModel,outgroup,iterations,seed=sample
-		(1:10000000,1),outputSeeds=TRUE,discard=FALSE){
+RunRaxml <- function(raxmlPath=paste(getwd(),"/",sep=""),raxmlVersion="raxmlHPC",
+		inputPath=paste(getwd(),"/",sep=""),mutationModel,outgroup,iterations,
+		seed=sample(1:10000000,1),outputSeeds=FALSE,discard=FALSE){
 	phylipFilesList <- list.files(inputPath,pattern="*.phylip",full.names=FALSE)
 	seed.vec <- array()
 	for(numb in 1:length(phylipFilesList)){
@@ -1618,11 +1620,13 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelVecto
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVector=modelVector,npop=npop){
+ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVector=c(1:length(migrationArray)),
+	popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
 	
+	npop<-length(popVector)
 	#Establish column names for these parameters (keep square matrices method)
 	allMigs<-list()
 	for(thisMatrix in 1:(npop - 1)){ #for each possible matrix, given npop
@@ -1824,11 +1828,13 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractGridParameters<-function(migrationArray=migrationArray,result=result,modelVector=modelVector,npop=npop){
+ExtractGridParameters<-function(migrationArray=migrationArray,result=result,modelVector=c(1:length(migrationArray)),
+	popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
 	
+	npop<-length(popVector)
 	#Establish column names for these parameters (keep square matrices method)
 	allMigs<-list()
 	for(thisMatrix in 1:(npop - 1)){ #for each possible matrix, given npop
@@ -2005,16 +2011,20 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 }
 
 
+
+
+
 ###############################Post-analysis Functions####################
 
 #This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models
-ConcatenateResults<-function(rdaFilesVec=NULL,addAICweights=TRUE,rmNaParameters=TRUE){
+ConcatenateResults<-function(rdaFilesVec=grep(".rda",list.files("./"),value=TRUE),addAICweights=TRUE,
+		rmNaParameters=TRUE){
 	totalData<-data.frame()
 	for (rep in 1:length(rdaFiles)){
 		load(rdaFiles[rep]) #Read model objects
 
 		#Combine results from the rda into dataframe
-		overall.results<-overall.results[order(overall.results[,1]),] #sort by model number (same order as parameters)
+		overall.results<-overall.results.noExtrap[order(overall.results.noExtrap[,1]),] #sort by model number (same order as parameters)
 		current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],parameters[[1]],parameters[[2]])
 		totalData<-rbind(totalData,current.results) #Add current.results to totalData
 		totalData<-totalData[order(totalData$models),] #Make sure totalData is all sorted by model
