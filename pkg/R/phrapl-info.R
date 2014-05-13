@@ -155,7 +155,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 }
 
 #Return AIC for a given model and tree
-ReturnAIC<-function(par,migrationIndividual,nTrees=1,msDir="/usr/local/bin/ms",compareDir="comparecladespipe.pl",
+ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath="comparecladespipe.pl",
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
@@ -185,7 +185,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msDir="/usr/local/bin/ms",c
 	for(i in 1:length(popAssignments)){ #Do separately for each subsample size class
 		currentPopAssign<-i
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
-		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msDir=msDir,compareDir=compareDir,
+		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest)
  	 	#Apply weights to matches
  	 	if(!is.null(subsampleWeights)){
@@ -342,8 +342,8 @@ CreateStartGrid<-function(fineGrid){
 }
 
 ##Match simulated trees to observed trees and export vector of matches
-PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msDir="/usr/local/bin/ms",
-		compareDir="comparecladespipe.pl",unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
+PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
+		comparePath="comparecladespipe.pl",unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
 		print.ms.string=FALSE,ncores=1,currentPopAssign=1){
 	
 	observed<-paste("observed",currentPopAssign,".tre",sep="")
@@ -352,6 +352,8 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msD
 		parameterVector,ceiling(nTrees/ncores))
 	
 	systemMS<-function(stringname){
+#		outputVectorMS<-suppressWarnings(system(command="(stringname) & sleep 2 ; kill $!",intern=TRUE))
+#		http://stackoverflow.com/questions/687948/timeout-a-command-in-bash-without-unnecessary-delay
 		outputVectorMS<-system(stringname,intern=TRUE)
 		return(outputVectorMS)
 	}
@@ -370,9 +372,9 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msD
 	}
 	
 	#Simulate trees in MS and do matching in perl
-	outputstringMS<-paste(msDir,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
+	outputstringMS<-paste(msPath,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
 		" | grep ';' > mstrees.txt", sep=" ") 
-	outputstringPerl<-paste("cat mstrees.txt | perl",compareDir,unresolvedFlag,paste("-a",assign,sep=""), 
+	outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag,paste("-a",assign,sep=""), 
 		paste("-o",observed,sep=""),sep=" ")
 
 	if(ncores==1){
