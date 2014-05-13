@@ -159,7 +159,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath="co
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE){
+		totalPopVector,popAssignments,subsampleWeights=NULL,summaryFn="mean",saveNoExtrap=FALSE){
 	parameterVector<-exp(par)
 	#now have to stitch in n0 being 1, always, for the first population
 	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
@@ -396,7 +396,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 #full dataset is estimated from the subsampled dataset based on a linear relationship between sample size
 #and lnL.
 ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1,totalPopVector,
-		saveNoExtrap=FALSE,summaryFn){
+		saveNoExtrap=FALSE,summaryFn="mean"){
 	nLoci<-length(outputVector) / length(popAssignments) / subsamplesPerGene #number of loci
 		
 	#Adjust zero matches to equal probability of getting match

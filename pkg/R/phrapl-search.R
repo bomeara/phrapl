@@ -61,7 +61,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE, ...) {
+	totalPopVector,subsampleWeights=NULL,summaryFn="mean",saveNoExtrap=FALSE, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -188,7 +188,7 @@ GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=1
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,totalPopVector=totalPopVector,
-		subsampleWeights=NULL,summaryFn,saveNoExtrap=FALSE,...){
+		subsampleWeights=NULL,summaryFn="mean",saveNoExtrap=FALSE,...){
 
   #Prepare temporary tree and assign files
 	observed<-read.tree(observedPath)
