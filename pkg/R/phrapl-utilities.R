@@ -2024,15 +2024,23 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 ###############################Post-analysis Functions####################
 
 #This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models
-ConcatenateResults<-function(rdaFilesVec=grep(".rda",list.files("./"),value=TRUE),addAICweights=TRUE,
-		rmNaParameters=TRUE){
+ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAICweights=TRUE,
+		rmNaParameters=TRUE,addTime.elapsed=FALSE){
+	#If a vector of rda file names is not provided, then read them in from the given path
+	if(is.null(rdaFiles)){
+		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
+	}
 	totalData<-data.frame()
 	for (rep in 1:length(rdaFiles)){
-		load(rdaFiles[rep]) #Read model objects
+		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
 
 		#Combine results from the rda into dataframe
-		overall.results<-overall.results.noExtrap[order(overall.results.noExtrap[,1]),] #sort by model number (same order as parameters)
-		current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],parameters[[1]],parameters[[2]])
+		overall.results<-overall.results[order(overall.results[,1]),] #sort by model number (same order as parameters)
+		if(addTime.elapsed==TRUE){
+			current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],parameters[[1]],parameters[[2]])
+		}else{
+			current.results<-cbind(overall.results,parameters[[1]],parameters[[2]])
+		}
 		totalData<-rbind(totalData,current.results) #Add current.results to totalData
 		totalData<-totalData[order(totalData$models),] #Make sure totalData is all sorted by model
 	}		
@@ -2046,7 +2054,14 @@ ConcatenateResults<-function(rdaFilesVec=grep(".rda",list.files("./"),value=TRUE
 	if(rmNaParameters==TRUE){
 		totalData<-RemoveParameterNAs(totalData)
 	}
-	return(totalData)
+	
+	#Print table
+	if(!is.null(outFile)){
+		write.table(totalData[order(totalData$dAIC,totalData$models),],
+			outFile,quote=FALSE,sep="\t",row.names=FALSE)
+	}
+	
+	return(totalData[order(totalData$dAIC,totalData$models),])
 }
 
 #Add specific descriptor columns to results (specific for simulation checking)
@@ -2084,7 +2099,7 @@ RemoveParameterNAs<-function(totalData){
 			colnum<-colnum #don't proceed to increase current column (because just tossed one)
 			proceed<-FALSE
 		}
-		if(colnum >= columnsLeft){
+		if(colnum > columnsLeft){
 			continue=FALSE
 		}
 		if(proceed==TRUE){
