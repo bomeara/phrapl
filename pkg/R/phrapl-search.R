@@ -112,8 +112,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
   	
   	#Get and store AIC for each set of grid values
   	initial.AIC<-data.frame()
-  	for(i in 1:nrow(startGrid)){
-    	currentAIC<-ReturnAIC(par=as.numeric(startGrid[i,]),migrationIndividual=migrationArray[[modelID]],
+  	for(t in 1:nrow(startGrid)){
+    	currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
     	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
     	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
     	ncores=ncores,debug=debug,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
@@ -245,19 +245,21 @@ GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=1
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
   	}
   	
-  	#Toss temporary tree and assign files
-	for(k in 1:length(popAssignments)){
-		unlink(c(paste("assign",k,".txt",sep=""),paste("observed",k,".tre",sep=""),
-			paste("subsampleWeights",k,".txt",sep="")))	
-	}
 #  	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
 
   	if(!is.null(results.file)) {
 		save(list=ls(), file=results.file)
 	}
   }
-  results.final<-list(results.list,gridList) #concatenate results and grids
-  ifelse(return.all, return(results.final), return(AIC.values))     
+  
+	#Toss temporary tree and assign files
+	for(k in 1:length(popAssignments)){
+		unlink(c(paste("assign",k,".txt",sep=""),paste("observed",k,".tre",sep=""),
+			paste("subsampleWeights",k,".txt",sep="")))	
+	}
+
+	results.final<-list(results.list,gridList) #concatenate results and grids
+	ifelse(return.all, return(results.final), return(AIC.values))     
 }
 
 # searchDiscreteModelSpace<-function(migrationArrayMap, migrationArray, popVector, print.ms.string=FALSE, badAIC=100000000000000, maxParameterValue=100, nTrees=1,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, debug=FALSE,  method="newuoa", itnmax=NULL,pop.size=50, print.results=FALSE, ...) {
