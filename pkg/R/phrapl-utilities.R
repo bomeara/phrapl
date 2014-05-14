@@ -1627,8 +1627,7 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRange=c(1:length(migrationArray)),
-	popVector=popAssignments[[1]]){
+ExtractParameters<-function(migrationArray=migrationArray,popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -1674,10 +1673,10 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRan
 	migParmsNcol<-(npop^2 - npop) * (npop - 1)
 	
 	#Create empty matrix to fill
-	migParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=migParmsNcol)) #for parameter indexes
+	migParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
@@ -1700,11 +1699,11 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRan
 	#############FILL IN A MATRIX WITH THE COLLAPSE AND N0MULTI PARAMETER INDEXES
 	
 	#Create empty matrices to fill
-	collapseParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1)))) 
-	n0multiParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1))))
+	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1)))) 
+	n0multiParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1))))
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
 		currentModelCount=currentModelCount+1
@@ -1835,8 +1834,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRan
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractGridParameters<-function(migrationArray=migrationArray,result=result,modelRange=c(1:length(migrationArray)),
-	popVector=popAssignments[[1]]){
+ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -1880,10 +1878,10 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	migParmsNcol<-(npop^2 - npop) * (npop - 1)
 	
 	#Create empty matrix to fill
-	migParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=migParmsNcol)) #for parameter indexes
+	migParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
@@ -1906,10 +1904,10 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	#############FILL IN A MATRIX WITH THE COLLAPSE PARAMETER INDEXES
 	
 	#Create empty matrices to fill
-	collapseParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1)))) 
+	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1)))) 
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		currentModelCount=currentModelCount+1
 		counter<-0
