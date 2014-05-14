@@ -1677,7 +1677,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRan
 	migParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in length(modelRange)){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
@@ -1704,7 +1704,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRan
 	n0multiParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1))))
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in length(modelRange)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
 		currentModelCount=currentModelCount+1
@@ -1883,7 +1883,7 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	migParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in length(modelRange)){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
@@ -1909,7 +1909,7 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	collapseParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1)))) 
 	currentModelCount=0
 	
-	for(currentModel in modelRange){ #loop through each model
+	for(currentModel in length(modelRange)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		currentModelCount=currentModelCount+1
 		counter<-0
