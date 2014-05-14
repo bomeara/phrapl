@@ -1499,6 +1499,13 @@ MergeTrees <- function(treesPath){
 	}
 }
 
+#If only using a subset of models, this partitions migrationArrayMap to match the chosen model range
+GenerateMigrationArrayMapTrunc<-function(migrationArrayMap,modelRange){
+	migrationArrayMapTrunc=cbind(1:length(modelRange),migrationArrayMap[modelRange,-1])
+	colnames(migrationArrayMapTrunc)<-colnames(migrationArrayMap)
+	return(migrationArrayMapTrunc)
+}
+
 #This function calculates a scaled number of subsample replicates that
 #is corrected based on the average original sample sizes from which subsamples
 #are taken. The larger the original sample sizes, the more independent
@@ -1545,7 +1552,7 @@ SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,total
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
 #of models into a table
-ExtractAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(1:length(migrationArray))){
+ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray))){
 
 	#Pull out the overall AICs
 	AIC<-grep("objective",result,value=TRUE)
@@ -1562,7 +1569,7 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(
 		params.K[i]<-KAll(migrationArray[[i]])
 		params.vector[i]<-paste(MsIndividualParameters(migrationArray[[i]]), sep=" ", collapse=" ")
 	}
-	models<-as.character(modelVector)
+	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
 	
 	#Back-transform AICs to get Likelihoods
@@ -1581,7 +1588,7 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
 #of models into a table
-ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelVector=c(1:length(migrationArray))){
+ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray))){
 
 	#Pull out best AIC for each model 
 	AIC<-c()
@@ -1600,7 +1607,7 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelVecto
 		params.vector[i]<-paste(MsIndividualParameters(migrationArray[[i]]), sep=" ", collapse=" ")
 		params.vector[i]<-gsub("n0multiplier_1","",params.vector[i]) #toss first n0multiplier parameter
 	}
-	models<-as.character(modelVector)
+	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
 	
 	#Back-transform AICs to get Likelihoods
@@ -1620,7 +1627,7 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelVecto
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVector=c(1:length(migrationArray)),
+ExtractParameters<-function(migrationArray=migrationArray,result=result,modelRange=c(1:length(migrationArray)),
 	popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
@@ -1667,10 +1674,10 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 	migParmsNcol<-(npop^2 - npop) * (npop - 1)
 	
 	#Create empty matrix to fill
-	migParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=migParmsNcol)) #for parameter indexes
+	migParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
 	
-	for(currentModel in modelVector){ #loop through each model
+	for(currentModel in modelRange){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
@@ -1693,11 +1700,11 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 	#############FILL IN A MATRIX WITH THE COLLAPSE AND N0MULTI PARAMETER INDEXES
 	
 	#Create empty matrices to fill
-	collapseParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=(npop * (npop - 1)))) 
-	n0multiParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=(npop * (npop - 1))))
+	collapseParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1)))) 
+	n0multiParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1))))
 	currentModelCount=0
 	
-	for(currentModel in modelVector){ #loop through each model
+	for(currentModel in modelRange){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
 		currentModelCount=currentModelCount+1
@@ -1828,7 +1835,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,modelVec
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractGridParameters<-function(migrationArray=migrationArray,result=result,modelVector=c(1:length(migrationArray)),
+ExtractGridParameters<-function(migrationArray=migrationArray,result=result,modelRange=c(1:length(migrationArray)),
 	popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
@@ -1873,10 +1880,10 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	migParmsNcol<-(npop^2 - npop) * (npop - 1)
 	
 	#Create empty matrix to fill
-	migParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=migParmsNcol)) #for parameter indexes
+	migParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
 	
-	for(currentModel in modelVector){ #loop through each model
+	for(currentModel in modelRange){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
@@ -1899,10 +1906,10 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,mode
 	#############FILL IN A MATRIX WITH THE COLLAPSE PARAMETER INDEXES
 	
 	#Create empty matrices to fill
-	collapseParms<-data.frame(matrix(NA,nrow=length(modelVector),ncol=(npop * (npop - 1)))) 
+	collapseParms<-data.frame(matrix(NA,nrow=length(modelRange),ncol=(npop * (npop - 1)))) 
 	currentModelCount=0
 	
-	for(currentModel in modelVector){ #loop through each model
+	for(currentModel in modelRange){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		currentModelCount=currentModelCount+1
 		counter<-0
