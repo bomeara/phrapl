@@ -971,6 +971,7 @@ GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath,inp
 			subsamplePath=subsamplePath)
 		write.table(weight,file=paste(subsamplePath,outputFile,sep=""),quote=FALSE,sep="\t",
 			row.names=FALSE,col.names=FALSE,append=TRUE)
+		cat(paste("Finished with ",y," out of ",length(observed)," trees\n",sep=""))
 		if(y%%(length(observed) / length(popAssignments)) == 0){
 			subsampleSizeCounter<-subsampleSizeCounter + 1
 		}
@@ -998,52 +999,76 @@ GetPermutationWeights<-function(phy,popVector,subsamplePath){
 
 	for(j in 1:ncol(tips.permute[[1]])){
 		try.label<-tips.permute[[1]][,j]
-		phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[1])] <- try.label 
+		#Define index of tips in this population
+		pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[1])]))
+		#Order them in the same way each time
+		phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+		#Rename according to the current permutation
+		phy$tip.label[pop.tips]<-try.label
 					
 		if(length(popLabels) > 1){	
 			for(k in 1:ncol(tips.permute[[2]])){
 				try.label<-tips.permute[[2]][,k]
-				phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[2])] <- try.label				
+				pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[2])]))
+				phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+				phy$tip.label[pop.tips]<-try.label				
 
 				if(length(popLabels) > 2){	
 					for(l in 1:ncol(tips.permute[[3]])){
 						try.label<-tips.permute[[3]][,l]
-						phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[3])] <- try.label	
+						pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[3])]))
+						phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+						phy$tip.label[pop.tips]<-try.label	
 
 						if(length(popLabels) > 3){
 							for(m in 1:ncol(tips.permute[[4]])){
 								try.label<-tips.permute[[4]][,m]
-								phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[4])] <- try.label 
+								pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[4])]))
+								phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+								phy$tip.label[pop.tips]<-try.label	
 							
 								if(length(popLabels) > 4){	
 									for(n in 1:ncol(tips.permute[[5]])){
 										try.label<-tips.permute[[5]][,n]
-										phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[5])] <- try.label				
+										pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[5])]))
+										phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+										phy$tip.label[pop.tips]<-try.label	
 									
 										if(length(popLabels) > 5){	
 											for(o in 1:ncol(tips.permute[[6]])){
 												try.label<-tips.permute[[6]][,o]
-												phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[6])] <- try.label	
+												pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[6])]))
+												phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+												phy$tip.label[pop.tips]<-try.label	
 											
 												if(length(popLabels) > 6){	
 													for(p in 1:ncol(tips.permute[[7]])){
 														try.label<-tips.permute[[7]][,p]
-														phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[7])] <- try.label				
-														
+														pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[7])]))
+														phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+														phy$tip.label[pop.tips]<-try.label	
+																	
 														if(length(popLabels) > 7){	
 															for(q in 1:ncol(tips.permute[[8]])){
 																try.label<-tips.permute[[8]][,q]
-																phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[8])] <- try.label	
-																
+																pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[8])]))
+																phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+																phy$tip.label[pop.tips]<-try.label																	
+														
 																if(length(popLabels) > 8){
 																	for(r in 1:ncol(tips.permute[[9]])){
 																		try.label<-tips.permute[[9]][,r]
-																		phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[9])] <- try.label 
-																		
+																		pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[9])]))
+																		phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+																		phy$tip.label[pop.tips]<-try.label																			
+													
 																		if(length(popLabels) > 9){	
 																			for(s in 1:ncol(tips.permute[[10]])){
 																				try.label<-tips.permute[[10]][,s]
-																				phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[10])] <- try.label				
+																				pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[10])]))
+																				phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
+																				phy$tip.label[pop.tips]<-try.label				
+																			
 																				if(length(popLabels) == 10){
 																					cladesGene<-GetCladesQuickly(phy)
 																					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
@@ -1325,6 +1350,74 @@ GetPermutationWeights.raw<-function(phy,popVector,subsamplePath){
 				col.names=FALSE,append=TRUE)
 	return(weight)
 }	
+
+#Because these permutations take a long time, this function attempts to speed up the process
+#of caluculating tree weights by randomly sampling from the possible permutations until a particular 
+#level of confidence is obtained in the estimated proportion of matches. Because the number of matching 
+#permutations is generally low however, this function did not end up speeding up the process. 
+#On the contrary...
+GetPermutationWeightsBasedOnSampling<-function(phy,popVector,subsamplePath, desiredConfidence = 0.05, minSamples = 100){
+	assignFrame<-CreateAssignment.df(popVector)
+	popLabels<-unique(assignFrame[,1])
+	
+	#Make list of label permutations for each population
+	tips.permute<-list()
+	tips.permutation.order <- list()
+	total.number.permutations <- 1
+	seen.samples <- c()
+	for(i in 1:length(popLabels)){
+		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] == 
+			popLabels[i])])))
+		tips.permute[[i]]<-tips.permute[[i]] + (((assignFrame[,2][which(assignFrame[,1] == popLabels[i])])[1]) - 1)
+		tips.permutation.order[[i]] <- sample.int(dim(tips.permute[[i]])[2])
+		total.number.permutations <- total.number.permutations * dim(tips.permute[[i]])[2]
+	}
+
+	numberOfPermutations<-0
+	phyOriginal<-phy
+	cladesMS<-GetCladesQuickly(phy)
+	matches<-0
+#	minRequired <- minSamples
+#	while((numberOfPermutations < minSamples) || (numberOfPermutations < minRequired)) {
+	while((numberOfPermutations < minSamples) || (matches < (desiredConfidence * minSamples))) {
+		if(numberOfPermutations >= total.number.permutations) {
+			break()
+		}
+		#Randomly sample permutation columns for each population (try again if that combination has been tried)
+		sample.try <- rep(NA, length(tips.permute))
+		while(is.na(sample.try[1])) { #we are trying to sample without replacement
+			sample.try <- rep(NA, length(tips.permute))
+			for (population in sequence(length(tips.permute))) {
+				sample.try[population] <- sample.int(dim(tips.permute[[population]])[2],1)	
+			}
+			if(paste(sample.try,collapse="_") %in% seen.samples) {
+				sample.try <- rep(NA, length(tips.permute))
+			}else{
+			}
+		}
+		seen.samples<-rbind(seen.samples,paste(sample.try,collapse="_"))
+		
+		#Create new set of tip labels
+		phy <- phyOriginal
+		for (population in sequence(length(tips.permute))) {
+			try.label<-tips.permute[[population]][,sample.try[population]]
+			phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[population])] <- try.label
+		}
+		cat(paste(paste(as.character(phy$tip.label),collapse="_"),"\n",sep=""))	
+		cladesGene<-GetCladesQuickly(phy)
+		matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
+		numberOfPermutations<-numberOfPermutations + 1
+		proportion<-matches/numberOfPermutations
+		
+		#The original idea was to pose a sampling precision (e.g., 0.01) and then keep sampling until
+		#the error around the estimated proportion was decreased to this point
+#		minRequired<-((desiredSamplePrecision)^2) * proportion / (1-proportion)
+#		minRequired<-((desiredSamplePrecision)^2) / (proportion * (1 - proportion)) 		
+		weight<-matches / numberOfPermutations
+	}
+	
+	return(weight)
+}
 
 #uses Kish's effective sample size formula
 GetKishESS<-function(popVector, nsamples) {
