@@ -56,12 +56,13 @@
 #with a different name for each run
 SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popAssignments, badAIC=100000000000000, 
 	maxParameterValue=100, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath="comparecladespipe.pl",
+	subsampleWeightsPath="subsampleWeights.txt",
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, 
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,subsampleWeights=NULL,summaryFn="mean",saveNoExtrap=FALSE, ...) {
+	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -117,7 +118,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
     	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
     	ncores=ncores,debug=debug,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
-    	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights=subsampleWeights,
+    	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeightsPath=subsampleWeightsPath,
     	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap)
     	initial.AIC<-rbind(initial.AIC,currentAIC)
     }
@@ -154,7 +155,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug, parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
- 	   		totalPopVector=totalPopVector,subsampleWeights=subsampleWeights,popAssignments=popAssignments,
+ 	   		totalPopVector=totalPopVector,subsampleWeightsPath=subsampleWeightsPath,popAssignments=popAssignments,
  	   		saveNoExtrap=saveNoExtrap)
  	  
 
@@ -181,18 +182,20 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 
 #This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
 #nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
-GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=100000000000000, 
-		maxParameterValue=100,nTrees=1 ,msPath="ms",comparePath="comparecladespipe.pl",
+GridSearch<-function(migrationArrayMap,migrationArray,modelRange=c(1:length(migrationArray)),popAssignments, 
+		badAIC=100000000000000,maxParameterValue=100,nTrees=1 ,msPath="ms",comparePath="comparecladespipe.pl",
 		observedPath="observed.tre",subsampleWeightsPath="subsampleWeights.txt",unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
-		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,totalPopVector=totalPopVector,
-		subsampleWeights=NULL,summaryFn="mean",saveNoExtrap=FALSE,...){
+		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
+		totalPopVector=totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,...){
 
   #Prepare temporary tree and assign files
 	observed<-read.tree(observedPath)
-	subsampleWeights<-read.table(subsampleWeightsPath)
+	if(!is.null(subsampleWeightsPath)){
+		subsampleWeights<-read.table(subsampleWeightsPath)
+	}
 	firstTree<-1
 	lastTree<-length(observed) / length(popAssignments)
 	for(k in 1:length(popAssignments)){
@@ -204,8 +207,10 @@ GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=1
 		for(m in firstTree:lastTree){
 			write.tree(observed[[m]],file=paste("observed",k,".tre",sep=""),append=TRUE)
 		}
-		write.table(subsampleWeights[firstTree:lastTree,1],file=paste("subsampleWeights",k,".txt",sep=""),
-			quote=FALSE,sep="",row.names=FALSE,col.names=FALSE)
+		if(!is.null(subsampleWeightsPath)){
+			write.table(subsampleWeights[firstTree:lastTree,1],file=paste("subsampleWeights",k,".txt",sep=""),
+				quote=FALSE,sep="",row.names=FALSE,col.names=FALSE)
+		}
 		firstTree<-firstTree + lastTree
 		lastTree<-lastTree + lastTree		
 	}
@@ -227,7 +232,7 @@ GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=1
   		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
   		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
-  		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights=subsampleWeights,
+  		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeightsPath=subsampleWeightsPath,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
@@ -241,10 +246,10 @@ GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=1
   		unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
-  		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights=subsampleWeights,
+  		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeightsPath=subsampleWeightsPath,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, ...))
   	}
-  	
+ 
 #  	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
 
   	if(!is.null(results.file)) {
@@ -252,13 +257,39 @@ GridSearch<-function(migrationArrayMap, migrationArray, popAssignments, badAIC=1
 	}
   }
   
-	#Toss temporary tree and assign files
+  	#Toss temporary tree and assign files
 	for(k in 1:length(popAssignments)){
-		unlink(c(paste("assign",k,".txt",sep=""),paste("observed",k,".tre",sep=""),
-			paste("subsampleWeights",k,".txt",sep="")))	
+		unlink(c(paste("assign",k,".txt",sep=""),paste("observed",k,".tre",sep=""),"mstrees.txt"))
+		if(file.exists(paste("subsampleWeights",k,".txt",sep=""))){
+			unlink(paste("subsampleWeights",k,".txt",sep=""))
+		}
 	}
 
-	results.final<-list(results.list,gridList) #concatenate results and grids
+	#Save table of best models
+	if(numReps==0){
+		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray,modelRange=modelRange)
+	}else{
+		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray,modelRange=modelRange)
+	}
+	
+	#Save parameter estimates and parameter indexes to tables
+	if(numReps==0){
+		parameters<-ExtractGridParameters(migrationArray=migrationArray,result=gridList,
+			popVector=popAssignments[[1]])
+	}else{
+		parameters<-ExtractParameters(migrationArray=migrationArray,result=results.list,
+			popVector=popAssignments[[1]])
+	}
+	
+	#Add all results to list
+	if(numReps==0){
+		results.final<-list("AIC.Grid"=gridList,"overall.results"=overall.results,
+			"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
+	}else{
+		results.final<-list("search.results"=results.list,"AIC.Grid"=gridList,
+			"overall.results"=overall.results,"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
+	}
+	
 	ifelse(return.all, return(results.final), return(AIC.values))     
 }
 

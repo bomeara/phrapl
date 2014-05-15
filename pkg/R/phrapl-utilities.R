@@ -1592,8 +1592,8 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 
 	#Pull out best AIC for each model 
 	AIC<-c()
-	for(rep in 1:length(result[[2]])){
-		AIC<-append(AIC,result[[2]][[rep]]$AIC[1])
+	for(rep in 1:length(result)){
+		AIC<-append(AIC,result[[rep]]$AIC[1])
 	}
 	
 	#Construct dataframe consisting of AICs and model descriptions for each model
@@ -1627,7 +1627,10 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractParameters<-function(migrationArray=migrationArray,popVector=popAssignments[[1]]){
+#This function takes output from an exhaustive search and assembles parameter indexes and estimates
+#based on a set of models. A list containing two tables is outputted: one containing parameter indexes
+#and one containing parameter estimates
+ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector=popAssignments[[1]]){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -1731,7 +1734,7 @@ ExtractParameters<-function(migrationArray=migrationArray,popVector=popAssignmen
 	for(eachCol in 1:nrow(collapseParms)){ 
 	
 		#First, make matrix of the collapse estimates
-		currentSol<-exp(result[[1]][[eachCol]]$solution) #back-transform the logged parameter estimates
+		currentSol<-exp(result[[eachCol]]$solution) #back-transform the logged parameter estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 				
 			#Because different collapse parameters are denoted by different columns rather than by different index values,
@@ -1933,11 +1936,11 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 		#First, make matrix of the collapse estimates
 		#Make vector of top parameter estimates from the grid (based on the mean of the top five estimates for each parm)
 		currentSol<-c()
-		positionOfNonParameters <- grep("lnL", colnames(result[[2]][[eachCol]]))[1] #find slopes
+		positionOfNonParameters <- grep("lnL", colnames(result[[eachCol]]))[1] #find slopes
 		if(!is.na(positionOfNonParameters)){
-			currentResult<-result[[2]][[eachCol]][2:(positionOfNonParameters - 1)] #toss slopes
+			currentResult<-result[[eachCol]][2:(positionOfNonParameters - 1)] #toss slopes
 		}else{
-			currentResult<-result[[2]][[eachCol]][2:length(result[[2]][[eachCol]])] #if only 1 popAssignment used
+			currentResult<-result[[eachCol]][2:length(result[[eachCol]])] #if only 1 popAssignment used
 		}
 
 		for(rep in 1:ncol(currentResult)){
@@ -2033,11 +2036,11 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAIC
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
 
 		#Combine results from the rda into dataframe
-		overall.results<-overall.results[order(overall.results[,1]),] #sort by model number (same order as parameters)
+		overall.results<-result[[2]][order(result[[2]][,1]),] #sort by model number (same order as parameters)
 		if(addTime.elapsed==TRUE){
-			current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],parameters[[1]],parameters[[2]])
+			current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],result[[3]],result[[4]])
 		}else{
-			current.results<-cbind(overall.results,parameters[[1]],parameters[[2]])
+			current.results<-cbind(overall.results,result[[3]],result[[4]])
 		}
 		totalData<-rbind(totalData,current.results) #Add current.results to totalData
 		totalData<-totalData[order(totalData$models),] #Make sure totalData is all sorted by model
@@ -2087,23 +2090,35 @@ getExponent<-function(x){
 RemoveParameterNAs<-function(totalData){
 	columnsLeft=ncol(totalData) #update number of remaining columns
 	continue=TRUE #Not to last column?
-	colnum=1 #Present column
+	proceed=TRUE
+	colnum=0 #Present column
 	while(continue){
-		NAlist<-is.na(totalData[,colnum])
-		proceed<-TRUE
-		if(length(NAlist[which(NAlist==TRUE)])==length(NAlist)){ #if there are only NAs in column
-			totalData<-totalData[,-colnum] #prune column from dataset
-			columnsLeft<-ncol(totalData)
-			colnum<-colnum #don't proceed to increase current column (because just tossed one)
-			proceed<-FALSE
-		}
-		if(colnum > columnsLeft){
-			continue=FALSE
-		}
 		if(proceed==TRUE){
 			colnum<-colnum + 1
 		}
+		NAlist<-is.na(totalData[,colnum])
+		proceed<-TRUE
+		if(length(NAlist[which(NAlist==TRUE)])==length(NAlist)){ #if there are only NAs in column
+			
+			totalData<-totalData[,-colnum] #prune column from dataset
+			columnsLeft<-ncol(totalData)
+			colnum<-colnum #don't proceed to increase current column (because just tossed one)
+			proceed=FALSE
+	
+		}
+
+		if(colnum >= columnsLeft){
+			continue=FALSE
+		}
+		
+		if(continue==FALSE){
+			NAlist<-is.na(totalData[,length(totalData)])
+			if(length(NAlist[which(NAlist==TRUE)])==length(NAlist)){
+				totalData<-totalData[,-length(totalData)]
+			}
+		}
 	}
+	
 	return(totalData)
 }
 
