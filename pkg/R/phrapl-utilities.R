@@ -2169,7 +2169,7 @@ AddDescriptors<-function(dataframe=totalData){
    	treeTreat<-as.matrix(rep(treeVec[treeRep],length(nrow(dataframe)))) #make tree number column
    	subnumTreat<-as.matrix(rep(subsampleNumVec[subsampleNumRep],length(nrow(dataframe)))) #make simulation rep column
    	subsampleTreat<-as.matrix(rep(subsampleRep,length(nrow(dataframe)))) #make subsample rep column
-
+	
 	#Combine dataframe across models with treatment descriptor columns
 	dataframe<-cbind(whichdataframe,migTreat,divTreat,treeTreat,subnumTreat,subsampleTreat,dataframe)
 	colnames(dataframe)<-c("dataset","migration","divTime","nTrees","subNum","subsample",colnames(dataframe[,7:ncol(dataframe)]))
