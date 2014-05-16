@@ -496,7 +496,7 @@ GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMi
 		n0multiplierMap<-n0multiplierIndividualsList[[i]]$n0multiplierMap
 		numFinalPops<-dim(collapseMatrix)[1]
 		numSteps<-dim(collapseMatrix)[2]
-		if ((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )<=maxK && doRun) {
+		if ((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) )<=maxK) {
 			migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
 			for (interval in 1:numSteps) {
 				for (fromPop in 1:numFinalPops) {
