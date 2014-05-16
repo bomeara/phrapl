@@ -332,7 +332,7 @@ CompleteIntervals<-function(popIntervalsList) {
 }
 
 #This function will build a graph connecting populations with migration and pop coalescence. It then tests for connectivity
-CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalRegime=FALSE) {
+CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalRegime=TRUE) {
 	g <- graph.empty() + vertices(sequence(dim(migrationIndividual$collapseMatrix)[1]))
 	for (interval in sequence(dim(migrationIndividual$collapseMatrix)[2])) {
 		merges<-which(migrationIndividual$collapseMatrix[,interval]>0) 
