@@ -1,8 +1,10 @@
-#library(partitions)
-#library(ape)
-#library(rgenoud)
-#library(optimx)
-#library(parallel)
+library(partitions)
+library(ape)
+library(rgenoud)
+library(optimx)
+library(parallel)
+library(igraph)
+
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("ncores", "popVector", "maxK","migrationArray", "migrationArrayMap"))
 
 TruncateToCells<-function(x, numCells, minVal, maxVal) {
