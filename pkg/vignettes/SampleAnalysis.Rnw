@@ -1,0 +1,27 @@
+\documentclass[a4paper]{article}
+%\VignetteIndexEntry{Sample analysis}
+%\VignettePackage{phrapl}
+
+
+\newcommand{\code}{\texttt}
+\newcommand{\pkg}{\textsf}
+\newcommand{\ape}{\pkg{phrapl}}
+
+\author{Brian O'Meara}
+\title{Sample analysis for phrapl}
+
+\begin{document}
+
+\maketitle
+
+<<echo=false,quiet=true>>=
+options(width=60)
+@ 
+
+This document will provide a sample analysis for phrapl.
+
+\section*{Acknowledgements}
+
+Thank you to XXX for providing data.
+
+\end{document}

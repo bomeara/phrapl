@@ -26,15 +26,7 @@ O'Meara B, Carstens B, Jackson N, Morales-Garcia A. (in prep)
 \author{
 Brian O'Meara
 }
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 ##---- Should be DIRECTLY executable !! ----
 ##-- ==>  Define data, use random,
