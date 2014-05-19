@@ -1166,193 +1166,6 @@ SplitAndSort <- function(x) {
 	return(paste(sort(strsplit(x, "_")[[1]]), collapse="_"))
 }
 
-#This following set of 3 functions imports and handles trees as newick strings in attempt to speed up the 
-#process of getting weights from subsamples.This attempt has resulted in failure: this is actually slower
-#than using ape phylo objects to accomplish this (see the non-raw analogue functions above).
-#When the armageddon comes and ape is no longer available, these functions will be there to fill the void.
-
-#Get weights for each subsample based on the number of matches per permutation
-GetPermutationWeightsAcrossSubsamples.raw<-function(phy="observed.tre",popAssignments,subsamplesPerGene,subsamplePath){	
-	phy<-read.table(paste(subsamplePath,phy,sep=""),stringsAsFactors=FALSE)
-	treesPerLocus<-subsamplesPerGene * length(popAssignments)
-	nLoci<-nrow(phy) / treesPerLocus
-	treeCounter<-1
-	subsampleWeights<-c()
-	
-	for(y in 1:nLoci){
-		subsampleSizeCounter<-1
-		for(z in 1:(nrow(phy) / nLoci)){
-			subsampleWeights<-append(subsampleWeights,GetPermutationWeights(phy=phy[treeCounter,],
-				popVector=popAssignments[[subsampleSizeCounter]],subsamplePath=subsamplePath))
-			treeCounter<-treeCounter + 1
-			if(z%%subsamplesPerGene == 0){ #increase to next popAssignments size class
-				subsampleSizeCounter<-subsampleSizeCounter + 1
-			}
-		}
-	}
-	return(subsampleWeights)
-}
-
-#Change labels for a population in a single newick tree to mach a new label permutation
-GetPermutatedLabels.raw<-function(phy,assignFrame,popLabels=popLabels[1],newLabels=try.label){
-	phy.split<-strsplit(phy,"")[[1]]
-	taxonLabels<-grep("\\w",phy.split,value=TRUE)
-	oldLabels<-taxonLabels[order(as.numeric(taxonLabels))][which(assignFrame[,1] == popLabels[1])]
-	oldLabelIndex<-array(NA,dim=length(oldLabels))
-	for(i in 1:length(oldLabels)){
-		oldLabelIndex[i]<-which(phy.split==oldLabels[i])
-	}
-	for(i in 1:length(oldLabels)){
-		phy.split[oldLabelIndex[i]]<-newLabels[i]
-	}
-	return(paste(phy.split,collapse=""))
-}
-
-#Get weights for a given tree based on the number of matches per permutation
-GetPermutationWeights.raw<-function(phy,popVector,subsamplePath){
-	phy<-gsub(pattern=";",replacement="",x=gsub(pattern='\\:\\d+\\.*\\d*',replacement="", 
-		x=phy,perl=TRUE)) #remove branch lengths
-	assignFrame<-CreateAssignment.df(popVector)
-	popLabels<-unique(assignFrame[,1])
-	#Make list of label permutations for each population
-	tips.permute<-list()
-	for(i in 1:length(popLabels)){
-		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] == 
-			popLabels[i])])))
-		tips.permute[[i]]<-tips.permute[[i]] + (((assignFrame[,2][which(assignFrame[,1] == popLabels[i])])[1]) - 1)
-	}
-	numberOfPermutations<-0
-	phyOriginal<-phy
-	cladesMS<-GetCladeNamesFromNewickString(phy,assignFrame)
-	matches<-0
-	if(length(popLabels) > 10){
-		stop("This function can only handle 10 populations")
-	}
-	
-	#Start permutation of populations	
-	for(j in 1:ncol(tips.permute[[1]])){
-		phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-			popLabels=popLabels[1],newLabels=tips.permute[[1]][,j])
-					
-		if(length(popLabels) > 1){	
-			for(k in 1:ncol(tips.permute[[2]])){
-				phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-					popLabels=popLabels[2],newLabels=tips.permute[[2]][,k])			
-
-				if(length(popLabels) > 2){	
-					for(l in 1:ncol(tips.permute[[3]])){
-						phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-							popLabels=popLabels[3],newLabels=tips.permute[[3]][,l])	
-
-						if(length(popLabels) > 3){
-							for(m in 1:ncol(tips.permute[[4]])){
-								phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-									popLabels=popLabels[4],newLabels=tips.permute[[4]][,m])
-							
-								if(length(popLabels) > 4){	
-									for(n in 1:ncol(tips.permute[[5]])){
-										phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-											popLabels=popLabels[5],newLabels=tips.permute[[5]][,n])				
-									
-										if(length(popLabels) > 5){	
-											for(o in 1:ncol(tips.permute[[6]])){
-												phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-													popLabels=popLabels[6],newLabels=tips.permute[[6]][,o])	
-											
-												if(length(popLabels) > 6){	
-													for(p in 1:ncol(tips.permute[[7]])){
-														phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-															popLabels=popLabels[7],newLabels=tips.permute[[7]][,p])				
-														
-														if(length(popLabels) > 7){	
-															for(q in 1:ncol(tips.permute[[8]])){
-																phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-																	popLabels=popLabels[8],newLabels=tips.permute[[8]][,q])	
-																
-																if(length(popLabels) > 8){
-																	for(r in 1:ncol(tips.permute[[9]])){
-																		phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-																			popLabels=popLabels[9],newLabels=tips.permute[[9]][,r])
-																		
-																		if(length(popLabels) > 9){	
-																			for(s in 1:ncol(tips.permute[[10]])){
-																				phy<-GetPermutatedLabels(phy=phy,assignFrame=assignFrame,
-																					popLabels=popLabels[10],newLabels=tips.permute[[10]][,s])				
-
-																				if(length(popLabels) == 10){
-																					cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-																					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-																					numberOfPermutations<-numberOfPermutations + 1
-																				}
-																			}
-																		}
-																		if(length(popLabels) == 9){
-																			cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-																			matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-																			numberOfPermutations<-numberOfPermutations + 1
-																		}
-																	}
-																}
-																if(length(popLabels) == 8){
-																	cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-																	matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-																	numberOfPermutations<-numberOfPermutations + 1
-																}
-															}
-														}
-														if(length(popLabels) == 7){
-															cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-															matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-															numberOfPermutations<-numberOfPermutations + 1
-														}
-													}
-												}
-												if(length(popLabels) == 6){
-													cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-													matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-													numberOfPermutations<-numberOfPermutations + 1
-												}
-											}
-										}
-										if(length(popLabels) == 5){
-											cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-											matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-											numberOfPermutations<-numberOfPermutations + 1
-										}
-									}
-								}
-								if(length(popLabels) == 4){
-									cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-									matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-									numberOfPermutations<-numberOfPermutations + 1
-								}
-							}
-						}
-						if(length(popLabels) == 3){
-							cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-							matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-							numberOfPermutations<-numberOfPermutations + 1
-						}
-					}
-				}
-				if(length(popLabels) == 2){
-					cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-					numberOfPermutations<-numberOfPermutations + 1
-				}
-			}
-		}
-		if(length(popLabels) == 1){
-			cladesGene<-GetCladeNamesFromNewickString(phy,assignFrame)
-			matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
-			numberOfPermutations<-numberOfPermutations + 1
-		}
-	}
-	weight<-matches / numberOfPermutations
-	write.table(weight,file=paste(subsamplePath,"subsampleWeights.txt",sep=""),quote=FALSE,sep="\t",row.names=FALSE,
-				col.names=FALSE,append=TRUE)
-	return(weight)
-}	
 
 #Because these permutations take a long time, this function attempts to speed up the process
 #of caluculating tree weights by randomly sampling from the possible permutations until a particular 
@@ -1726,7 +1539,7 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector=popAssignments[[1]]){
+ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -1933,7 +1746,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector=popAssignments[[1]]){
+ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -2128,6 +1941,8 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAIC
 		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
 	}
 	totalData<-data.frame()
+	result <- c()
+	time.elapsed <- c()
 	for (rep in 1:length(rdaFiles)){
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
 
@@ -2160,22 +1975,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAIC
 	
 	return(totalData[order(totalData$dAIC,totalData$models),])
 }
-
-#Add specific descriptor columns to results (specific for simulation checking)
-AddDescriptors<-function(dataframe=totalData){           
-	#Get treatment descriptor columns
-   	whichdataframe<-as.matrix(rep(datasetsVec[dataset],length(nrow(dataframe)))) #make dataframe descriptor column
-   	migTreat<-as.matrix(rep(migVec[dataset],length(nrow(dataframe)))) #make migration column
-   	divTreat<-as.matrix(rep(divVec[divRep],length(nrow(dataframe)))) #make divergence column
-   	treeTreat<-as.matrix(rep(treeVec[treeRep],length(nrow(dataframe)))) #make tree number column
-   	subnumTreat<-as.matrix(rep(subsampleNumVec[subsampleNumRep],length(nrow(dataframe)))) #make simulation rep column
-   	subsampleTreat<-as.matrix(rep(subsampleRep,length(nrow(dataframe)))) #make subsample rep column
-	
-	#Combine dataframe across models with treatment descriptor columns
-	dataframe<-cbind(whichdataframe,migTreat,divTreat,treeTreat,subnumTreat,subsampleTreat,dataframe)
-	colnames(dataframe)<-c("dataset","migration","divTime","nTrees","subNum","subsample",colnames(dataframe[,7:ncol(dataframe)]))
-    return(dataframe)
-}   	            
+	            
 	
 #Function used for calculating AIC weights
 getExponent<-function(x){
@@ -2358,14 +2158,16 @@ SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramC
 #columns that should be included in the new table, but which aren't to be summarized. This function also adusts the model 
 #rank column based on the mean and median AIC weight across subsamples. Output for this function is a list of three
 #dataframes for mean, median, and standard deviation values.
-SummarizeParametersAcrossSubsamples<-function(totalData=allData,treatmentVec=NULL,paramColVec=c(8:13,16:ncol(allData)),
+SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramColVec=NULL,
 	timeColVec=c(15),descriptionColVec=c(1:7,14)){
-	
+	if(is.null(paramColVec)) {
+		paramColVec<-c(8:13,16:ncol(totalData))
+	}
 	#Define all unique treatments (if any)
 	if(!is.null(treatmentVec)){
 		utreat=unique(treatmentVec)
 	}else{
-		treatmentVec<-rep("treatment",nrow(allData))
+		treatmentVec<-rep("treatment",nrow(totalData))
 		utreat<-unique(treatmentVec)
 	}
 

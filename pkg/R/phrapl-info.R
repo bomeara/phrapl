@@ -391,7 +391,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 		wrapOutput<-function(x,outputstring) {
 			as.numeric(system(outputstring,intern=TRUE))
 		}
-		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=outputstring,mc.cores=ncores)),1,sum)
+		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=paste(outputstringMS, outputstringPerl, sep=" ", collapse=" "),mc.cores=ncores)),1,sum)
 		return(outputVector)
 	}
 }
@@ -547,130 +547,6 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 
 
 
-################################UNUSED FUNCTIONS FOR REPLACING PERL WITH R##################################
-
-
-##Match simulated trees to observed trees and export vector of matches
-MatchingTrees<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msLocation="/usr/local/bin/ms",observed="observed.txt",
-	subsamplesPerGene,debug=FALSE,print.ms.string=FALSE,ncores=1) {
-
-	msCallInfo<-CreateMSstringSpecific(popAssignments[[1]],migrationIndividual,parameterVector,ceiling(nTrees/ncores))
-	
-  if(print.ms.string) {
-    print(msCallInfo) 
-  }
-  if(debug) {
-    print("parameterVector")
-    print(parameterVector)
-  }
-
-	#Simulate trees in MS
-	outputstringMS<-paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
-		" | grep ';' > mstrees.txt", sep=" ") 
-	system(outputstringMS,intern=TRUE)
-	
-	#Retrieve simulated trees and population assignments
-	phy<-read.table("mstrees.txt",stringsAsFactors=FALSE)
-	assignFrame<-CreateAssignment.df(popAssignments[[1]])
-
-	#Convert individual numbers to population letters and export 
-	for(i in 1:length(phy[,])){
-		phy[i,1]<-ConvertAlleleNumbersToPopulationLetters.raw(phy=phy[i,1],assignFrame=assignFrame)
-	}
-
-	#If going to subsample these trees, convert to phylo objects
-	if(length(popAssignments) > 1){
-		write.table(phy,"mstrees.txt",quote=FALSE,row.names=FALSE,col.names=FALSE,eol=";\n")
-		phy.pops<-read.tree("mstrees.txt")
-	}
-
-#	phy.phylo<-read.tree("mstrees.txt") #Also load as phylo, so can drop tips later on if necessary
-#	phy.phylo$tip.label<-ConvertAlleleNumbersToPopulationLetters.phylo(phy.phylo,assignFrame)
-
-	#Get observed trees
-	observed<-read.table(observed,stringsAsFactors=FALSE)
-
-	#Calculate popAssignment indexes for the matching vector
-	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
-	nLoci<-length(observed[,]) / treesPerLocus #number of loci
-	outputVector<-array(NA,length(observed[,]))
-	counter1<-1
-	for(n in 1:nLoci){
-		counter2<-1
-		for(m in 1:(length(observed[,]) / subsamplesPerGene)){
-			outputVector[counter1]<-counter2
-			counter1<-counter1+1	
-			if(m%%subsamplesPerGene==0){
-				counter2<-counter2+1
-			}
-		}
-	}
-
-	#Calculate number of matches for each observed tree to each simulated tree
-	currentPhy<-phy
-	for(q in 1:length(popAssignments)){ #for each popAssignment size class
-		#get clades for each simulated tree for this size class and convert indiv numbers to pop letters
-		#Don't need to convert numbers to letter here as it was done above
-		cladesAllPhy<-lapply(currentPhy[,],GetCladeNamesFromNewickString,assignFrame=assignFrame)
-		for(r in which(outputVector==q)){ #for each observed subsample within a size class
-			matches<-0
-			cladesGene<-GetCladeNamesFromNewickString(observed[r,1],assignFrame=assignFrame,
-				convertIndivNumsToPopLetters=TRUE,getOutDegreeOfPolytomies=TRUE) #get clades for current obs tree
-			for(s in 1:length(currentPhy[,])){ #for each simulated tree
-				matches<-matches + GetScoreOfSingleTree(cladesMS=cladesAllPhy[[s]], phyMS=currentPhy[s,1],
-					cladesGene=cladesGene[[1]], phyGene=observed[r,1],polytomyDegreesForCorrection=cladesGene[[2]])
-			}
-			outputVector[r]<-matches
-		}		
-		##When we reach the next size class, drop tips from simulated trees (to do this, need to convert trees to phylo)
-		if(q < length(popAssignments)){ 
-			currentPhy<-phy.pops
-			for(t in 1:length(currentPhy)){			
-				currentPhy[[t]]<-SubsampleMSTree(phy=currentPhy[[t]],popVectorOrig=popAssignments[[q]],
-					popVectorFinal=popAssignments[[q+1]])
-			}
-			write.tree(currentPhy,file="mstrees.txt")
-			currentPhy<-read.table("mstrees.txt",stringsAsFactors=FALSE)
-			assignFrame<-CreateAssignment.df(popAssignments[[q+1]])
-		}
-	}
-	
-	return(outputVector)
-
-}
-
-#Converts individual numbers to population labels when trees are phylo
-ConvertAlleleNumbersToPopulationLetters.phylo <- function(phy,assignFrame){
-	phy$tip.label <- as.character(assignFrame$popLabel[match(phy$tip.label, assignFrame$indivTotal)])
-}
-
-#Converts individual numbers to population labels when trees are raw strings
-ConvertAlleleNumbersToPopulationLetters.raw<-function(phy,assignFrame){
-	phy<-gsub(pattern=";", replacement="", x=gsub(pattern='\\:\\d+\\.*\\d*', replacement="", 
-		x= phy, perl=TRUE)) #remove branch lengths
-	split.tree<-strsplit(phy,"")[[1]]
-	#split.tree<-strsplit(phy, "[^\\d]", perl=TRUE)[[1]]
-	#split.tree<-split.tree[which(nchar(split.tree)>0)]
-	counter=1
-	#Put together double digit numbers
-	for(i in 1:length(split.tree)){
-		if(counter<length(split.tree)){
-			if(sum((grep("\\d",split.tree[counter])),(grep("\\d",split.tree[counter+1]))) == 2){
-				split.tree[counter]<-paste(split.tree[counter],split.tree[counter+1],sep="")
-				split.tree<-split.tree[-(counter+1)]
-				counter<-counter+2
-			}else{
-				counter<-counter+1
-			}
-		}
-	}
-	allele.indexes<-grep("\\d",split.tree,perl=TRUE) #indexes of taxa to transform
-	#split.tree <- as.character(assignFrame$popLabel[match(split.tree,assignFrame$indivTotal)])
-	for(i in allele.indexes){
-		split.tree[i]<-as.character(assignFrame$popLabel[match(split.tree[i],assignFrame$indivTotal)])
-	}
-	return(paste(split.tree,collapse=""))
-}
 
 #GetAndBindLabel and GetClades together get a list of all clades in the tree. For the taxa descended from each clade, 
 #sorts alphabetically and then makes them a string. These are slow, and have since been replaced by GetCladesQuickly
@@ -762,7 +638,7 @@ GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyD
 
 #Drops tips from the simulated trees (to be used in accordance with popAssignments)
 #Relies on using phylo objects, which makes it slow
-SubsampleMSTree.phylo<-function(phy,popVectorOrig,popVectorFinal) {
+SubsampleMSTree<-function(phy,popVectorOrig,popVectorFinal) {
 	taxaToDrop<-c()
 	minSample<-1
 	maxSample<-0
