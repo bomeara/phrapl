@@ -986,6 +986,7 @@ GetPermutationWeights<-function(phy,popVector,subsamplePath){
 	popLabels<-unique(assignFrame[,1])
 	#Make list of label permutations for each population
 	tips.permute<-list()
+	try.label <- c()
 	for(i in 1:length(popLabels)){
 		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] == 
 			popLabels[i])])))

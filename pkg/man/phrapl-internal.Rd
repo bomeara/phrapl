@@ -19,11 +19,14 @@
 \alias{GenerateIntervalsFullyResolvedCollapse}
 \alias{GenerateIntervalsNoCollapse}
 \alias{GenerateMigrationArrayMap}
+\alias{GenerateMigrationArrayMapTrunc}
 \alias{GenerateMigrationIndividuals}
 \alias{GenerateMigrationIndividualsAllowNoMigration}
 \alias{GenerateMigrationIndividualsFullyResolvedCollapseAllowNoMigration}
 \alias{GenerateMigrationIndividualsNoCollapseAllowNoMigration}
 \alias{GenerateN0multiplierIndividuals}
+\alias{GetPermutationWeightsBasedOnSampling}
+\alias{GridSearch}
 \alias{KAll}
 \alias{KCollapseMatrix}
 \alias{KN0multiplierMap}
