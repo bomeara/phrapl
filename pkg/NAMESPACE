@@ -1,3 +1,6 @@
 exportPattern("^[^\\.]")
 
 
+import(ape, partitions, optimx, parallel, nloptr, Matrix, numDeriv, rgl, RColorBrewer)
+importFrom(igraph, graph.empty, vertices, shortest.paths)
+
