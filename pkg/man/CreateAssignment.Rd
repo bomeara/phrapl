@@ -1,14 +1,14 @@
-\name{createAssignment}
-\alias{createAssignment}
+\name{CreateAssignment}
+\alias{CreateAssignment}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-createAssignment
+CreateAssignment
 }
 \description{
 Define the number of free parameters and assign individuals to populations according to the predefined file of samples to populations.
 }
 \usage{
-createAssignment(popVector, file = "assign.txt")
+CreateAssignment(popVector, file = "assign.txt")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

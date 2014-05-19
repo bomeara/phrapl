@@ -4,7 +4,7 @@ Date: 2014-05-06
 Title: Phylogeography using approximate likelihood
 Author: Brian O'Meara <bomeara@utk.edu>, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
 Maintainer: Brian O'Meara <bomeara@utk.edu>
-Imports: ape, partitions, igraph, rgenoud, optimx, parallel, nloptr, Matrix, rgl, RColorBrewer
+Depends: ape, partitions, igraph, rgenoud, optimx, parallel, nloptr, Matrix, rgl, RColorBrewer
 Description: Fits various phylogeographic models using approximate likelihood.
 LazyData: no
 License: GPL (>= 2)
