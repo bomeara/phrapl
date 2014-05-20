@@ -224,7 +224,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		print(resultsVector[1:2])
 		if(print.matches){
  	  		cat("\nmatches\n")
- 	  		print(paste(round(likelihoodVector,1),collapse=" ",sep="")) #print matches for each observed tree
+ 	  		print(paste(round(likelihoodVector,4),collapse=" ",sep="")) #print matches for each observed tree
  	  	}
 		cat("End Run\n\n") #Separator of different simulation runs
 
