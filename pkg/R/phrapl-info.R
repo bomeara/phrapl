@@ -155,7 +155,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 }
 
 #Return AIC for a given model and tree
-ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath="comparecladespipe.pl",
+ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		subsampleWeightsPath="subsampleWeights.txt",
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
@@ -347,7 +347,7 @@ CreateStartGrid<-function(fineGrid){
 
 ##Match simulated trees to observed trees and export vector of matches
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
-		comparePath="comparecladespipe.pl",unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
+		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
 		print.ms.string=FALSE,ncores=1,currentPopAssign=1){
 	
 	observed<-paste("observed",currentPopAssign,".tre",sep="")
