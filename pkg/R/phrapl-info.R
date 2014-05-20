@@ -54,6 +54,23 @@ KN0multiplierMap<-function(n0multiplierMap) {
 }
 
 
+FractionNonZeroMigration <- function(migrationIndividual) {
+	return(sum(migrationIndividual$migrationArray[!is.na(migrationIndividual$migrationArray)]>0) / sum(!is.na(migrationIndividual$migrationArray)) )	
+}
+
+NumberPopulationsAtRoot <- function(migrationIndividual) {
+	last.interval <- dim(migrationIndividual$collapseMatrix)[2]
+	number.ones <- length(which(migrationIndividual$collapseMatrix[,last.interval]==1))	
+	number.na <- length(which(is.na(migrationIndividual$collapseMatrix[,last.interval])))
+	number.all <- dim(migrationIndividual$collapseMatrix)[1]
+	number.alive <- number.all - number.na
+	number.unmerged <- number.alive
+	if (number.ones > 0) {
+		number.unmerged <- number.alive - number.ones + 1
+	}
+	return(number.unmerged)
+}
+
 
 CreateAssignment<-function(popVector,file="assign.txt") {
 	alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
