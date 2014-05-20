@@ -11,6 +11,7 @@
 \alias{CreateMSstringGeneric}
 \alias{CreateMSstringSpecific}
 \alias{Expansionmultiplierindividual}
+\alias{FractionNonZeroMigration}
 \alias{GenerateExpansionMultiplierIndividuals}
 \alias{GenerateIntervals}
 \alias{GenerateIntervalsFullyResolvedCollapse}
@@ -78,6 +79,7 @@
 \alias{GetScoreOfSingleTree}
 \alias{GetTrianglePlotWeights}
 \alias{MergeTrees}
+\alias{NumberPopulationsAtRoot}
 \alias{PassBounds}
 \alias{ProportionDifference}
 \alias{RemoveParameterNAs}
