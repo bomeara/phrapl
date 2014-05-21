@@ -13,7 +13,6 @@ Phylogeographic analysis using approximated likelihoods
 
   More information on \pkg{phrapl} can be found at \url{http://phrapl-package.ird.fr/}.
 }
-
 \author{
   Brian O'Meara, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
 
