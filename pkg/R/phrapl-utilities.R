@@ -777,7 +777,7 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 #from each locus and 2) a single assignment file (if popAssignments is specified) or an assignment file for each locus 
 #and replicate (if popAssignments=NULL). If more than one subsampling vector is included in popAssignments, subsampling
 #is done for each subsampling size class.  
-PrepSubsampling<-function(subsamplePath,assignFile="cladeAssignments.txt",treesFile="trees.tre",outputFile="observed.tre",
+PrepSubsampling<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",outputFile="observed.tre",
 	nIndividualsDesired=NULL,subsamplesPerGene,minPerPop=1,popAssignments,outgroup=TRUE,outgroupPrune=TRUE){
 	if(is.null(nIndividualsDesired)){
 		nIndividualsDesired<-sum(popAssignments[[1]])
@@ -957,7 +957,7 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 }
 
 #Get weights for each subsample based on the number of matches per permutation
-GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath,inputFile="observed.tre",
+GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath="./",inputFile="observed.tre",
 		outputFile="subsampleWeights.txt"){
 	observed<-read.tree(paste(subsamplePath,inputFile,sep=""))
 	subsampleSizeCounter<-1
@@ -974,7 +974,7 @@ GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath,inp
 }
 
 #Get weights for a given tree based on the number of matches per permutation
-GetPermutationWeights<-function(phy,popVector,subsamplePath){
+GetPermutationWeights<-function(phy,popVector,subsamplePath="./"){
 	assignFrame<-CreateAssignment.df(popVector)
 	popLabels<-unique(assignFrame[,1])
 	#Make list of label permutations for each population
