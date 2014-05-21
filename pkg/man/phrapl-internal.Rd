@@ -34,7 +34,6 @@
 \alias{MsIndividualParameters}
 \alias{N0multiplierindividual}
 \alias{PipeMS}
-\alias{PlotModel}
 \alias{Popinterval}
 \alias{PrepSubsampling}
 \alias{PrunedAssignFrame}
@@ -46,7 +45,6 @@
 \alias{RowMax}
 \alias{RowMin}
 \alias{SaveMS}
-\alias{SaveMovie}
 \alias{SearchContinuousModelSpaceNLoptr}
 \alias{SetMaxK}
 \alias{TaxaToDrop}
