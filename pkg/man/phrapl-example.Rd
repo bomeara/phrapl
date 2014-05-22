@@ -35,6 +35,9 @@ objects, first export them to a file (note you will need to install and load the
 
 }
 \examples{
+  #load ape
+  library(ape)
+  
   #Write trees to file
   write.tree(trees,file="trees.tre")
 
@@ -56,7 +59,7 @@ objects, first export them to a file (note you will need to install and load the
     subsamplesPerGene=10)
 
   #To get the weights
-  GetPermutationWeightsAcrossSubsample(popAssignments=
+  GetPermutationWeightsAcrossSubsamples(popAssignments=
     popAssignments)
 
   #To run a grid search
