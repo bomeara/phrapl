@@ -782,6 +782,10 @@ PrepSubsampling<-function(subsamplePath="./",assignFile="cladeAssignments.txt",t
 	if(is.null(nIndividualsDesired)){
 		nIndividualsDesired<-sum(popAssignments[[1]])
 	}
+	#Remove old files
+	if(file.exists(paste(subsamplePath,outputFile,sep=""))){
+		unlink(paste(subsamplePath,outputFile,sep=""))
+	}
 	#Create list for storing subsample trees
 	phyList<-list()
 	#If outgroup present, add this to the first popAssignments vector
@@ -959,6 +963,9 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 #Get weights for each subsample based on the number of matches per permutation
 GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath="./",inputFile="observed.tre",
 		outputFile="subsampleWeights.txt"){
+	if(file.exists(paste(subsamplePath,outputFile,sep=""))){
+		unlink(paste(subsamplePath,outputFile,sep=""))
+	}
 	observed<-read.tree(paste(subsamplePath,inputFile,sep=""))
 	subsampleSizeCounter<-1
 	for(y in 1:length(observed)){
