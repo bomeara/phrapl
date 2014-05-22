@@ -13,7 +13,7 @@ Genealogies were simulated under a coalescent isolation-with-migration model in 
 Nm = 0.5 and coalesce after Ne generations. Population A-B coalesces with C after 2.5Ne generations and population A-B-C coalesces with 
 D after 5Ne generations (no migration involved). 
 
-To access this dataset, simply load the file into R; e.g., load(paste(system.file("data",package="phrapl"),"/TestData.rda",sep="")).  
+To access this dataset, simply load the file into R; e.g., data(TestData).  
 
 Seven objects are included:  
 1. migrationArray, which lists specifications for six models to be analyzed (model number 2 corresponds to the correct model); 
