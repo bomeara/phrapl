@@ -9,7 +9,7 @@ Cull results from a grid or heuristic search into a table
 This function takes output from a grid or heuristic search carried out across a set of models and constructs a 
 table that includes AIC values and weights, parameter estimates, and specifications for each model. The function 
 can either import one or more R object files (with the extention .rda) located in the specified rdaFilePath, in 
-which phrapl output is stored, or can can be passed a vector of file names to be imported.
+which phrapl output is stored, or can be passed a vector of file names to be imported.
 }
 \usage{
 ConcatenateResults(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,rmNaParameters=TRUE)
