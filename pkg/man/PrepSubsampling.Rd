@@ -19,20 +19,19 @@ outgroup=TRUE,outgroupPrune=TRUE)
 }
 \arguments{
   \item{subsamplePath}{
-Path to the directory from which input files are accessed and to which output files are printed
+Path to the directory from which input files are accessed and to which output files are printed.
 }
   \item{assignFile}{
-File that includes population assignments. This should consist of two columns: the fist lists of all
-individuals in the tree; the second lists populations (e.g., "A", "B", "C"...) to which individuals
-belong. The file must include a header row
+File that includes population assignments. This should consist of two columns: the first lists all
+individuals in the tree; the second lists populations to which individuals belong (e.g., "A", "B", "C"...).
+The file must include a header row.
 }
   \item{treesFile}{
-A file that includes one or more trees to be subsampled, in newick format
+A file that includes one or more trees to be subsampled, in newick format.
 }
   \item{outputFile}{
 File to which subsampled trees will be printed. If there is more than one tree in the treesFile,
 all subsamples for the first tree will be printed, then all the subsamples for the second tree, etc.
-If more than one
 }
   \item{popAssignments}{
 A list of vectors that gives a fixed number of subsamples to take per population. Defining popAssignments
