@@ -27,6 +27,7 @@ If specified, gives the file name to which the output table should be printed.
   \item{rmNaParameters}{
 If true, this removes all parameter columns from the table that only include NAs.
 }
+}
 \author{
 Nathan Jackson
 }
