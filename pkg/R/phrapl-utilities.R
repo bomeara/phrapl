@@ -777,9 +777,9 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 #from each locus and 2) a single assignment file (if popAssignments is specified) or an assignment file for each locus 
 #and replicate (if popAssignments=NULL). If more than one subsampling vector is included in popAssignments, subsampling
 #is done for each subsampling size class.  
-PrepSubsampling<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",outputFile="observed.tre",
-	nIndividualsDesired=NULL,subsamplesPerGene,minPerPop=1,popAssignments,outgroup=TRUE,outgroupPrune=TRUE){
-	if(is.null(nIndividualsDesired)){
+PrepSubsampling<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",
+outputFile="observed.tre",popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
+outgroup=TRUE,outgroupPrune=TRUE){
 		nIndividualsDesired<-sum(popAssignments[[1]])
 	}
 	#Remove old files

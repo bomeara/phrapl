@@ -23,7 +23,9 @@ List containing all the models
 Integer vector: which models to examine
 }
   \item{popAssignments}{
-Assignment of alleles (numeric) to populations (letters)
+A list of vectors (typically only one vector will be specified) that define the number of individuals per 
+population included in the observed tree file (usually these will be subsampled trees). Defining popAssignments 
+as list(c(4,4,4)) for example means that there 12 tips per observed tree, with 4 tips per population.
 }
   \item{badAIC}{
 In case of failure (such as trying a parameter outside a bound), this allows returning of suboptimal but still finite number. Mostly used for heuristic searches.
