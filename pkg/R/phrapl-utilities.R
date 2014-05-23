@@ -780,6 +780,7 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 PrepSubsampling<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",
 outputFile="observed.tre",popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
 outgroup=TRUE,outgroupPrune=TRUE){
+	if(is.null(nIndividualsDesired)){
 		nIndividualsDesired<-sum(popAssignments[[1]])
 	}
 	#Remove old files
