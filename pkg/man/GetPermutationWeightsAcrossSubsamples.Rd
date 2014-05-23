@@ -27,6 +27,7 @@ Name of the file that includes the subsampled trees
   \item{outputFile}{
 Name of the file to which the weights will be printed (its length will equal the number of subsampled trees)
 }
+}
 \note{
 Because this function exhaustively permutes all possible tip lables across a tree, it can take a long time
 for large subsampled trees. For more information, please see the user manual.

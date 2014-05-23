@@ -64,6 +64,7 @@ as the last population included in the assignFile.
 Whether a subsampled outgroup should be pruned from the subsampled tree prior to being printed to the output
 file. This is to be used in conjunction with the outgroup option.
  }
+ }
 \author{
 Nathan Jackson & Brian O'Meara
 }
