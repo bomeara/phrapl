@@ -1,37 +1,61 @@
 \name{ConcatenateResults}
 \alias{ConcatenateResults}
-\alias{concatenateResults}
-\alias{concatenate.Results}
 \title{
-Cull results from a grid or heuristic search into a table
+ConcatenateResults
 }
 \description{
-This function takes output from a grid or heuristic search carried out across a set of models and constructs a 
-table that includes AIC values and weights, parameter estimates, and specifications for each model. The function 
-can either import one or more R object files (with the extention .rda) located in the specified rdaFilePath, in 
-which phrapl output is stored, or can be passed a vector of file names to be imported.
+This function builds a table with details for each model analyzed. It give AICs, model weights, details of each model, and parameter estimates and indexes. This is the major output of phrapl.
 }
 \usage{
-ConcatenateResults(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,rmNaParameters=TRUE)
+ConcatenateResults(rdaFilesPath = "./", rdaFiles = NULL, outFile = NULL, addAICweights = TRUE, rmNaParameters = TRUE, addTime.elapsed = FALSE)
 }
+%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{rdaFilesPath}{
-A directory in which R object files (which must have the extention .rda) are located. 
+Path to *.rda files which are outputs (not automatically saved!) of \link{GridSearch} (default is the current dir).
+
 }
   \item{rdaFiles}{
-As an alternative to using rdaFilePath, a vector of file names can be passed to the function.
+A vector of rda file names (located in the directory specified above) can be given.
 }
   \item{outFile}{
-If specified, gives the file name to which the output table should be printed.
+Outfile name.
+}
+  \item{addAICweights}{
+Option to printed out in outFile.
 }
   \item{rmNaParameters}{
-If true, this removes all parameter columns from the table that only include NAs.
+Option to printed out in outFile.
+}
+  \item{addTime.elapsed}{
+Option to printed out in outFile.
 }
 }
 \author{
-Nathan Jackson
+  Brian O'Meara, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
+
+  Maintainer: Brian O'Meara <bomeara@utk.edu>
 }
-\note{
-For more information, please see the user manual.
+\references{
+ 
+O'Meara, B.C., N. Jackson, A. Morales-Garcia, and B. Carstens (2014) Phrapl in prep.
 }
-\keyword{ ~concatenate }
+\seealso{
+\link{GridSearch}, 
+\link{CalculateModelAverages}.
+}
+\examples{
+
+#totalData<-ConcatenateResults(
+#rdaFilesPath="/path_to_rdaFiles/",
+#rdaFiles=NULL,
+#outFile=NULL,
+#addAICweights=TRUE,
+#rmNaParameters=TRUE,
+#addTime.elapsed=FALSE)
+
+##Save results to a .txt file
+#write(t(totalData), file = "totalData.txt", ncolumns = 40, append = FALSE, sep = "\t")	
+		
+}
+
