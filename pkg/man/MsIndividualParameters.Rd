@@ -32,6 +32,6 @@ Maintainer: Brian O'Meara <bomeara@utk.edu>
 ##free parameters were specified (maxK=3)  
 
 data(MigrationArray_4pop_3K)
-msIndividualParameters(migrationArray[[54]])
+MsIndividualParameters(migrationArray[[54]])
 }
 
