@@ -8,6 +8,7 @@
 \alias{CompleteIntervals}
 \alias{ConvertOutputVectorToLikelihood}
 \alias{CreateAssignment.df}
+\alias{CreateAssignment}
 \alias{CreateMSstringGeneric}
 \alias{CreateMSstringSpecific}
 \alias{Expansionmultiplierindividual}
