@@ -5,7 +5,8 @@
 CreateAssignment
 }
 \description{
-Define the number of free parameters and assign individuals to populations according to the predefined file of samples to populations.
+Define the number of free parameters and assign individuals to populations 
+according to the predefined file of samples to populations.
 }
 \usage{
 CreateAssignment(popVector, file = "assign.txt")

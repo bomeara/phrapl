@@ -5,7 +5,9 @@ GenerateMigrationArrayMap
 }
 \description{
 
-This function was meant to declare the matrix of model space search for a given \link{migrationArray}. It will generate a table which contains of all the parameter switches for each model.
+This function was meant to declare the matrix of model space search for a given
+\link{migrationArray}. It will generate a table which contains of all the 
+parameter switches for each model.
 }
 \usage{
 GenerateMigrationArrayMap(migrationArray)
@@ -21,7 +23,8 @@ Contains a matrix of models to be explored.
   Maintainer: Brian O'Meara <bomeara@utk.edu>
 }
 \references{
-O'Meara, B.C., N. Jackson, A. Morales-Garcia, and B. Carstens (2014) Phrapl in prep.
+O'Meara, B.C., N. Jackson, A. Morales-Garcia, and B. Carstens (2014) 
+Phrapl in prep.
 }
 \seealso{
 \link{migrationArray}

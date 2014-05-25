@@ -3,38 +3,60 @@
 \alias{example}
 \alias{TestData}
 \alias{grid.search}
+\alias{migrationArray}
+\alias{migrationArrayMap}
+\alias{trees}
+\alias{assignFile}
+\alias{popAssignments}
+\alias{subsampledTrees}
+\alias{subsampleWeights}
 \title{
 A description for applying phrapl to a test dataset 
 }
 \description{
-A test dataset called TestData.rda can be found in the data directory included in the phrapl package. This dataset comprises 
-10 gene trees containing three populations ("A","B", and "C"), with 20 samples per population, and a single outgroup sample ("D"). 
-Genealogies were simulated under a coalescent isolation-with-migration model in which populations A and B share alleles at a rate of 
-Nm = 0.5 and coalesce after Ne generations. Population A-B coalesces with C after 2.5Ne generations and population A-B-C coalesces with 
+A test dataset called TestData.rda can be found in the data directory included 
+in the phrapl package. This dataset comprises 
+10 gene trees containing three populations ("A","B", and "C"), with 20 samples 
+per population, and a single outgroup sample ("D"). 
+Genealogies were simulated under a coalescent isolation-with-migration model in
+which populations A and B share alleles at a rate of 
+Nm = 0.5 and coalesce after Ne generations. Population A-B coalesces with C
+after 2.5Ne generations and population A-B-C coalesces with 
 D after 5Ne generations (no migration involved). 
 
 To access this dataset, simply load the file into R; e.g., data(TestData).  
 
 Seven objects are included:  
-1. migrationArray, which lists specifications for six models to be analyzed (model number 2 corresponds to the correct model); 
-2. migrationArrayMap, which lists parameter indexes for each model included in migrationArray; 
+1. migrationArray, which lists specifications for six models to be analyzed 
+(model number 2 corresponds to the correct model); 
+2. migrationArrayMap, which lists parameter indexes for each model included 
+in migrationArray; 
 3. trees, which contains the 10 full gene trees in newick format; 
 4. assignFile, which gives assignments of samples to populations;
-5. popAssignments, which gives a list of vectors describing how the dataset should be subsampled (e.g., list(c(4,4,4)) means that one 
-    subsampling procedure should be carried out, where 4 individuals are sampled from populations A, B, and C);
-6. subsampledTrees, which contains subsampled gene trees (10 subsampled trees for each original gene tree, sampled at 4 samples per population;
+5. popAssignments, which gives a list of vectors describing how the dataset 
+should be subsampled (e.g., list(c(4,4,4)) means that one 
+    subsampling procedure should be carried out, where 4 individuals are sampled
+    from populations A, B, and C);
+6. subsampledTrees, which contains subsampled gene trees (10 subsampled trees 
+for each original gene tree, sampled at 4 samples per population;
 	the outgroup has been pruned in each tree);
-7. subsampleWeights, which gives a weight for each subsample topology that is used in phrapl to calculate log likelihoods.
+7. subsampleWeights, which gives a weight for each subsample topology that is 
+used in phrapl to calculate log likelihoods.
 
-A phrapl GridSearch can be run using migrationArray, migrationArrayMap, popAssignments, subsampledTrees, and subsampleWeights. 
-To perform subsampling (PrepSubsampling) and weights calculation (GetPermutationWeightsAcrossSubsamples) ahead of doing the grid search, 
+A phrapl GridSearch can be run using migrationArray, migrationArrayMap, 
+popAssignments, subsampledTrees, and subsampleWeights. 
+To perform subsampling (PrepSubsampling) and weights calculation 
+(GetPermutationWeightsAcrossSubsamples) ahead of doing the grid search, 
 use assignFile and trees.
 
-Phrapl functions input assignFile, trees, subsampledTrees, and subsampleWeights as files rather than as R objects. Thus, to use these four 
-objects, first export them to a file (note you will need to install and load the ape package to export the trees).
+Phrapl functions input assignFile, trees, subsampledTrees, and subsampleWeights 
+as files rather than as R objects. Thus, to use these four 
+objects, first export them to a file (note you will need to install and load the
+ape package to export the trees).
 
 }
 \examples{
+  data(TestData)
   \dontrun{
   #load ape
   library(ape)
