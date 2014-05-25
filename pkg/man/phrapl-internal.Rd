@@ -84,7 +84,6 @@
 \alias{TruncateToCells}
 \alias{getExponent}
 \alias{maxK}
-\alias{migrationArray}
 \title{Internal phrapl Functions}
 \description{
   Internal \pkg{phrapl} functions.

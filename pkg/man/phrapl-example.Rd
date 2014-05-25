@@ -2,7 +2,6 @@
 \alias{phrapl-example}
 \alias{example}
 \alias{TestData}
-\alias{grid.search}
 \alias{migrationArray}
 \alias{migrationArrayMap}
 \alias{trees}
