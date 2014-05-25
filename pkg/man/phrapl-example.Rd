@@ -35,6 +35,7 @@ objects, first export them to a file (note you will need to install and load the
 
 }
 \examples{
+  \dontrun{
   #load ape
   library(ape)
   
@@ -75,6 +76,7 @@ objects, first export them to a file (note you will need to install and load the
   #To generate an output table
   totalData<-ConcatenateResults(outFile=
     "AIC_table.txt")
+    }
 }
 \keyword{example}
 \keyword{TestData}
