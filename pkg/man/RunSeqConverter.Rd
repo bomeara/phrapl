@@ -9,12 +9,12 @@ fasta, or Se-Al formats and converts them to (relax) phylip format. This format
 is required for RAxML (RunRaxml). 
 }
 \usage{
-RunSeqConverter(seqConvPath = paste(getwd(), "/", sep = ""), 
-inFilePath = paste(getwd(), "/", sep = ""), inputFormat = "nex")
+RunSeqConverter(seqConvPath=system.file("extdata","seqConverter.pl",package="phrapl"),
+	inFilePath="./",inputFormat="nex")
 }
 \arguments{
   \item{seqConvPath}{
-Path to the seqConverter script (default is the current dir).
+Path to the seqConverter script (default is to the script distributed with phrapl).
 }
   \item{inFilePath}{
 Path to the sequence files (default is current dir).

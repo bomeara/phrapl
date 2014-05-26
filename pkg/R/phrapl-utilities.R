@@ -1332,11 +1332,11 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
 
 #Function for running seqConverter to convert nexus, fasta, or se-al files to phylip
 #inputFormat can be "nex", "fasta", or "seal" (and files must use these as the file suffix)
-RunSeqConverter <- function(seqConvPath=paste(getwd(),"/",sep=""),inFilePath=paste(getwd(),"/",sep=""),
-		inputFormat="nex"){
+RunSeqConverter <- function(seqConvPath=system.file("extdata","seqConverter.pl",package="phrapl"),
+	inFilePath="./",inputFormat="nex"){
 	filesList <- list.files(inFilePath,pattern=paste("*.",inputFormat,sep=""))
 	for(numLoci in 1:length(filesList)){
-		systemCall1 <-system(paste(seqConvPath,"seqConverter.pl -d",paste(inFilePath,filesList[numLoci],sep="")," -ope",sep=""))
+		systemCall1 <-system(paste(seqConvPath," -d",paste(inFilePath,filesList[numLoci],sep="")," -ope",sep=""))
 	}
 }
 
