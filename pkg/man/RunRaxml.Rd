@@ -13,9 +13,8 @@ to be used for all loci or as a vector which needs to match the order of the
 reading of the phylip files (i.e., alphabetic/numeric).
 }
 \usage{
-RunRaxml(raxmlPath = paste(getwd(), "/", sep = ""), raxmlVersion = "raxmlHPC",
-inputPath = paste(getwd(), "/", sep = ""), mutationModel, outgroup, iterations,
-seed = sample(1:1e+07, 1), outputSeeds = FALSE, discard = FALSE)
+RunRaxml(raxmlPath = "./", raxmlVersion = "raxmlHPC",inputPath = "./", mutationModel, 
+outgroup, iterations, seed = sample(1:1e+07, 1), outputSeeds = FALSE, discard = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
