@@ -1344,8 +1344,9 @@ RunSeqConverter <- function(seqConvPath=system.file("extdata","seqConverter.pl",
 #designated path). It reads in all .phylip files in the designated path, and runs RAxML for each in turn.
 #Outgroups and mutation models can be specified either as a single string to be used for all loci or as a
 #vector which needs to match the order of the reading of the phylip files (i.e., alphabetic/numeric).
-RunRaxml <- function(raxmlPath="./",raxmlVersion="raxmlHPC",inputPath="./",mutationModel,
-		outgroup,iterations,seed=sample(1:10000000,1),outputSeeds=FALSE,discard=FALSE){
+RunRaxml <- function(raxmlPath=paste(getwd(),"/",sep=""),raxmlVersion="raxmlHPC",
+	inputPath=paste(getwd(),"/",sep=""),mutationModel,outgroup,iterations,
+	seed=sample(1:10000000,1),outputSeeds=FALSE,discard=FALSE){
 	phylipFilesList <- list.files(inputPath,pattern="*.phylip",full.names=FALSE)
 	seed.vec <- array()
 	for(numb in 1:length(phylipFilesList)){
