@@ -276,7 +276,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 	}else{
 		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray)
 	}
-	
+	overall.results$models <- modelRange #so if we've done subsampling, use right model numbers
 	#Save parameter estimates and parameter indexes to tables
 	if(numReps==0){
 		parameters<-ExtractGridParameters(migrationArray=migrationArray,result=gridList,
