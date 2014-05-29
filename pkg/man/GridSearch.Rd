@@ -15,7 +15,7 @@ search.
 \usage{
 GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap, 
 migrationArray, popAssignments, badAIC = 1e+14, 
-maxParameterValue = 100, nTrees = 1, msPath = "ms", 
+maxParameterValue = 100, nTrees = 1e5, msPath = "ms", 
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
 observedPath = "observed.tre", subsampleWeightsPath = "subsampleWeights.txt", 
 unresolvedTest = TRUE, print.ms.string = FALSE, print.results = FALSE, 
