@@ -183,7 +183,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 #This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
 #nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
 GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,migrationArray,popAssignments, 
-		badAIC=100000000000000,maxParameterValue=100,nTrees=1 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
+		badAIC=100000000000000,maxParameterValue=100,nTrees=1e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		observedPath="observed.tre",subsampleWeightsPath="subsampleWeights.txt",unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
