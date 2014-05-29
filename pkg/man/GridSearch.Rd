@@ -135,12 +135,18 @@ Way to summarize results across subsamples.
   \item{saveNoExtrap}{
 Boolean to tell whether to save extrapolated values. FALSE by default.
 }
+  \item{doSNPs}{
+Boolean to tell whether to use the SNPs model: count a single matching edge on
+the simulated tree as a full match. FALSE by default.
+}
   \item{\dots}{
 Other items to pass to heuristic search functions.
 }
 }
 \details{
-We recommend using the grid, not the heuristic search.
+We recommend using the grid, not the heuristic search. If you are using the
+SNPs model, you should have uniform weights for the gene trees unless
+there is some reason you want to weight them differently.
 }
 \value{
 If return.all==FALSE, just a vector of AIC values. Otherwise, a list with 

@@ -177,7 +177,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE){
+		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE){
 	parameterVector<-exp(par)
 	#now have to stitch in n0 being 1, always, for the first population
 	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
@@ -204,7 +204,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		currentPopAssign<-j
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
-		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest)
+		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest, doSNPs=doSNPs)
  	 	
  	 	#Apply weights to matches
  	 	if(!is.null(subsampleWeightsPath)){
@@ -365,7 +365,7 @@ CreateStartGrid<-function(fineGrid){
 ##Match simulated trees to observed trees and export vector of matches
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
-		print.ms.string=FALSE,ncores=1,currentPopAssign=1){
+		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE){
 	
 	observed<-paste("observed",currentPopAssign,".tre",sep="")
 	assign<-paste("assign",currentPopAssign,".txt",sep="")
@@ -391,11 +391,17 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 	if (unresolvedTest==FALSE) {
 		unresolvedFlag<-""
 	}
+
+	snpFlag<-"-d" #for doSNPs
+	if (doSNPs==FALSE) {
+		snpFlag<-""
+	}
+
 	
 	#Simulate trees in MS and do matching in perl
 	outputstringMS<-paste(msPath,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
 		" | grep ';' > mstrees.txt", sep=" ") 
-	outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag,paste("-a",assign,sep=""), 
+	outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag, snpFlag, paste("-a",assign,sep=""), 
 		paste("-o",observed,sep=""),sep=" ")
 
 	if(ncores==1){
