@@ -1,6 +1,6 @@
 \name{SaveMovie}
 \alias{SaveMovie}
-\alias{saveovie}
+\alias{savemovie}
 \alias{Savemovie}
 \alias{save.movie}
 

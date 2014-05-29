@@ -26,7 +26,7 @@ collapseStarts = c(0.3, 0.58, 1.11, 2.12, 4.07, 7.81, 15),
 n0Starts = c(0.1, 0.5, 1, 2, 4), 
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15, 4.64, 10), 
 subsamplesPerGene = 1, totalPopVector = totalPopVector, summaryFn = "mean", 
-saveNoExtrap = FALSE, ...)
+saveNoExtrap = FALSE, doSNPs = FALSE, ...)
 }
 \arguments{
   \item{migrationArrayMap}{
