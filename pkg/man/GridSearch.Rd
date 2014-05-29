@@ -13,8 +13,8 @@ traditional optimization approaches. However, it can still do a heuristic
 search.
 }
 \usage{
-GridSearch(migrationArrayMap, migrationArray, 
-modelRange = c(1:length(migrationArray)), popAssignments, badAIC = 1e+14, 
+GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap, 
+migrationArray, popAssignments, badAIC = 1e+14, 
 maxParameterValue = 100, nTrees = 1, msPath = "ms", 
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
 observedPath = "observed.tre", subsampleWeightsPath = "subsampleWeights.txt", 
@@ -29,14 +29,15 @@ subsamplesPerGene = 1, totalPopVector = totalPopVector, summaryFn = "mean",
 saveNoExtrap = FALSE, doSNPs = FALSE, ...)
 }
 \arguments{
-  \item{migrationArrayMap}{
+   \item{modelRange}{
+Integer vector: which models to examine. Do not specify to use default of all
+models.
+}
+ \item{migrationArrayMap}{
 A data.frame containing information about all the models
 }
   \item{migrationArray}{
 List containing all the models
-}
-  \item{modelRange}{
-Integer vector: which models to examine
 }
   \item{popAssignments}{
 A list of vectors (typically only one vector will be specified) that define the 

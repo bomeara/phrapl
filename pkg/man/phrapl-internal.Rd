@@ -18,7 +18,6 @@
 \alias{GenerateIntervalsFullyResolvedCollapse}
 \alias{GenerateIntervalsNoCollapse}
 \alias{GenerateMigrationArrayMapTrunc}
-\alias{GenerateMigrationIndividuals}
 \alias{GenerateMigrationIndividualsAllowNoMigration}
 \alias{GenerateMigrationIndividualsFullyResolvedCollapseAllowNoMigration}
 \alias{GenerateMigrationIndividualsNoCollapseAllowNoMigration}
