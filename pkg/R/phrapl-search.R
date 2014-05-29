@@ -182,7 +182,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 
 #This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
 #nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
-GridSearch<-function(migrationArrayMap,migrationArray,modelRange=c(1:length(migrationArray)),popAssignments, 
+GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,migrationArray,popAssignments, 
 		badAIC=100000000000000,maxParameterValue=100,nTrees=1 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		observedPath="observed.tre",subsampleWeightsPath="subsampleWeights.txt",unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
@@ -190,6 +190,11 @@ GridSearch<-function(migrationArrayMap,migrationArray,modelRange=c(1:length(migr
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
 		totalPopVector=totalPopVector,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE,...){
+
+   if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
+     migrationArray<-migrationArray[modelRange]
+     migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
+   }
 
   #Prepare temporary tree and assign files
 	observed<-read.tree(observedPath)
@@ -267,9 +272,9 @@ GridSearch<-function(migrationArrayMap,migrationArray,modelRange=c(1:length(migr
 
 	#Save table of best models
 	if(numReps==0){
-		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray,modelRange=modelRange)
+		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray)
 	}else{
-		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray,modelRange=modelRange)
+		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray)
 	}
 	
 	#Save parameter estimates and parameter indexes to tables
