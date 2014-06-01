@@ -83,10 +83,22 @@ if(new.window) {
 			}
 		}
 		if(max(collapseMatrix[, regime],na.rm=TRUE)==1) {
-			center<-cbind(rbind(current.terminal.pos[which(collapseMatrix[,regime]==1),], current.terminal.pos[which(collapseMatrix[,regime]==1),]), z=c(regime+1,regime+1.2))
-			for (length.out in 2:6) {
-			shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from=center[1,1],to=center[2,1], length.out=length.out), seq(from=center[1,2],to=center[2,2], length.out=length.out), seq(from=center[1,3],to=center[2,3], length.out=length.out))
-, radius=base.radius/3, sides=8, twist=1, closed=-2), depth=2)), col="gray") #hack to deal with rgl's twisting of cylinders
+			collapsing.individuals <- which(collapseMatrix[,regime]==1)
+			if(length(collapsing.individuals)>2) {
+				for (collapsing.individuals.index in sequence(length(collapsing.individuals))) {
+					center<-cbind(rbind(current.terminal.pos[collapsing.individuals[collapsing.individuals.index],], next.terminal.pos[collapsing.individuals[collapsing.individuals.index],]), z=c(regime+1,regime+1))
+					print("center")
+					print(center)
+					for (length.out in 2:6) {
+						shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from=center[1,1],to=center[2,1], length.out=length.out), seq(from=center[1,2],to=center[2,2], length.out=length.out), seq(from=center[1,3],to=center[2,3], length.out=length.out))
+	, radius=base.radius/3, sides=8, twist=1, closed=-2), depth=2)), col="gray") #hack to deal with rgl's twisting of cylinders
+					}
+				}
+			} else {
+				center<-cbind(rbind(current.terminal.pos[which(collapseMatrix[,regime]==1),], current.terminal.pos[which(collapseMatrix[,regime]==1),]), z=c(regime+1,regime+1))
+				for (length.out in 2:6) {
+					shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from=center[1,1],to=center[2,1], length.out=length.out), seq(from=center[1,2],to=center[2,2], length.out=length.out), seq(from=center[1,3],to=center[2,3], length.out=length.out)), radius=base.radius/3, sides=8, twist=1, closed=-2), depth=2)), col="gray") #hack to deal with rgl's twisting of cylinders
+				}
 			}
 
 		}
