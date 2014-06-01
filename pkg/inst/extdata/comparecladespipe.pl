@@ -164,6 +164,8 @@ else {
 			foreach my $taxon (@splitinner) {
 				push(@renamedinner,$assignments{ $taxon });
 			}
+			print(@renamedinner);
+			print("\n");
 			@renamedinner = sort(@renamedinner);
 			push(@cladearray,join('-',@renamedinner));
 			$intree=~s/\($innermatch\)/$innermatch/;
