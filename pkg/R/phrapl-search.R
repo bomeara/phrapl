@@ -1,62 +1,9 @@
-#has the functions for searching or optimizing a single model
-
-# searchContinuousModelSpace<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL,...) {
-  # modelID<-returnModel(p,migrationArrayMap)
-  # if(print.results) {
-    # resultVector<-c(modelID,p)
-    # names(resultVector)<-c("migrationArryIndividualID","collapseMatrix.number", "n0multiplierMap.number","migrationArray.number")
-    # print(resultVector)
-  # }
-  # if(is.na(modelID)) {
-    # return(badAIC)
-  # }
-  # else {
-    # paramNames<-msIndividualParameters(migrationArray[[modelID]])
-    # startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space
-    # if(debug) {
-      # print(startingVals) 
-    # }
-    # searchResults<-optimx(par=startingVals, fn=eeturnAIC, method=method, migrationIndividual=migrationArray[[modelID]], migrationArrayMap=migrationArrayMap, migrationArray=migrationArray, popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, itnmax=itnmax, debug=debug, control=list(iter.max=itnmax, maxit=itnmax,iter.lim=itnmax),...)
-    # return(searchResults$fvalues)
-  # }
-# }
-
-# SearchContinuousModelSpaceOptim<-function(p, migrationArrayMap, migrationArray, popVector, badAIC=100000000000000, maxParameterValue=100, nTrees=1 ,msLocation="/usr/local/bin/ms",compareLocation="comparecladespipe.pl",assign="assign.txt",observed="observed.txt",unresolvedTest=TRUE, print.ms.string=FALSE, print.results=FALSE, debug=FALSE,method="nlminb",itnmax=NULL, return.all=FALSE, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), ...) {
-#   modelID<-ReturnModel(p,migrationArrayMap)
-#   if(print.results) {
-#     resultVector<-c(modelID,p)
-#     names(resultVector)<-c("migrationArryIndividualID","collapseMatrix.number", "n0multiplierMap.number","migrationArray.number")
-#     print(resultVector)
-#   }
-#   if(is.na(modelID)) {
-#     return(badAIC)
-#   }
-#   else {
-#     paramNames<-MsIndividualParameters(migrationArray[[modelID]])
-#     startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1 + sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) ))  #going to optimize in log space. For N0, force first one to always be 1, so drop a parameter here
-#     if(debug) {
-#       print(startingVals) 
-#     }
-#     searchResults<-optim(par=startingVals, fn=ReturnAIC, method=method, control=list(maxit=itnmax), migrationIndividual=migrationArray[[modelID]], popVector=popVector, badAIC=badAIC, maxParameterValue=maxParameterValue, nTrees=nTrees,msLocation=msLocation,compareLocation=compareLocation,assign=assign,observed=observed,unresolvedTest=unresolvedTest, print.ms.string=print.ms.string, print.results=print.results, debug=debug, parameterBounds=parameterBounds, ...)
-# 
-#   			#stitch the first N0multiplier (=1) into the final parameter vector
-# 			positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
-# 			solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
-# 			solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
-# 			if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
-#   				solutionVectorSecondPart<-c()
-# 			}
-#     ifelse(return.all, return(searchResults), return(searchResults$value))     
-#   }
-# }
-
-
 #TO DO: If the optimal value is outside the bounds of the grid, offer warning or option to restart search centered at new grid
 #I have tweaked the code for SearchContinuousSpaceNLopter such that 1) different grid parameters were used and such that 2)the grid file is saved
 #with a different name for each run
 SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popAssignments, badAIC=100000000000000, 
 	maxParameterValue=100, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
-	subsampleWeightsPath="subsampleWeights.txt",
+	subsampleWeights.df=NULL,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, 
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
@@ -118,7 +65,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
     	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
     	ncores=ncores,debug=debug,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
-    	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeightsPath=subsampleWeightsPath,
+    	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
     	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, doSNPs=doSNPs)
     	initial.AIC<-rbind(initial.AIC,currentAIC)
     }
@@ -155,7 +102,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug, parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
- 	   		totalPopVector=totalPopVector,subsampleWeightsPath=subsampleWeightsPath,popAssignments=popAssignments,
+ 	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
  	   		saveNoExtrap=saveNoExtrap, doSNPs=doSNPs)
  	  
 
@@ -184,7 +131,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 #nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
 GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,migrationArray,popAssignments, 
 		badAIC=100000000000000,maxParameterValue=100,nTrees=1e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
-		observedPath="observed.tre",subsampleWeightsPath="subsampleWeights.txt",unresolvedTest=TRUE,
+		observedTrees=NULL,subsampleWeights.df=NULL, doWeights=TRUE, unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
@@ -195,26 +142,20 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
      migrationArray<-migrationArray[modelRange]
      migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
    }
-
+   if(is.null(subsampleWeights.df) && doWeights) {
+   	subsampleWeights.df <- GetPermutationWeightsAcrossSubsamples(popAssignments, observedTrees)
+   }
   #Prepare temporary tree and assign files
-	observed<-read.tree(observedPath)
-	if(!is.null(subsampleWeightsPath)){
-		subsampleWeights<-read.table(subsampleWeightsPath)
-	}
 	firstTree<-1
-	lastTree<-length(observed) / length(popAssignments)
+	lastTree<-length(observedTrees) / length(popAssignments)
 	for(k in 1:length(popAssignments)){
-		write.table(CreateAssignment.df(popAssignments[[k]]),file=paste("assign",k,".txt",sep=""),
+		write.table(CreateAssignment.df(popAssignments[[k]]),file=paste(tempdir(),"/assign",k,".txt",sep=""),
 			quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE,append=FALSE)
-		if(file.exists(paste("observed",k,".tre",sep=""))){
-			unlink(paste("observed",k,".tre",sep=""))
+		if(file.exists(paste(tempdir(),"/observed",k,".tre",sep=""))){
+			unlink(paste(tempdir(),"/observed",k,".tre",sep=""))
 		}
 		for(m in firstTree:lastTree){
-			write.tree(observed[[m]],file=paste("observed",k,".tre",sep=""),append=TRUE)
-		}
-		if(!is.null(subsampleWeightsPath)){
-			write.table(subsampleWeights[firstTree:lastTree,1],file=paste("subsampleWeights",k,".txt",sep=""),
-				quote=FALSE,sep="",row.names=FALSE,col.names=FALSE)
+			write.tree(observedTrees[[m]],file=paste(tempdir(),"/observed",k,".tre",sep=""),append=TRUE)
 		}
 		firstTree<-firstTree + lastTree
 		lastTree<-lastTree + lastTree		
@@ -237,7 +178,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
   		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
-  		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeightsPath=subsampleWeightsPath,
+  		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, doSNPs=doSNPs,...))
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
@@ -251,7 +192,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   		unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
-  		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeightsPath=subsampleWeightsPath,
+  		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, doSNPs=doSNPs, ...))
   	}
  
@@ -265,9 +206,6 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   	#Toss temporary tree and assign files
 	for(k in 1:length(popAssignments)){
 		unlink(c(paste("assign",k,".txt",sep=""),paste("observed",k,".tre",sep=""),"mstrees.txt"))
-		if(file.exists(paste("subsampleWeights",k,".txt",sep=""))){
-			unlink(paste("subsampleWeights",k,".txt",sep=""))
-		}
 	}
 
 	#Save table of best models

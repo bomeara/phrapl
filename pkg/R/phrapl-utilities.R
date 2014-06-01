@@ -962,27 +962,21 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 }
 
 #Get weights for each subsample based on the number of matches per permutation
-GetPermutationWeightsAcrossSubsamples<-function(popAssignments,subsamplePath="./",inputFile="observed.tre",
-		outputFile="subsampleWeights.txt"){
-	if(file.exists(paste(subsamplePath,outputFile,sep=""))){
-		unlink(paste(subsamplePath,outputFile,sep=""))
-	}
-	observed<-read.tree(paste(subsamplePath,inputFile,sep=""))
+GetPermutationWeightsAcrossSubsamples<-function(popAssignments,observedTrees){
+	subsampleWeights<-data.frame(weight=matrix(1.0, ncol=1, nrow=length(observedTrees)))
 	subsampleSizeCounter<-1
-	for(y in 1:length(observed)){
-		weight<-GetPermutationWeights(phy=observed[[y]],popVector=popAssignments[[subsampleSizeCounter]],
-			subsamplePath=subsamplePath)
-		write.table(weight,file=paste(subsamplePath,outputFile,sep=""),quote=FALSE,sep="\t",
-			row.names=FALSE,col.names=FALSE,append=TRUE)
-		cat(paste("Finished with ",y," out of ",length(observed)," trees\n",sep=""))
-		if(y%%(length(observed) / length(popAssignments)) == 0){
+	for(y in sequence(length(observedTrees))){
+		subsampleWeights[y,1]<-GetPermutationWeights(phy=observedTrees[[y]],popVector=popAssignments[[subsampleSizeCounter]])
+		cat(paste("Finished with ",y," out of ",length(observedTrees)," trees\n",sep=""))
+		if(y%%(length(observedTrees) / length(popAssignments)) == 0){
 			subsampleSizeCounter<-subsampleSizeCounter + 1
 		}
 	}
+	return(subsampleWeights)
 }
 
 #Get weights for a given tree based on the number of matches per permutation
-GetPermutationWeights<-function(phy,popVector,subsamplePath="./"){
+GetPermutationWeights<-function(phy,popVector){
 	assignFrame<-CreateAssignment.df(popVector)
 	popLabels<-unique(assignFrame[,1])
 	#Make list of label permutations for each population
@@ -1173,7 +1167,7 @@ SplitAndSort <- function(x) {
 #level of confidence is obtained in the estimated proportion of matches. Because the number of matching 
 #permutations is generally low however, this function did not end up speeding up the process. 
 #On the contrary...
-GetPermutationWeightsBasedOnSampling<-function(phy,popVector,subsamplePath, desiredConfidence = 0.05, minSamples = 100){
+GetPermutationWeightsBasedOnSampling<-function(phy,popVector, desiredConfidence = 0.05, minSamples = 100){
 	assignFrame<-CreateAssignment.df(popVector)
 	popLabels<-unique(assignFrame[,1])
 	

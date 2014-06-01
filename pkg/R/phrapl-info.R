@@ -173,7 +173,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 
 #Return AIC for a given model and tree
 ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
-		subsampleWeightsPath="subsampleWeights.txt",
+		subsampleWeights.df=NULL,
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
@@ -207,10 +207,15 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest, doSNPs=doSNPs)
  	 	
  	 	#Apply weights to matches
- 	 	if(!is.null(subsampleWeightsPath)){
-	  		likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * 
-	  			read.table(paste("subsampleWeights",j,".txt",sep=""))[,1]
-		}else{
+ 	 	#if(!is.null(subsampleWeightsPath)){
+	  	#	likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * 
+	  	#		read.table(paste("subsampleWeights",j,".txt",sep=""))[,1]
+		#}else{
+		#	likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent)
+		#}
+		if(!is.null(subsampleWeights.df)) {
+			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * subsampleWeights.df[,j]
+		} else {
 			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent)
 		}
 	  	likelihoodVector<-append(likelihoodVector,likelihoodVectorCurrent)
@@ -366,9 +371,10 @@ CreateStartGrid<-function(fineGrid){
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
 		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE){
-	
-	observed<-paste("observed",currentPopAssign,".tre",sep="")
-	assign<-paste("assign",currentPopAssign,".txt",sep="")
+	stored.wd<-getwd()
+	setwd(tempdir())
+	observed<-paste(tempdir(),"/observed",currentPopAssign,".tre",sep="")
+	assign<-paste(tempdir(),"/assign",currentPopAssign,".txt",sep="")
 	msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual,
 		parameterVector,ceiling(nTrees/ncores))
 	
@@ -408,6 +414,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 		outputVectorMS<-systemMS(stringname=outputstringMS)
 		outputVectorPerl<-systemPerl(stringname=outputstringPerl)
 		outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
+		setwd(stored.wd)
 		return(outputVector)
 	}else{
 		stop("something is wrong here")
@@ -415,6 +422,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 			as.numeric(system(outputstring,intern=TRUE))
 		}
 		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=paste(outputstringMS, outputstringPerl, sep=" ", collapse=" "),mc.cores=ncores)),1,sum)
+		setwd(stored.wd)
 		return(outputVector)
 	}
 }
