@@ -744,15 +744,13 @@ TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutof
 		{
 			thisPopSamples <- assignFrame[which(assignFrame[,1] == unique(assignFrame[,1])[numLevel]),][[2]]
 			#...if the there is more than one individual in the population...
-			if (length(thisPopSamples) > 1)
-			{
+			if (length(thisPopSamples) > 1)			{
 				#...randomly sample "popAssignments[numLevel]" individuals and add them to "toRetain"
 				toRetainTemp <- sample(thisPopSamples,popAssignments[numLevel],replace=FALSE)
 				toRetain <- c(toRetain,toRetainTemp)[!is.na(c(toRetain,toRetainTemp))]
 			} else {
 				#But if there is only one individual in the population (and one sample is to be drawn)...
-				if(popAssignments[numLevel] == 1)
-				{
+				if(popAssignments[numLevel] == 1) {
 					#Then add that sample to "toRetain"
 					toRetain <- c(toRetain,thisPopSamples)[!is.na(c(toRetain,thisPopSamples))]
 				}
@@ -768,6 +766,148 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
+PrepSubsampling<-function(assignmentsGlobal, observedTrees,popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
+outgroup=TRUE,outgroupPrune=TRUE){
+	if(is.null(nIndividualsDesired)){
+		nIndividualsDesired<-sum(popAssignments[[1]])
+	}
+	#Create list for storing subsample trees
+	phyList<-list()
+	#If outgroup present, add this to the first popAssignments vector
+	if(outgroup==TRUE){
+		popAssignments[[1]]<-c(popAssignments[[1]],1)
+		nIndividualsDesired<-nIndividualsDesired + 1
+	}
+	assignFrameOriginal<-assignmentsGlobal
+	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:nrow(assignFrameOriginal)))
+	colnames(assignFrameOriginal)<-c("indiv","popLabel","indivTotal")
+	phyOriginal <- observedTrees
+	if(class(phyOriginal)!="multiPhylo") { #if there is only one locus...
+		phyOriginal<-c(phyOriginal) #convert phy to a multiphylo class
+	}
+	#Create list for storing subsampled trees
+	counters<-c()
+	for(i in sequence(length(popAssignments))){
+		phyList[[i]]<-rmtree(N=length(phyOriginal) * subsamplesPerGene,n=3)
+		counters<-append(counters,1)
+	}
+	
+	for (tree in 1:length(phyOriginal)){ #for each locus (i.e., tree)
+		phy<-phyOriginal #renew phy for each locus
+		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus	
+		tips.vec <- phy[[tree]]$tip.label #make an array of the included individuals
+		phy[[tree]]$tip.label <- as.character(c(1:length(phy[[tree]]$tip.label))) #change tip labels to consecutive numbers			
+		assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
+		match.vec <- data.frame()
+		for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
+		{
+			match.temp = NULL
+			for(match1 in 1:length(assign.vec)) #go through each individual in the assignment spreadsheet and ask...
+			{
+				a.match <- tips.vec[match] %in% assign.vec[match1] #is the current tip individual the same as the current individual in the spreadsheet?
+				if(a.match=="TRUE") #if so,
+				{
+					match.temp <- assignFrame[match1,] #remember the assignment
+				}
+			}
+			if(!is.null(match.temp)){
+				match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
+			} else { #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
+				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match)) 
+				cat("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
+					"These tips will not be subsampled.\n",file=paste(subsamplePath,"WARNINGS.txt",sep=""),append=TRUE)
+			}
+		}
+		assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy[[tree]]$tip.label)))) #convert this locus-specific one into assignFrame
+		colnames(assignFrame) <- c("popLabel","indivTotal")	
+		assignFrame <- assignFrame[order(assignFrame$popLabel),] #order new assignFrame by population
+	
+		#Re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
+		for(changetips in 1:length(phy[[tree]]$tip.label))
+		{
+			phy[[tree]]$tip.label[assignFrame$indivTotal[changetips]] <- as.numeric(changetips)
+		}
+
+		#Make new assignFrame with the new tip labels listed in order
+		assignFrame <- data.frame(as.factor(assignFrame[,1]),c(1:length(phy[[tree]]$tip.label)))
+		colnames(assignFrame) <- c("popLabel","indivTotal")	
+		
+		#Begin the subsampling
+		retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
+		newphyVector<-list()
+		for (rep in 1:subsamplesPerGene) {
+			keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired,minPerPop,attemptsCutoff=100000,popAssignments[[1]]) #subsample assignFrame
+			retainedTaxaMatrix[rep,]<-keepTaxa
+			prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
+			delTaxa<-TaxaToDrop(assignFrame,keepTaxa)
+			newphy<-drop.tip(phy[[tree]],as.character(delTaxa)) #toss non-sampled individuals from the tree
+			for (tipIndex in 1:length(newphy$tip.label)) { #rename tips in tree to be consecutive
+				old.label<-newphy$tip.label[tipIndex]
+				new.label<-as.character(which(prunedAF[,2]==old.label))
+				newphy$tip.label[tipIndex]<-new.label
+			}
+			#If tossing outgroup
+			if(outgroupPrune==TRUE){
+				notFound=FALSE
+				tipIndex=0
+				
+				#Toss out that tip which has the highest tip label
+				while(notFound==FALSE){
+					tipIndex=tipIndex + 1
+					if(newphy$tip.label[tipIndex]==length(keepTaxa)){
+						newphy<-drop.tip(newphy,tipIndex)
+						notFound=TRUE
+					}
+				}
+			}		
+			prunedAF[,2]<-as.character(c(1:length(prunedAF[,2]))) #rename tips in assignFrame to be consecutive
+			if(outgroupPrune==TRUE){
+				prunedAF<-prunedAF[-length(prunedAF[,2]),] #prune outgroup from assignFrame
+			}
+			
+			#Save current subsample
+			phyList[[1]][[counters[1]]]<-newphy
+			counters[1]<-counters[1] + 1
+
+#			write.tree(newphy,file=paste(subsamplePath,"observed1.tre",sep=""),append=TRUE)
+			#Save current subsample in master list
+			newphyVector[[length(newphyVector) + 1]]<-newphy
+		}
+		
+		#Subsample further if specified by popAssignments, printing to the tree file each time
+		if(length(popAssignments) > 1){
+			assignFrame<-prunedAF
+			for(i in 2:(length(popAssignments))){
+				currentSampleSize=sum(popAssignments[[i]])
+				retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=sum(popAssignments[[i]])) #matrix storing subsamples from each iteration	
+				for(j in 1:subsamplesPerGene){
+					keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired=currentSampleSize,
+						minPerPop,attemptsCutoff=100000,popAssignments=popAssignments[[i]]) #subsample assignFrame
+					retainedTaxaMatrix[j,]<-keepTaxa
+					prunedAF<-PrunedAssignFrame(assignFrame,keepTaxa)
+					delTaxa<-TaxaToDrop(assignFrame,taxaRetained=keepTaxa)
+					newphy<-drop.tip(newphyVector[[j]],as.character(delTaxa)) #toss non-sampled individuals from the tree
+					prunedAF<-cbind(prunedAF[order(prunedAF[,1],prunedAF[,2]),],new.label=c(1:nrow(prunedAF)))
+					for (tipIndex in 1:length(newphy$tip.label)) { #rename tips in tree to be consecutive
+						old.label<-newphy$tip.label[tipIndex]
+						new.label<-as.character(prunedAF[,3][which(prunedAF[,2]==old.label)])
+						newphy$tip.label[tipIndex]<-new.label
+					}
+					#Save current subsample
+					phyList[[i]][[counters[i]]]<-newphy
+					counters[i]<-counters[i] + 1
+					
+#					write.tree(newphy,file=paste(subsamplePath,"observed",i,".tre",sep=""),append=TRUE)
+					newphyVector[[j]]<-newphy
+				}
+				assignFrame<-CreateAssignment.df(popAssignments[[i]])
+			}
+		}
+	}
+	return(phyList)
+}
+
+
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file 
 #containing a tree for each locus. For each locus, subsampling can be done either by iteratively sampling 
 #nIndividualsDesired from the entire dataset (with a minimum sample per population specified by minPerPop), 
@@ -777,7 +917,7 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 #from each locus and 2) a single assignment file (if popAssignments is specified) or an assignment file for each locus 
 #and replicate (if popAssignments=NULL). If more than one subsampling vector is included in popAssignments, subsampling
 #is done for each subsampling size class.  
-PrepSubsampling<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",
+PrepSubsamplingFiles<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",
 outputFile="observed.tre",popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
 outgroup=TRUE,outgroupPrune=TRUE){
 	if(is.null(nIndividualsDesired)){

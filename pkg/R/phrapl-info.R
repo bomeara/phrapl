@@ -91,6 +91,35 @@ CreateAssignment<-function(popVector,file="assign.txt") {
 	write.table(assignFrame,file=file,quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
 }
 
+GuessAssignments <- function(observedTrees, popVector) {
+	tips <- observedTrees[[1]]$tip.label
+	# Levenshtein Distance
+	distances  <- adist(tips)
+	rownames(distances) <- tips
+	hc <- hclust(as.dist(distances))
+	groupings <- cutree(hc, k=length(popVector))
+	if(sum(sort(table(groupings))==sort(popVector))!=length(popVector)) {
+		warning("automatic grouping failed")
+		return(NA)
+	}
+	alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
+	assignments<-data.frame(indiv=names(groupings), popLabel=groupings, row.names=sequence(length(groupings)), stringsAsFactors=FALSE)
+	groupings.table <- table(groupings)
+	for(i in sequence(length(groupings.table))) {
+		matching.index<-which(popVector==groupings.table[i])
+		if(length(matching.index)>0) {
+			matching.index<-matching.index[1]
+		} else {
+			warning("automatic grouping failed")
+			return(NA)
+		}
+		assignments$popLabel[which(assignments$popLabel==i)]<-alphabet[matching.index]
+		popVector[matching.index]<-0
+		
+	}
+	return(assignments)
+}
+
 CreateAssignment.df<-function(popVector) {
 	alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
 	assignFrame<-data.frame()
