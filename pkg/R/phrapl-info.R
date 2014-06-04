@@ -206,7 +206,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE){
+		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100){
 	parameterVector<-exp(par)
 	#now have to stitch in n0 being 1, always, for the first population
 	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
@@ -254,7 +254,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
  	if(length(popAssignments) > 1){
   		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
   			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,saveNoExtrap=saveNoExtrap,
-  			summaryFn=summaryFn) 
+  			summaryFn=summaryFn, nEq=nEq) 
   		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
   		colnames(AICValue)<-"AIC"
   		if(saveNoExtrap==TRUE){
@@ -264,7 +264,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
-  			totalPopVector=totalPopVector,summaryFn=summaryFn)	
+  			totalPopVector=totalPopVector,summaryFn=summaryFn, nEq=nEq)	
   		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))		
 	}
 	if(print.results) {
@@ -456,27 +456,54 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 	}
 }
 
+#What happens with zero matching trees? Is the probability of the data exactly
+#zero under that model? No -- there is a nonzero probability of nearly every
+#gene tree topology, and letting it be zero is a strong statement that a model
+#is impossible. It's like flipping a coin 5 times, finding zero heads, and
+#saying that the best estimate for P(heads) is zero: it's probably wrong.
+#Similarly, we have prior information: each possible gene topology, absent
+#other information, has a 1/howmanytrees(nTips) chance of matching. Simply
+#plugging this in when we have no matches isn't ideal: shouldn't our estimate
+#of this change if we do 1e9 simulated trees than 1e3 and still find no match?
+#We use a beta-binomial distribution to do this; mean is set to
+#1/howmanytrees(nTips), and the equivalent sample size of the prior
+#(how much weight we give it) matters but is up to the user
+#By default, we assume that it's equal to 100 data points
+#This is several orders of magnitude smaller than the usual number of nTrees
+#so using beta will have little effect with matches, but it does let lack of
+#matches result in a finite likelihood
+AdjustUsingBeta <- function(numMatches, nTrees, nTips, nEq=100) {
+	#nEq = a + b + 1
+	#1/howmanytrees(nTips) = a / (a + b) #the prior mean
+	#b = nEq - a - 1
+	#howmanytrees(nTips) = (a + b) / a = (a + nEq - a - 1) / a = (nEq -1) / a
+	a <- (nEq - 1) /  howmanytrees(nTips)
+	b <- nEq - a - 1
+	return( (numMatches + a) / (nTrees + a + b))	
+}
+
 #This function calculates lnL based on number of matches for each subsample. Then the likelihood of the
 #full dataset is estimated from the subsampled dataset based on a linear relationship between sample size
 #and lnL.
 ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1,totalPopVector,
-		saveNoExtrap=FALSE,summaryFn="mean"){
+		saveNoExtrap=FALSE,summaryFn="mean", nEq=100){
 	nLoci<-length(outputVector) / length(popAssignments) / subsamplesPerGene #number of loci
 		
-	#Adjust zero matches to equal probability of getting match
 	start<-1
 	end<-length(outputVector) / length(popAssignments)
 	for(g in sequence(length(popAssignments))){ #for each subsample size class
 		currentPopAssignments<-popAssignments[[g]]
 		outputVector[start:end]<-as.numeric(outputVector[start:end])
-		probOfMissing<-1/((howmanytrees(sum(popAssignments[[g]]))) * 1000000)
-		outputVector[start:end][which(outputVector[start:end]==0)]<-probOfMissing
+		#probOfMissing<-1/((howmanytrees(sum(popAssignments[[g]]))) * 1000000)
+		#outputVector[start:end][which(outputVector[start:end]==0)]<-probOfMissing
+		outputVector[start:end]<-AdjustUsingBeta(numMatches=outputVector[start:end], nTrees=nTrees, nTips=sum(currentPopAssignments), nEq=nEq)
+
 		start<-start + end
 		end<-end + end
 	}
 	
 	#Convert to log space
-	outputVector<-as.numeric(outputVector)/nTrees
+#	outputVector<-as.numeric(outputVector)/nTrees
 	outputVector<-log(outputVector)
 
 	#If the option to save non-extrapolated likelihood using the largest subsample size, do this
@@ -575,11 +602,9 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
 #although effective subsample sizes can be considered by using SumDivScaledNreps
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
-		totalPopVector,summaryFn="mean") {
-	probOfMissing=1/((howmanytrees(sum(popAssignments[[1]]))) * 1000000)
+		totalPopVector,summaryFn="mean", nEq=100) {
 	outputVector<-as.numeric(outputVector)
-	outputVector[which(outputVector==0)]<-probOfMissing
-	outputVector<-outputVector/nTrees
+	outputVector<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
 	outputVector<-log(outputVector)
 	lnL<-0
 	localVector<-rep(NA, subsamplesPerGene)
