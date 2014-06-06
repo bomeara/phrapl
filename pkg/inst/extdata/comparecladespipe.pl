@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 #compareclades.pl
-#Brian O'Meara, 24 August 2011
+#Brian O'Meara, 6 June 2014
 #http://www.brianomeara.info
 #released under GPL2
-#version 1.1
+#version 1.2
 use diagnostics;
 use strict;
 my $assignmentfile="a";
@@ -164,8 +164,8 @@ else {
 			foreach my $taxon (@splitinner) {
 				push(@renamedinner,$assignments{ $taxon });
 			}
-			print(@renamedinner);
-			print("\n");
+			#print(@renamedinner);
+			#print("\n");
 			@renamedinner = sort(@renamedinner);
 			push(@cladearray,join('-',@renamedinner));
 			$intree=~s/\($innermatch\)/$innermatch/;

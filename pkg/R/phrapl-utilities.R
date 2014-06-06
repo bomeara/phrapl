@@ -1103,16 +1103,27 @@ PrunedAssignFrame<-function(assignFrame,taxaRetained) {
 
 #Get weights for each subsample based on the number of matches per permutation
 GetPermutationWeightsAcrossSubsamples<-function(popAssignments,observedTrees){
-	subsampleWeights<-data.frame(weight=matrix(1.0, ncol=1, nrow=length(observedTrees)))
-	subsampleSizeCounter<-1
-	for(y in sequence(length(observedTrees))){
-		subsampleWeights[y,1]<-GetPermutationWeights(phy=observedTrees[[y]],popVector=popAssignments[[subsampleSizeCounter]])
-		cat(paste("Finished with ",y," out of ",length(observedTrees)," trees\n",sep=""))
-		if(y%%(length(observedTrees) / length(popAssignments)) == 0){
-			subsampleSizeCounter<-subsampleSizeCounter + 1
-		}
+	subsampleWeightsList<-list()
+	numTrees<-0
+	treeCounter<-0
+	#Get number of observed trees
+	for(t in sequence(length(observedTrees))){
+		if (class(observedTrees[[t]]) != "multiPhylo"){
+        	observedTrees[[t]] <- c(observedTrees[[t]])
+    	}
+		numTrees<-numTrees + length(observedTrees[[t]])
 	}
-	return(subsampleWeights)
+	for(f in sequence(length(observedTrees))){ #for each popAssignments
+	subsampleWeights<-data.frame(weight=matrix(NA,ncol=1,nrow=length(observedTrees[[f]])))
+		for(y in sequence(length(observedTrees[[f]]))){ #for each tree
+			subsampleWeights[y,1]<-GetPermutationWeights(phy=observedTrees[[f]][[y]],
+				popVector=popAssignments[[f]])
+			treeCounter<-treeCounter + 1
+			cat(paste("Finished with ",treeCounter," out of ",numTrees," trees\n",sep=""))
+		}
+	subsampleWeightsList[[f]]<-subsampleWeights
+	}
+	return(subsampleWeightsList)
 }
 
 #Get weights for a given tree based on the number of matches per permutation

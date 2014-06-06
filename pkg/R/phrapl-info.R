@@ -226,7 +226,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
  	if(print.results) {
  	   print(parameterVector) 
  	}
- 	 
+
  	#Do tree matching
  	likelihoodVector<-c()
 	for(j in 1:length(popAssignments)){ #Do separately for each subsample size class
@@ -234,19 +234,14 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest, doSNPs=doSNPs)
- 	 	
+
  	 	#Apply weights to matches
- 	 	#if(!is.null(subsampleWeightsPath)){
-	  	#	likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * 
-	  	#		read.table(paste("subsampleWeights",j,".txt",sep=""))[,1]
-		#}else{
-		#	likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent)
-		#}
 		if(!is.null(subsampleWeights.df)) {
-			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * subsampleWeights.df[,j]
+			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * subsampleWeights.df[[j]][,1]
 		} else {
 			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent)
 		}
+
 	  	likelihoodVector<-append(likelihoodVector,likelihoodVectorCurrent)
   	}
 
