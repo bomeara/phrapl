@@ -1,8 +1,8 @@
-\name{PrepSubsampling}
-\alias{PrepSubsampling}
-\alias{Prepsubsampling}
-\alias{prepsubsampling}
-\alias{prep.subsampling}
+\name{PrepSubsamplingFiles}
+\alias{PrepSubsamplingFiles}
+\alias{Prepsubsamplingfiles}
+\alias{prepsubsamplingfiles}
+\alias{prep.subsampling.files}
 \title{
 Subsample tips from a tree
 }
@@ -14,18 +14,29 @@ population can be included to root each subsample, but then pruned from the tree
 prior to analysis using phrapl.
 }
 \usage{
-PrepSubsampling(assignmentsGlobal, observedTrees,popAssignments,
-subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1, outgroup=TRUE,
+PrepSubsamplingFiles(subsamplePath="./",assignFile="cladeAssignments.txt",
+treesFile="trees.tre", outputFile="observed.tre",popAssignments,
+subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,outgroup=TRUE,
 outgroupPrune=TRUE)
 }
 \arguments{
-  \item{assignmentsGlobal}{
-Dataframe with population assignments. This should consist of two columns: 
+  \item{subsamplePath}{
+Path to the directory from which input files are accessed and to which output 
+files are printed.
+}
+  \item{assignFile}{
+File that includes population assignments. This should consist of two columns: 
 the first lists all individuals in the tree; the second lists populations to 
 which individuals belong (e.g., "A", "B", "C"...).
+The file must include a header row.
 }
-  \item{observedTrees}{
-A multiphylo object with observed trees.
+  \item{treesFile}{
+A file that includes one or more trees to be subsampled, in newick format.
+}
+  \item{outputFile}{
+File to which subsampled trees will be printed. If there is more than one tree 
+in the treesFile, all subsamples for the first tree will be printed, then all 
+the subsamples for the second tree, etc.
 }
   \item{popAssignments}{
 A list of vectors that gives a fixed number of subsamples to take per 
