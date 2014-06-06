@@ -17,7 +17,7 @@ GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap,
 migrationArray, popAssignments, badAIC = 1e+14, 
 maxParameterValue = 100, nTrees = 1e5, msPath = "ms", 
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
-observedPath = "observed.tre", subsampleWeightsPath = "subsampleWeights.txt", 
+observedTrees, subsampleWeights.df = NULL, 
 unresolvedTest = TRUE, print.ms.string = FALSE, print.results = FALSE, 
 print.matches = FALSE, debug = FALSE, method = "nlminb", itnmax = NULL, 
 ncores = 1, results.file = NULL, maxtime = 0, maxeval = 0, return.all = TRUE, 
@@ -26,7 +26,7 @@ collapseStarts = c(0.3, 0.58, 1.11, 2.12, 4.07, 7.81, 15),
 n0Starts = c(0.1, 0.5, 1, 2, 4), 
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15, 4.64, 10), 
 subsamplesPerGene = 1, totalPopVector = totalPopVector, summaryFn = "mean", 
-saveNoExtrap = FALSE, doSNPs = FALSE, ...)
+saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, ...)
 }
 \arguments{
    \item{modelRange}{
@@ -65,13 +65,12 @@ should result in ms running.
 Path to the local placement of the compareCladesPipe.pl perl script, including 
 that script name.
 }
-  \item{observedPath}{
-Path to the local instance of the observed trees, including the name of the 
-file.
+  \item{observedTrees}{
+Multiphylo object of the empirical trees.
  }
-  \item{subsampleWeightsPath}{
-Path to the local instance of the weights for the trees, including the name of 
-the file.
+  \item{subsampleWeights.df}{
+A dataframe of the weights for each subsample. If this is NULL, it is computed
+within GridSearch.
 }
   \item{unresolvedTest}{
 Boolean: deal with unresolved gene trees by looking for partial matches and 
@@ -139,6 +138,19 @@ Boolean to tell whether to save extrapolated values. FALSE by default.
   \item{doSNPs}{
 Boolean to tell whether to use the SNPs model: count a single matching edge on
 the simulated tree as a full match. FALSE by default.
+}
+  \item{nEq}{
+If no simulated trees match the observed trees, the frequentist estimate of
+the matching proportion is exactly zero (flip a coin 5 times, see no heads, so
+estimate probability of heads is zero). This would have an extreme effect: if
+any gene trees don't match, the model has no likelihood. A better approach is
+to realize that a finite set of samples gives finite information. We assume
+that the probability of a match, absent data, is 1/number of possible gene
+trees, and this is combined with the empirical estimate to give an estimate of
+the likelihood. A question is how much weight to put on this pre-existing
+estimate, and that is set by nEq. With its default of 100, very low weight is
+placed on this: it's equivalent in the info present in nTrees=100, and since
+the actual nTrees is 10000 or more, it has very little impact.
 }
   \item{\dots}{
 Other items to pass to heuristic search functions.

@@ -814,8 +814,8 @@ outgroup=TRUE,outgroupPrune=TRUE){
 				match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
 			} else { #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
 				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match)) 
-				cat("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
-					"These tips will not be subsampled.\n",file=paste(subsamplePath,"WARNINGS.txt",sep=""),append=TRUE)
+				warning(paste("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
+					"These tips will not be subsampled.", sep=" "))
 			}
 		}
 		assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy[[tree]]$tip.label)))) #convert this locus-specific one into assignFrame
