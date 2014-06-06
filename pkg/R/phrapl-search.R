@@ -138,27 +138,28 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
 		totalPopVector=totalPopVector,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100, ...){
 
-   if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
-     migrationArray<-migrationArray[modelRange]
-     migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
-   }
-   if(is.null(subsampleWeights.df) && doWeights) {
+	if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
+		migrationArray<-migrationArray[modelRange]
+		migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
+	}
+	if(is.null(subsampleWeights.df) && doWeights) {
    	subsampleWeights.df <- GetPermutationWeightsAcrossSubsamples(popAssignments, observedTrees)
-   }
-  #Prepare temporary tree and assign files
-	firstTree<-1
-	lastTree<-length(observedTrees) / length(popAssignments)
+	}
+  	#Prepare temporary tree and assign files
 	for(k in 1:length(popAssignments)){
 		write.table(CreateAssignment.df(popAssignments[[k]]),file=paste(tempdir(),"/assign",k,".txt",sep=""),
 			quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE,append=FALSE)
 		if(file.exists(paste(tempdir(),"/observed",k,".tre",sep=""))){
 			unlink(paste(tempdir(),"/observed",k,".tre",sep=""))
 		}
-		for(m in firstTree:lastTree){
-			write.tree(observedTrees[[m]],file=paste(tempdir(),"/observed",k,".tre",sep=""),append=TRUE)
-		}
-		firstTree<-firstTree + lastTree
-		lastTree<-lastTree + lastTree		
+	}
+	for(f in 1:length(observedTrees)){ #for each popAssignment
+		if (class(observedTrees[[f]]) != "multiPhylo"){
+        	observedTrees[[f]] <- c(observedTrees[[f]])
+    	}
+		for(m in 1:length(observedTrees[[f]])){ #for each tree
+			write.tree(observedTrees[[f]][[m]],file=paste(tempdir(),"/observed",f,".tre",sep=""),append=TRUE)
+		}		
 	}
  
   AIC.values<-rep(NA,length(migrationArray))
@@ -172,6 +173,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
  		}else{
  			currentStartGrid=NULL
  		}
+
   		result.indiv<-NULL
   		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
   		maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
@@ -180,6 +182,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
   		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, doSNPs=doSNPs, nEq=nEq,...))
+  		
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
   		if(!is.null(result.indiv[[1]])) {
@@ -195,14 +198,14 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, doSNPs=doSNPs, nEq=nEq, ...))
   	}
- 
-#  	 print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
 
-  	if(!is.null(results.file)) {
-		save(list=ls(), file=results.file)
+#  	 	print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
+
+  		if(!is.null(results.file)) {
+			save(list=ls(), file=results.file)
+		}
 	}
-  }
-  
+
   	#Toss temporary tree and assign files
 	for(k in 1:length(popAssignments)){
 		unlink(c(paste(tempdir(),"/assign",k,".txt",sep=""),paste(tempdir(),"/observed",k,".tre",sep=""),paste(tempdir(), "/mstrees.txt", sep="")))
