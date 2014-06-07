@@ -12,25 +12,16 @@ accurate estimate of the log likelihood of an observed tree given trees expected
 under a given model.
 }
 \usage{
-GetPermutationWeightsAcrossSubsamples(popAssignments,subsamplePath="./",
-inputFile="observed.tre", outputFile="subsampleWeights.txt")
+GetPermutationWeightsAcrossSubsamples(popAssignments,observedTrees)
 }
 \arguments{
   \item{popAssignments}{
 A list of vectors (typically only one vector will be specified) that define the 
-number of tips per population included in the observed tree file (usually these 
+number of tips per population included in the observed trees (usually these 
 will be subsampled trees).
 }
-  \item{subsamplePath}{
-Path to the directory from which input files are accessed and to which output 
-files are printed.
-}
-  \item{inputFile}{
-Name of the file that includes the subsampled trees
-}
-  \item{outputFile}{
-Name of the file to which the weights will be printed (its length will equal the
-number of subsampled trees)
+  \item{observedTrees}{
+Multiphylo object containing the subsampled trees (outputted from PrepSubsampling)
 }
 }
 \note{
