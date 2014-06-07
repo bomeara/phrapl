@@ -42,40 +42,27 @@ using assignFile popAssignments, and trees.
 
 A phrapl GridSearch can be run using the output from these functions in 
 addition to migrationArray and migrationArrayMap.
-
-Phrapl functions input assignFile and trees as files rather than as R objects. 
-Thus, to use these two objects, first export them to a file (note you will need 
-to install and load the ape package to export the trees).
 }
 \examples{
   data(TestData)
   \dontrun{
-  #load ape
-  library(ape)
-  
-  #Write trees to file
-  write.tree(trees,file="trees.tre")
-
-  #Write assignFile to file
-  write.table(assignFile,file="cladeAssignments.txt",
-    quote=FALSE,row.names=FALSE)
-
   #Run PrepSubsampling on this dataset to get
   #10 subsample iterations per tree. Include 
   #everything in the working directory
-  PrepSubsampling(popAssignments=popAssignments,
+  observedTrees<-PrepSubsampling(assignmentsGlobal=assignFile,
+    observedTrees<-trees,popAssignments=popAssignments,
     subsamplesPerGene=10)
 
   #To get the weights
-  GetPermutationWeightsAcrossSubsamples(popAssignments=
-    popAssignments)
+  subsampleWeights.df<-GetPermutationWeightsAcrossSubsamples(
+    popAssignments=popAssignments,observedTrees=observedTrees)
 
   #To run a grid search
-  result<-GridSearch(migrationArrayMap=
-    migrationArrayMap,migrationArray=
-    migrationArray,modelRange=1:6,
-    popAssignments=popAssignments,subsamplesPerGene=
-    10,nTrees=1e3,print.results=TRUE,return.all=TRUE)
+  result<-GridSearch(migrationArrayMap=migrationArrayMap,migrationArray=
+    migrationArray,modelRange=1:6,popAssignments=popAssignments,
+    observedTrees=observedTrees,subsampleWeights.df=subsampleWeights.df,
+    subsamplesPerGene=10,totalPopVector=rep(20,10),nTrees=1e3,
+    print.results=TRUE,return.all=TRUE)
 
   #To save the results to a file
   save(list=ls(), file="phraplOutput.rda")
