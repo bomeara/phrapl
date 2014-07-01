@@ -204,7 +204,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		subsampleWeights.df=NULL,
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
-		badAIC=100000000000000,ncores=1,maxParameterValue=100,parameterBounds=list(minCollapseTime=0.1,
+		badAIC=100000000000000,ncores=1,maxParameterValue=100,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
 		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100){
 	parameterVector<-exp(par)
@@ -217,11 +217,14 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   	}
   	parameterVector<-c(parameterVectorFirstPart, 1, parameterVectorSecondPart)
   	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
-  	if(!PassBounds(parameterVector, parameterBounds)) {
-  		return(badAIC)
- 	}
-	if(max(parameterVector)>maxParameterValue) {
-  		return(badAIC)
+
+	if(numReps > 0){ #only worry about weeding out values if doing numerical optimization
+  		if(!PassBounds(parameterVector, parameterBounds)) {
+			return(badAIC)
+ 		}
+		if(max(parameterVector)>maxParameterValue) {
+			return(badAIC)
+		}
 	}
  	if(print.results) {
  	   print(parameterVector) 
@@ -304,7 +307,8 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 	if(length(popAssignments) > 1 && saveNoExtrap==TRUE){
 		return(cbind(AICValue,AICValue.noExtrap,lnLValue))
 	}else{
-  		return(cbind(AICValue,lnLValue))
+		names(AICValue)<-NULL
+  		return(AICValue)
   	}
 }
 
