@@ -59,19 +59,19 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     }
   	
   	#Get and store AIC for each set of grid values
-  	initial.AIC<-data.frame()
+  	initial.AIC<-c()
   	for(t in 1:nrow(startGrid)){
     	currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
     	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
     	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
-    	ncores=ncores,debug=debug,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
+    	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
     	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
-    	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap, doSNPs=doSNPs, nEq=nEq)
-    	initial.AIC<-rbind(initial.AIC,currentAIC)
+    	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq)
+    	initial.AIC<-append(initial.AIC,currentAIC)
     }
  
     if(debug) {
-    	print(cbind(AIC=initial.AIC[,1],exp(startGrid)))
+    	print(cbind(AIC=initial.AIC,exp(startGrid)))
     }
 
 	#Save the grid as object
@@ -79,7 +79,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     if(length(popAssignments) > 1){
    	 	thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
    	}else{
-   	 	thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid))
+   	 	thisGrid<-cbind(AIC=initial.AIC[1],exp(startGrid))
    	}
     thisGrid<-thisGrid[order(thisGrid$AIC),]
     #Save grid to file
@@ -101,7 +101,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		badAIC=badAIC, maxParameterValue=maxParameterValue,
  	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
- 	   		debug=debug, parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
+ 	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
  	   		saveNoExtrap=saveNoExtrap, doSNPs=doSNPs, nEq=nEq)
  	  
@@ -238,4 +238,3 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 	
 	ifelse(return.all, return(results.final), return(AIC.values))     
 }
-
