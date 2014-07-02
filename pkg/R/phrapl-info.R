@@ -380,17 +380,48 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 }
 
 #This takes vectors of parameter values and constructs a grid containing all possible combinations of parameter values, except
-#non-sensical collapse time combinations (e.g., tau's at time 1 which are larger than tau's at time 2) are filtered out.
+#non-sensical collapse time combinations (e.g., tau's at time 1 which are larger than tau's at time 2), and identical migration 
+#rates and n0mulipliers are filtered out.
 #This grid is outputted in the form of a list which can be used to obtain AIC values using SearchContinuousModelSpaceNLoptr. 
 CreateStartGrid<-function(fineGrid){
 	startGrid<-list()
 	startGrid[[1]]<-expand.grid(fineGrid)
+	#Toss nonsensical collapse combinations (e.g., when collapse 2 is smaller than collapse 1)
 	howManyCollapses<-length(grep("collapse",names(startGrid[[1]])))
 	if(howManyCollapses > 1){
 		for(rep in 1:(howManyCollapses - 1)){
 			startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,rep] < startGrid[[1]][,(rep+1)]),]
 		}
 	}
+	
+	#Toss migration parameters that are equal
+	howManyMigrations<-length(grep("migration",names(startGrid[[1]])))
+	if(howManyMigrations > 1){
+		#Get vector of detailing rows with the same migration rate
+		migrationCols<-startGrid[[1]][,grep("migration",names(startGrid[[1]]))] #mig columns only
+		uniqueMigs<-c()
+		for(r in 1:nrow(migrationCols)){
+			uniqueMigs<-append(uniqueMigs,length(unique(simplify2array(migrationCols[r,])))==
+				length(simplify2array(migrationCols[r,])))
+		}
+		#Toss rows with duplicate migration rates (if more than 1 free mig param)
+		startGrid[[1]]<-startGrid[[1]][which(uniqueMigs==TRUE),]
+	}
+	
+	#Toss n0multiplier parameters that are equal
+	howManyN0s<-length(grep("n0multiplier",names(startGrid[[1]])))
+	if(howManyN0s > 1){
+		#Get vector of detailing rows with the same n0multiplier
+		n0Cols<-startGrid[[1]][,grep("n0multiplier",names(startGrid[[1]]))] #n0 columns only
+		uniqueN0s<-c()
+		for(r in 1:nrow(n0Cols)){
+			uniqueN0s<-append(uniqueN0s,length(unique(simplify2array(n0Cols[r,])))==
+				length(simplify2array(n0Cols[r,])))
+		}
+		#Toss rows with duplicate n0multipliers (if more than 1 free n0 param)
+		startGrid[[1]]<-startGrid[[1]][which(uniqueN0s==TRUE),]
+	}
+
 	startGrid[[1]]<-log(startGrid[[1]]) #since we are optimizing in log space
 	return(startGrid)
 }
