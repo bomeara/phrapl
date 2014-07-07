@@ -79,7 +79,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     if(length(popAssignments) > 1){
    	 	thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
    	}else{
-   	 	thisGrid<-cbind(AIC=initial.AIC[1],exp(startGrid))
+   	 	thisGrid<-cbind(AIC=initial.AIC,exp(startGrid))
    	}
     thisGrid<-thisGrid[order(thisGrid$AIC),]
     #Save grid to file
