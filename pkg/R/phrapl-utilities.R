@@ -163,7 +163,7 @@ Expansionmultiplierindividual<-function(collapseMatrix, complete, expansionmulti
 
 
 
-CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,nTrees=1) {
+CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,nTrees=1,createSeed=TRUE) {
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
 	n0multiplierMap<-migrationIndividual$n0multiplierMap
@@ -251,6 +251,10 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 				
 			}
 		}
+		if (createSeed==TRUE){
+			seed<-round(runif(3,1,10000000000))
+			msString<-paste(msString,"-seed",seed[1],seed[2],seed[3],sep=" ")
+		}	
 		nsam<-sum(popVector)
 		nreps<-nTrees
 		opts<-msString
