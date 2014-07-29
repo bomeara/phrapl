@@ -206,8 +206,14 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100){
+		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100, setCollapseZero=FALSE){
 	parameterVector<-exp(par)
+	
+	#If first collapse set to zero, add this to front of each parameter vector
+	if(setCollapseZero==TRUE){
+		parameterVector<-c(0,parameterVector)
+	}
+
 	#now have to stitch in n0 being 1, always, for the first population
 	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
 	parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
