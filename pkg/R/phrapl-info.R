@@ -268,17 +268,17 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
   			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,saveNoExtrap=saveNoExtrap,
   			summaryFn=summaryFn,nEq=nEq) 
-  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero))
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))
   		colnames(AICValue)<-"AIC"
   		if(saveNoExtrap==TRUE){
-  			AICValue.noExtrap<-2*(-lnLValue[2] + (KAll(migrationIndividual) - length(setCollapseZero))
+  			AICValue.noExtrap<-2*(-lnLValue[2] + (KAll(migrationIndividual) - length(setCollapseZero)))
   			colnames(AICValue.noExtrap)<-"AIC.lnL.noExtrap"
   		}		
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
   			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq)	
-  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero))		
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))		
 	}
 	if(print.results) {
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))
