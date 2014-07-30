@@ -206,24 +206,34 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100, setCollapseZero=FALSE){
+		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100, setCollapseZero=NULL){
 	parameterVector<-exp(par)
 	
-	#If first collapse set to zero, add this to front of each parameter vector
-	if(setCollapseZero==TRUE){
-		parameterVector<-c(0,parameterVector)
+	#If some collapses are set to zero, replace them with a zero
+	if(!is.null(setCollapseZero)){
+		for(z in 1:length(setCollapseZero)){
+			positionOfFirstCol<-grep("collapse",MsIndividualParameters(migrationIndividual))[setCollapseZero][z]
+			parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstCol-1)]
+			parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
+			if((1+length(parameterVectorFirstPart)) > length(parameterVector)){
+				parameterVectorSecondPart<-c()
+  			}
+  			parameterVector<-c(parameterVectorFirstPart,0,parameterVectorSecondPart)
+  		}
 	}
-
-	#now have to stitch in n0 being 1, always, for the first population
-	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
-	parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
-	parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
-	if((1+length(parameterVectorFirstPart)) > length(parameterVector)) {
-		parameterVectorSecondPart<-c()
-  	}
-  	parameterVector<-c(parameterVectorFirstPart, 1, parameterVectorSecondPart)
+	
+	#If there is only 1 n0, stitch in a 1 to replace the free parameter	
+	if(sum(grepl("n0multiplier",paramNames)) == 1){
+		positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
+		parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
+		parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
+		if((1+length(parameterVectorFirstPart)) > length(parameterVector)){
+			parameterVectorSecondPart<-c()
+  		}
+  		parameterVector<-c(parameterVectorFirstPart,1,parameterVectorSecondPart)
+	}
+	
   	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
-
 	if(numReps > 0){ #only worry about weeding out values if doing numerical optimization
   		if(!PassBounds(parameterVector, parameterBounds)) {
 			return(badAIC)
@@ -242,7 +252,8 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		currentPopAssign<-j
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
-		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest, doSNPs=doSNPs)
+		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest,
+		doSNPs=doSNPs)
 
  	 	#Apply weights to matches
 		if(!is.null(subsampleWeights.df)) {
