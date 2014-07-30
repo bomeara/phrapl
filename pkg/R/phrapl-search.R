@@ -238,9 +238,9 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 
 	#Save table of best models
 	if(numReps==0){
-		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray)
+		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray,setCollapseZero=setCollapseZero)
 	}else{
-		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray)
+		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray,setCollapseZero=setCollapseZero)
 	}
 	overall.results$models <- modelRange #so if we've done subsampling, use right model numbers
 	#Save parameter estimates and parameter indexes to tables
