@@ -222,16 +222,14 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   		}
 	}
 	
-	#If there is only 1 n0, stitch in a 1 to replace the free parameter	
-	if(sum(grepl("n0multiplier",paramNames)) == 1){
-		positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
-		parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
-		parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
-		if((1+length(parameterVectorFirstPart)) > length(parameterVector)){
-			parameterVectorSecondPart<-c()
-  		}
-  		parameterVector<-c(parameterVectorFirstPart,1,parameterVectorSecondPart)
-	}
+	#Stitch in a 1 to replace the first n0, since it is not free	
+	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
+	parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
+	parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
+	if((1+length(parameterVectorFirstPart)) > length(parameterVector)){
+		parameterVectorSecondPart<-c()
+  	}
+  	parameterVector<-c(parameterVectorFirstPart,1,parameterVectorSecondPart)
 	
   	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
 	if(numReps > 0){ #only worry about weeding out values if doing numerical optimization
@@ -269,18 +267,18 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
  	if(length(popAssignments) > 1){
   		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
   			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,saveNoExtrap=saveNoExtrap,
-  			summaryFn=summaryFn, nEq=nEq) 
-  		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))
+  			summaryFn=summaryFn,nEq=nEq) 
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero))
   		colnames(AICValue)<-"AIC"
   		if(saveNoExtrap==TRUE){
-  			AICValue.noExtrap<-2*(-lnLValue[2] + KAll(migrationIndividual))
+  			AICValue.noExtrap<-2*(-lnLValue[2] + (KAll(migrationIndividual) - length(setCollapseZero))
   			colnames(AICValue.noExtrap)<-"AIC.lnL.noExtrap"
   		}		
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
-  			totalPopVector=totalPopVector,summaryFn=summaryFn, nEq=nEq)	
-  		AICValue<-2*(-lnLValue[1] + KAll(migrationIndividual))		
+  			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq)	
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero))		
 	}
 	if(print.results) {
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))

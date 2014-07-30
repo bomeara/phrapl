@@ -43,12 +43,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     		} 
     	}
     	
-    	#Calculate number of n0 parameters (if just one, subtract it off)
-    	if(sum(grepl("n0multiplier",paramNames)) == 1){
- 	       numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
- 	    }else{
- 	   	   numn0 <- sum(grepl("n0multiplier",paramNames))
- 	   	}
+		#Calculate number of n0 parameters (subtract off first one because not free)
+		numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
     	if (numn0 > 0) {
     		for (i in sequence(numn0)) {
     			startingVectorList<-append(startingVectorList, list(n0Starts))
@@ -130,20 +126,18 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 				if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
   					solutionVectorSecondPart<-c()
   				}
-			searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
+			searchResults$solution<-c(solutionVectorFirstPart,log(0),solutionVectorSecondPart)
 			}
 		}
 
-  		#If there is only 1 n0, stitch in a 1 to replace the free parameter	
-  		if(sum(grepl("n0multiplier",MsIndividualParameters(migrationArray[[modelID]]))) == 1){
-			positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
-			solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
-			solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
-			if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
-  				solutionVectorSecondPart<-c()
-  			}
-			searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
-		}
+  		#Stitch in a 1 to replace the first n0, since it is not free	
+		positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
+		solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
+		solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
+		if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
+  			solutionVectorSecondPart<-c()
+  		}
+		searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
 		
 		if(debug) {
 # 	   	print(searchResults)
