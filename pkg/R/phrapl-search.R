@@ -9,7 +9,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=FALSE, ...) {
+	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -26,25 +26,29 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     if(is.null(startGrid)) { #need to make our own grid
     	startingVectorList<-list()
     	nameCount<-1
-    	#if the first event is going to be fixed at zero
-    	if(setCollapseZero==TRUE){
-    		numCollapse <- sum(grepl("collapse",paramNames))-1
+    	
+    	#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
+    	numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+    	if(!is.null(setCollapseZero)){
+    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(grep("collapse",paramNames)!=
+    			setCollapseZero)]
     	}else{
-    		numCollapse <- sum(grepl("collapse",paramNames))
+    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)
     	}
-    	if (numCollapse > 0) {
+    	if(numCollapse > 0) {
     		for (i in sequence(numCollapse)) {
     			startingVectorList<-append(startingVectorList, list(collapseStarts))
-    			#if the first event is going to be fixed at zero
-    			if(setCollapseZero==TRUE){
-    				names(startingVectorList)[nameCount]<-grep("collapse",paramNames,value=TRUE)[i+1]
-    			}else{
-    				names(startingVectorList)[nameCount]<-grep("collapse",paramNames,value=TRUE)[i]
-    			}
+    			names(startingVectorList)[nameCount]<-collapses2estimate[i]
     			nameCount<-nameCount + 1
     		} 
     	}
-        numn0 <- sum(grepl("n0multiplier",paramNames))-1 #-1 since one is fixed to be 1
+    	
+    	#Calculate number of n0 parameters (if just one, subtract it off)
+    	if(sum(grepl("n0multiplier",paramNames)) == 1){
+ 	       numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
+ 	    }else{
+ 	   	   numn0 <- sum(grepl("n0multiplier",paramNames))
+ 	   	}
     	if (numn0 > 0) {
     		for (i in sequence(numn0)) {
     			startingVectorList<-append(startingVectorList, list(n0Starts))
@@ -52,6 +56,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     			nameCount<-nameCount + 1
     		} 
     	}	
+    	
+    	#Calculate number of migration parameters
     	numMigration <- sum(grepl("migration",paramNames))
     	if (numMigration > 0) {
     		for (i in sequence(numMigration)) {
@@ -113,18 +119,33 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq)
+ 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero)
  	  
+ 	  	#If some collapses are set to zero, replace them with a zero
+		if(!is.null(setCollapseZero)){
+			for(z in 1:length(setCollapseZero)){
+				positionOfFirstCol<-grep("collapse",MsIndividualParameters(migrationArray[[modelID]]))[setCollapseZero][z]
+				solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstCol-1)]
+				solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
+				if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
+  					solutionVectorSecondPart<-c()
+  				}
+			searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
+			}
+		}
 
-  		#stitch the first N0multiplier (=1) into the final parameter vector
-		positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
-		solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
-		solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
-		if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
-  			solutionVectorSecondPart<-c()
-  		}
-		searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
-		 if(debug) {
+  		#If there is only 1 n0, stitch in a 1 to replace the free parameter	
+  		if(sum(grepl("n0multiplier",MsIndividualParameters(migrationArray[[modelID]]))) == 1){
+			positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
+			solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
+			solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
+			if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
+  				solutionVectorSecondPart<-c()
+  			}
+			searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
+		}
+		
+		if(debug) {
 # 	   	print(searchResults)
  	   	}
  	   	if(searchResults$objective <= best.result.objective) {
@@ -146,7 +167,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
-		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=FALSE, ...){
+		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, ...){
 
 	if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
 		migrationArray<-migrationArray[modelRange]
