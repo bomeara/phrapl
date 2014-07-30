@@ -1611,7 +1611,8 @@ SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,total
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
 #of models into a table
-ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray))){
+ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray)),
+	setCollapseZero=NULL){
 
 	#Pull out the overall AICs
 	AIC<-grep("objective",result,value=TRUE)
@@ -1623,10 +1624,8 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1
 	params.K<-rep(NA, length(AIC))
 	params.vector<-rep(NA, length(AIC))
 	for (i in sequence(length(AIC))) {
-		AIC[i]
-		KAll(migrationArray[[i]])
-		params.K[i]<-KAll(migrationArray[[i]])
-		params.vector[i]<-paste(MsIndividualParameters(migrationArray[[i]]), sep=" ", collapse=" ")
+		params.K[i]<-ncol(result[[i]]) - 1
+		params.vector[i]<-paste(colnames(result[[i]])[-1], sep=" ", collapse=" ")
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
@@ -1647,7 +1646,8 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
 #of models into a table
-ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray))){
+ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray)),
+	setCollapseZero=NULL){
 
 	#Pull out best AIC for each model 
 	AIC<-c()
@@ -1660,11 +1660,8 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 	params.K<-rep(NA, length(AIC))
 	params.vector<-rep(NA, length(AIC))
 	for (i in sequence(length(AIC))) {
-		AIC[i]
-		KAll(migrationArray[[i]])
-		params.K[i]<-KAll(migrationArray[[i]])
-		params.vector[i]<-paste(MsIndividualParameters(migrationArray[[i]]), sep=" ", collapse=" ")
-		params.vector[i]<-gsub("n0multiplier_1","",params.vector[i]) #toss first n0multiplier parameter
+		params.K[i]<-ncol(result[[i]]) - 1
+		params.vector[i]<-paste(colnames(result[[i]])[-1], sep=" ", collapse=" ")
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
