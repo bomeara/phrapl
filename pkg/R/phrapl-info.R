@@ -206,31 +206,8 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE, doSNPs=FALSE, nEq=100, setCollapseZero=NULL){
+		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL){
 	parameterVector<-exp(par)
-	
-	#If some collapses are set to zero, replace them with a zero
-	if(!is.null(setCollapseZero)){
-		for(z in 1:length(setCollapseZero)){
-			positionOfFirstCol<-grep("collapse",MsIndividualParameters(migrationIndividual))[setCollapseZero][z]
-			parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstCol-1)]
-			parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
-			if((1+length(parameterVectorFirstPart)) > length(parameterVector)){
-				parameterVectorSecondPart<-c()
-  			}
-  			parameterVector<-c(parameterVectorFirstPart,0,parameterVectorSecondPart)
-  		}
-	}
-	
-	#Stitch in a 1 to replace the first n0, since it is not free	
-	positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationIndividual))[1]
-	parameterVectorFirstPart<-parameterVector[sequence(positionOfFirstN0-1)]
-	parameterVectorSecondPart<-parameterVector[(1+length(parameterVectorFirstPart)):length(parameterVector)]
-	if((1+length(parameterVectorFirstPart)) > length(parameterVector)){
-		parameterVectorSecondPart<-c()
-  	}
-  	parameterVector<-c(parameterVectorFirstPart,1,parameterVectorSecondPart)
-	
   	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
 	if(numReps > 0){ #only worry about weeding out values if doing numerical optimization
   		if(!PassBounds(parameterVector, parameterBounds)) {
@@ -263,22 +240,23 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 	  	likelihoodVector<-append(likelihoodVector,likelihoodVectorCurrent)
   	}
 
-  	#Convert matches to likelihoods
+  	#Convert matches to likelihoods (note that when calculating AIC, K is adjusted by subtracting off any
+  	#fixed collapses, and also subtracting 1 for the first n0multiplier, which is never free
  	if(length(popAssignments) > 1){
   		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
   			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,saveNoExtrap=saveNoExtrap,
   			summaryFn=summaryFn,nEq=nEq) 
-  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))
   		colnames(AICValue)<-"AIC"
   		if(saveNoExtrap==TRUE){
-  			AICValue.noExtrap<-2*(-lnLValue[2] + (KAll(migrationIndividual) - length(setCollapseZero)))
+  			AICValue.noExtrap<-2*(-lnLValue[2] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))
   			colnames(AICValue.noExtrap)<-"AIC.lnL.noExtrap"
   		}		
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
   			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq)	
-  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))		
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))		
 	}
 	if(print.results) {
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))

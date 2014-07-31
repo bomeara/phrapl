@@ -43,8 +43,12 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     		} 
     	}
     	
-		#Calculate number of n0 parameters (subtract off first one because not free)
-		numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
+    	#Calculate number of n0 parameters (if just one, subtract it off)
+    	if(sum(grepl("n0multiplier",paramNames)) == 1){
+ 	       numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
+ 	    }else{
+ 	   	   numn0 <- sum(grepl("n0multiplier",paramNames))
+ 	   	}
     	if (numn0 > 0) {
     		for (i in sequence(numn0)) {
     			startingVectorList<-append(startingVectorList, list(n0Starts))
@@ -62,10 +66,36 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     			nameCount<-nameCount + 1
     		} 
     	}
-    	startGrid <- CreateStartGrid(startingVectorList)
+    	startGrid<-CreateStartGrid(startingVectorList)
     	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+   
+    	#If some collapses are set to zero, stitch these values into the startGrid
+		if(!is.null(setCollapseZero)){
+			for(z in 1:length(setCollapseZero)){
+				positionOfFirstCol<-setCollapseZero[z]
+				startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
+				names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
+				startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
+				if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
+					startGridSecondPart<-c()
+  				}
+  				startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
+  				names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
+  			}
+		}
+		
+		#Stitch in a 1 to replace the first n0 (which is never free)	
+		positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
+		startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
+		names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstN0 - 1)]
+		startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+		if((1 + length(sequence(positionOfFirstN0 - 1))) > length(names(startGrid))){
+			startGridSecondPart<-c()
+  		}
+  		startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
+		names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
     }
-
+    
     if(is.null(nTreesGrid)) {
     	nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
     }
@@ -87,7 +117,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     }
 
 	#Save the grid as object
-    positionOfFirstN0 <- min(grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]])))
+    positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
     if(length(popAssignments) > 1){
    	 	thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
    	}else{
@@ -115,30 +145,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero)
- 	  
- 	  	#If some collapses are set to zero, replace them with a zero
-		if(!is.null(setCollapseZero)){
-			for(z in 1:length(setCollapseZero)){
-				positionOfFirstCol<-grep("collapse",MsIndividualParameters(migrationArray[[modelID]]))[setCollapseZero][z]
-				solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstCol-1)]
-				solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
-				if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
-  					solutionVectorSecondPart<-c()
-  				}
-			searchResults$solution<-c(solutionVectorFirstPart,log(0),solutionVectorSecondPart)
-			}
-		}
-
-  		#Stitch in a 1 to replace the first n0, since it is not free	
-		positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
-		solutionVectorFirstPart<-searchResults$solution[sequence(positionOfFirstN0-1)]
-		solutionVectorSecondPart<-searchResults$solution[(1+length(solutionVectorFirstPart)):length(searchResults$solution)]
-		if((1+length(solutionVectorFirstPart)) > length(searchResults$solution)) {
-  			solutionVectorSecondPart<-c()
-  		}
-		searchResults$solution<-c(solutionVectorFirstPart,log(1),solutionVectorSecondPart)
-		
+ 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq)
+ 	 		
 		if(debug) {
 # 	   	print(searchResults)
  	   	}

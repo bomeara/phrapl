@@ -1624,8 +1624,15 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1
 	params.K<-rep(NA, length(AIC))
 	params.vector<-rep(NA, length(AIC))
 	for (i in sequence(length(AIC))) {
-		params.K[i]<-ncol(result[[i]]) - 1
+		#for K, subtract off fixed values
+		params.K[i]<-(ncol(result[[i]]) - 1) - length(setCollapseZero) - 1
 		params.vector[i]<-paste(colnames(result[[i]])[-1], sep=" ", collapse=" ")
+		if(!is.null(setCollapseZero)){ #toss collapse parameter names when they are set to zero
+			params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-setCollapseZero],sep=" ",collapse=" ")
+		}
+		#Remove first n0multiplier
+		params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier",strsplit(params.vector[i],
+			" ")[[1]])[1])],seo=" ",collapse=" ")
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
@@ -1660,8 +1667,15 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 	params.K<-rep(NA, length(AIC))
 	params.vector<-rep(NA, length(AIC))
 	for (i in sequence(length(AIC))) {
-		params.K[i]<-ncol(result[[i]]) - 1
+		#for K, subtract off fixed values
+		params.K[i]<-(ncol(result[[i]]) - 1) - length(setCollapseZero) - 1
 		params.vector[i]<-paste(colnames(result[[i]])[-1], sep=" ", collapse=" ")
+		if(!is.null(setCollapseZero)){ #toss collapse parameter names when they are set to zero
+			params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-setCollapseZero],sep=" ",collapse=" ")
+		}
+		#Remove first n0multiplier
+		params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier",strsplit(params.vector[i],
+			" ")[[1]])[1])],seo=" ",collapse=" ")
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
@@ -1686,7 +1700,7 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector){
+ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -1877,12 +1891,21 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 	
 	
 	##########################CBIND ALL PARAMETER INDEX COLUMNS TOGETHER
-	parameterIndexes<-cbind(collapseParms,n0multiParms,migParms)
+	if(rm.n0==TRUE){
+		parameterIndexes<-cbind(collapseParms,migParms)
+	}else{
+		parameterIndexes<-cbind(collapseParms,n0multiParms,migParms)
+	}
 	#Add an "I" to colnames for the indexes (to distinguish them from the parameter values colnames)
 	for(rep in 1:ncol(parameterIndexes)){
 		colnames(parameterIndexes)[rep]<-paste(colnames(parameterIndexes)[rep],"_I",sep="")
 	}
-	parameterValues<-cbind(collapseParmsValues,n0multiParmsValues,migParmsValues)
+	
+	if(rm.n0==TRUE){
+		parameterValues<-cbind(collapseParmsValues,migParmsValues)
+	}else{
+		parameterValues<-cbind(collapseParmsValues,n0multiParmsValues,migParmsValues)
+	}
 	parameterAll<-cbind(parameterValues,parameterIndexes)
 	
 	return(list(parameterValues,parameterIndexes))
@@ -1893,7 +1916,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector){
+ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -1919,15 +1942,17 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 	}	
 	
 	
-	############MAKE COLUMN HEADERS FOR COLLAPSE BASED ON FULLY RESOLVED TREE
+	############MAKE COLUMN HEADERS FOR COLLAPSE AND N0MULTI BASED ON FULLY RESOLVED TREE
 	#First, make rectangular matrix to match fully resolved case 
 	allCollapses<-array(NA,dim=c(npop,npop - 1))
 	
 	#Fill in arrays with parameter headers
 	collapseColnames=c()
+	n0multiColnames=c()
 	for(cols in 1:length(allCollapses[1,])){ #for each column
 		for(rows in 1:length(allCollapses[,1])){ #for each row
 			collapseColnames<-append(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
+			n0multiColnames<-append(n0multiColnames,paste("n_t",cols,".",rows,sep=""))
 		}
 	}	
 	
@@ -1960,30 +1985,35 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 	colnames(migParms)<-migColnames
 			
 
-	#############FILL IN A MATRIX WITH THE COLLAPSE PARAMETER INDEXES
+	#############FILL IN A MATRIX WITH THE COLLAPSE  AND N0MULTI PARAMETER INDEXES
 	
 	#Create empty matrices to fill
-	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1)))) 
+	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1))))
+	n0multiParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1)))) 
 	currentModelCount=0
 	
 	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
+		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(cols in 1:length(collapseCurrentMatrix[1,])){ #for each column
 			for(rows in 1:length(collapseCurrentMatrix[,1])){ #for each row	
 				counter<-counter+1 #keep track of column to deposit values	
 				collapseParms[currentModelCount,counter]<-collapseCurrentMatrix[rows,cols] #pull out indexes
+				n0multiParms[currentModelCount,counter]<-n0multiCurrentMatrix[rows,cols] #pull out indexes
 			}
 		}
 	}			
 	colnames(collapseParms)<-collapseColnames
+	colnames(n0multiParms)<-n0multiColnames
 	
 
 	
 	##########################MAKE MATRICES FILLED WITH THE PARAMETER VALUES, BASED ON THE INDEXES
 	#Create data.frames to substitute in with the parameter values
 	collapseParmsValues<-collapseParms
+	n0multiParmsValues<-n0multiParms
 	migParmsValues<-migParms
 	
 	#Now loop through each  (i.e., each row in Parms matrices)
@@ -2040,7 +2070,32 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 		#Now take away from the parameters vector the used up parameter values
 		currentSol<-tail(currentSol,length(currentSol) - uniqueCollapse)	
 	
-		#Second, make matrix of the migration estimates
+	
+		#Second, make matrix of the n0multiplier estimates
+		if(length(currentSol)> 0){ #if there are parameter estimates left
+			#Calulate the number of unique parameters
+			uniqueN0multi<-as.numeric(n0multiParms[eachCol,]) 
+			uniqueN0multi<-uniqueN0multi[!is.na(uniqueN0multi)]
+			uniqueN0multi<-uniqueN0multi[which(uniqueN0multi > 0)]
+			uniqueN0multi<-length(unique(uniqueN0multi))
+			if(uniqueN0multi > 0){ #If there are any unique parameters
+				for(rep1 in 1:uniqueN0multi){ #For each unique parameter
+					for(rep2 in sequence(1:ncol(n0multiParms))){ #Go through each parameter position
+						if(!is.na(as.numeric(n0multiParms[eachCol,rep2]))){
+							if(as.numeric(n0multiParms[eachCol,rep2])==rep1){ #if the index matches the unique parameter
+								n0multiParmsValues[eachCol,rep2]<-currentSol[rep1] #change the index to the corresponding parameter value
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		#Now take away from the parameters vector the used up parameter values
+		currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
+
+	
+		#Third, make matrix of the migration estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 			#Calulate the number of unique parameters
 			uniqueMig<-as.numeric(migParms[eachCol,]) 
@@ -2063,12 +2118,21 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 	
 	
 	##########################CBIND ALL PARAMETER INDEX COLUMNS TOGETHER
-	parameterIndexes<-cbind(collapseParms,migParms)
+	if(rm.n0==TRUE){
+		parameterIndexes<-cbind(collapseParms,migParms)
+	}else{
+		parameterIndexes<-cbind(collapseParms,n0multiParms,migParms)
+	}
 	#Add an "I" to colnames for the indexes (to distinguish them from the parameter values colnames)
 	for(rep in 1:ncol(parameterIndexes)){
 		colnames(parameterIndexes)[rep]<-paste(colnames(parameterIndexes)[rep],"_I",sep="")
 	}
-	parameterValues<-cbind(collapseParmsValues,migParmsValues)
+	
+	if(rm.n0==TRUE){
+		parameterValues<-cbind(collapseParmsValues,migParmsValues)
+	}else{
+		parameterValues<-cbind(collapseParmsValues,n0multiParmsValues,migParmsValues)
+	}
 	parameterAll<-cbind(parameterValues,parameterIndexes)
 	
 	return(list(parameterValues,parameterIndexes))
