@@ -29,7 +29,11 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	
     	#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
     	numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
-    	if(!is.null(setCollapseZero)){
+    	if(numCollapse < 0){ #If for some reason there are more fixed parameters than possible, reduce them
+    		setCollapseZero<-sequence(sum(grepl("collapse",paramNames)))
+    		numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+    	}
+    	if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
     		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(grep("collapse",paramNames)!=
     			setCollapseZero)]
     	}else{
@@ -69,18 +73,32 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	startGrid<-CreateStartGrid(startingVectorList)
     	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
    
-    	#If some collapses are set to zero, stitch these values into the startGrid
-		if(!is.null(setCollapseZero)){
-			for(z in 1:length(setCollapseZero)){
-				positionOfFirstCol<-setCollapseZero[z]
-				startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
-				names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
-				startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
-				if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
-					startGridSecondPart<-c()
+    	#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid
+		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0){
+			
+			#If there are only fixed parameters...
+			if(length(startGrid) == 0){
+				startGrid<-data.frame(matrix(rep(log(0),length(setCollapseZero)),nrow=1,ncol=length(setCollapseZero)))
+				for(g in 1:length(setCollapseZero)){
+					names(startGrid)[g]<-paste("collapse_",setCollapseZero[g],sep="")
+				}
+			}else{
+			
+				#Otherwise, if there are free parameters
+				for(z in 1:length(setCollapseZero)){
+					positionOfFirstCol<-setCollapseZero[z]
+					startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
+					names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
+					if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
+						startGridSecondPart<-c()
+						startGrid<-cbind(startGridFirstPart,log(0))
+					}else{
+						startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
+						startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
+					}
+  				
+  					names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
   				}
-  				startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
-  				names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
   			}
 		}
 		
@@ -88,14 +106,17 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 		positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
 		startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
 		names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstN0 - 1)]
-		startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
 		if((1 + length(sequence(positionOfFirstN0 - 1))) > length(names(startGrid))){
 			startGridSecondPart<-c()
+			startGrid<-cbind(startGridFirstPart,log(1))
+		}else{
+			startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+			startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
   		}
-  		startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
+  		
 		names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
     }
-    
+        
     if(is.null(nTreesGrid)) {
     	nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
     }
@@ -169,7 +190,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
-		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, ...){
+		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2, ...){
 
 	if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
 		migrationArray<-migrationArray[modelRange]
@@ -254,7 +275,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 	#Save parameter estimates and parameter indexes to tables
 	if(numReps==0){
 		parameters<-ExtractGridParameters(migrationArray=migrationArray,result=gridList,
-			popVector=popAssignments[[1]])
+			popVector=popAssignments[[1]],dAIC.cutoff=dAIC.cutoff)
 	}else{
 		parameters<-ExtractParameters(migrationArray=migrationArray,result=results.list,
 			popVector=popAssignments[[1]])
