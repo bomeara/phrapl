@@ -25,8 +25,9 @@ numReps = 0, startGrid = NULL,
 collapseStarts = c(0.3, 0.58, 1.11, 2.12, 4.07, 7.81, 15), 
 n0Starts = c(0.1, 0.5, 1, 2, 4), 
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15, 4.64, 10), 
-subsamplesPerGene = 1, totalPopVector = totalPopVector, summaryFn = "mean", 
-saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, ...)
+subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
+saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
+dAIC.cutoff=2, rm.n0, ...)
 }
 \arguments{
    \item{modelRange}{
@@ -152,6 +153,21 @@ estimate, and that is set by nEq. With its default of 100, very low weight is
 placed on this: it's equivalent in the info present in nTrees=100, and since
 the actual nTrees is 10000 or more, it has very little impact.
 }
+  \item{setCollapseZero}{
+A vector of collapse parameters that will be set to zero (e.g., c(1,2) will set
+both the first and second collapse parameters to zero). K will be adjusted
+automatically to account for the specified fixed parameters.
+}
+  \item{dAIC.cutoff}{
+A value specifying how optimized parameter values should be selected. Parameter
+estimates are calculated by taking the mean parameter value across all values
+within an AIC distance of dAIC.cutoff relative to the lowest AIC value. The 
+default is 2 AIC points.
+}
+  \item{rm.n0}{
+A boolean indicating whether n0multiplier parameter estimates should be outputted
+with the other estimates.
+  }
   \item{\dots}{
 Other items to pass to heuristic search functions.
 }
