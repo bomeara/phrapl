@@ -1916,7 +1916,7 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates
 #based on a set of models. A list containing two tables is outputted: one containing parameter indexes
 #and one containing parameter estimates
-ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE){
+ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE,dAIC.cutoff=2){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
@@ -2028,10 +2028,16 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 		}else{
 			currentResult<-result[[eachCol]][2:length(result[[eachCol]])] #if only 1 popAssignment used
 		}
-
+		
+		#For each column of parameters, get optimal parameter values according the define dAIC cutoff	
 		for(rep in 1:ncol(currentResult)){
-			currentSol<-append(currentSol,mean(currentResult[1:5,rep])) #Note that grid prams are already back-transformed (i.e., logged)
+			dAIC.temp<-c()
+			for(a in 1:nrow(result[[eachCol]][1])){
+				dAIC.temp<-append(dAIC.temp,result[[eachCol]][a,1] - result[[eachCol]][1,1])
+			}
+			currentSol<-append(currentSol,mean(currentResult[which(dAIC.temp < dAIC.cutoff),rep])) #Note that grid prams are already back-transformed (i.e., logged)
 		}
+
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 				
 			#Because different collapse parameters are denoted by different columns rather than by different index values,
