@@ -190,7 +190,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
-		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2, ...){
+		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE, ...){
 
 	if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
 		migrationArray<-migrationArray[modelRange]
