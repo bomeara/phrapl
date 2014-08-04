@@ -200,13 +200,22 @@ PassBounds <- function(parameterVector, parameterBounds) {
 	return(TRUE)
 }
 
+ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mitochondrial, do 1/4
+#doing each class of parameters separately in case some aren't affected by the scaling
+	warning("Math not checked")
+	parameterVector[which(grepl("collapse", names(parameterVector)))] <- parameterVector[which(grepl("collapse", names(parameterVector)))]/NeScaling
+	parameterVector[which(grepl("n0", names(parameterVector)))] <- parameterVector[which(grepl("n0", names(parameterVector)))]/NeScaling
+	parameterVector[which(grepl("migration", names(parameterVector)))] <- parameterVector[which(grepl("migration", names(parameterVector)))]/NeScaling
+	return(parameterVector)
+}
+
 #Return AIC for a given model and tree
 ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		subsampleWeights.df=NULL,
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=100,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL){
+		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, popScaling){
 	parameterVector<-exp(par)
   	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
 	if(numReps > 0){ #only worry about weeding out values if doing numerical optimization
@@ -228,7 +237,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest,
-		doSNPs=doSNPs)
+		doSNPs=doSNPs, popScaling=popScaling)
 
  	 	#Apply weights to matches
 		if(!is.null(subsampleWeights.df)) {
@@ -422,61 +431,71 @@ CreateStartGrid<-function(fineGrid){
 ##Match simulated trees to observed trees and export vector of matches
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
-		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE){
+		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE, popScaling=popScaling){
 	stored.wd<-getwd()
 	setwd(tempdir())
-	observed<-paste(tempdir(),"/observed",currentPopAssign,".tre",sep="")
-	assign<-paste(tempdir(),"/assign",currentPopAssign,".txt",sep="")
-	msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual,
-		parameterVector,ceiling(nTrees/ncores))
+	final.outputVector<-c()
+	for (scaling.index in sequence(length(unique(popScaling)))) {
+		observed<-paste(tempdir(),"/observed",currentPopAssign,".scaling.",popScaling[scaling.index],".tre",sep="")
+		assign<-paste(tempdir(),"/assign",currentPopAssign,".txt",sep="")
+		msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual,
+			ScaleParameterVectorByNe(parameterVector, popScaling[scaling.index]),ceiling(nTrees/ncores))
 	
-	systemMS<-function(stringname){
-#		outputVectorMS<-suppressWarnings(system(command="(stringname) & sleep 2 ; kill $!",intern=TRUE))
-#		http://stackoverflow.com/questions/687948/timeout-a-command-in-bash-without-unnecessary-delay
-		outputVectorMS<-system(stringname,intern=TRUE)
-		return(outputVectorMS)
-	}
-	systemPerl<-function(stringname){
-		outputVectorPerl<-system(stringname,intern=TRUE)
-		return(outputVectorPerl)
-	}
-
-	if(print.ms.string) {
-    	print(msCallInfo) 
-  	}
-
-	unresolvedFlag<-"-u"
-	if (unresolvedTest==FALSE) {
-		unresolvedFlag<-""
-	}
-
-	snpFlag<-"-d" #for doSNPs
-	if (doSNPs==FALSE) {
-		snpFlag<-""
-	}
-
-	
-	#Simulate trees in MS and do matching in perl
-	outputstringMS<-paste(msPath,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
-		" | grep ';' > mstrees.txt", sep=" ") 
-	outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag, snpFlag, paste("-a",assign,sep=""), 
-		paste("-o",observed,sep=""),sep=" ")
-
-	if(ncores==1){
-		outputVectorMS<-systemMS(stringname=outputstringMS)
-		outputVectorPerl<-systemPerl(stringname=outputstringPerl)
-		outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
-		setwd(stored.wd)
-		return(outputVector)
-	}else{
-		stop("something is wrong here")
-		wrapOutput<-function(x,outputstring) {
-			as.numeric(system(outputstring,intern=TRUE))
+		systemMS<-function(stringname){
+	#		outputVectorMS<-suppressWarnings(system(command="(stringname) & sleep 2 ; kill $!",intern=TRUE))
+	#		http://stackoverflow.com/questions/687948/timeout-a-command-in-bash-without-unnecessary-delay
+			outputVectorMS<-system(stringname,intern=TRUE)
+			return(outputVectorMS)
 		}
-		outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=paste(outputstringMS, outputstringPerl, sep=" ", collapse=" "),mc.cores=ncores)),1,sum)
-		setwd(stored.wd)
-		return(outputVector)
+		systemPerl<-function(stringname){
+			outputVectorPerl<-system(stringname,intern=TRUE)
+			return(outputVectorPerl)
+		}
+
+		if(print.ms.string) {
+			print(msCallInfo) 
+		}
+
+		unresolvedFlag<-"-u"
+		if (unresolvedTest==FALSE) {
+			unresolvedFlag<-""
+		}
+
+		snpFlag<-"-d" #for doSNPs
+		if (doSNPs==FALSE) {
+			snpFlag<-""
+		}
+
+	
+		#Simulate trees in MS and do matching in perl
+		outputstringMS<-paste(msPath,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
+			" | grep ';' > mstrees.txt", sep=" ") 
+		outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag, snpFlag, paste("-a",assign,sep=""), 
+			paste("-o",observed,sep=""),sep=" ")
+
+		if(ncores==1){
+			outputVectorMS<-systemMS(stringname=outputstringMS)
+			outputVectorPerl<-systemPerl(stringname=outputstringPerl)
+			outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
+			#return(outputVector)
+		}else{
+			stop("something is wrong here")
+			wrapOutput<-function(x,outputstring) {
+				as.numeric(system(outputstring,intern=TRUE))
+			}
+			outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=paste(outputstringMS, outputstringPerl, sep=" ", collapse=" "),mc.cores=ncores)),1,sum)
+			#return(outputVector)
+		}
+		final.outputVector <- append(final.output.vector, outputVector)
 	}
+	#reorder to match input tree order
+	orderVector <- c()
+	for  (scaling.index in sequence(length(unique(popScaling)))) {
+		orderVector <- append(orderVector, which(popScaling==unique(popScaling)[scaling.index]))
+	}
+	final.outputVector[orderVector]<-final.outputVector
+	setwd(stored.wd)
+	return(final.outputVector)
 }
 
 #What happens with zero matching trees? Is the probability of the data exactly
