@@ -436,10 +436,10 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 	setwd(tempdir())
 	final.outputVector<-c()
 	for (scaling.index in sequence(length(unique(popScaling)))) {
-		observed<-paste(tempdir(),"/observed",currentPopAssign,".scaling.",popScaling[scaling.index],".tre",sep="")
+		observed<-paste(tempdir(),"/observed",currentPopAssign,".scaling.",unique(popScaling)[scaling.index],".tre",sep="")
 		assign<-paste(tempdir(),"/assign",currentPopAssign,".txt",sep="")
 		msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual,
-			ScaleParameterVectorByNe(parameterVector, popScaling[scaling.index]),ceiling(nTrees/ncores))
+			ScaleParameterVectorByNe(parameterVector,unique(popScaling)[scaling.index]),ceiling(nTrees/ncores))
 	
 		systemMS<-function(stringname){
 	#		outputVectorMS<-suppressWarnings(system(command="(stringname) & sleep 2 ; kill $!",intern=TRUE))
