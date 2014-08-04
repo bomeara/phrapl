@@ -486,7 +486,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 			outputVector<-apply(simplify2array(mclapply(sequence(ncores),wrapOutput,outputstring=paste(outputstringMS, outputstringPerl, sep=" ", collapse=" "),mc.cores=ncores)),1,sum)
 			#return(outputVector)
 		}
-		final.outputVector <- append(final.output.vector, outputVector)
+		final.outputVector <- append(final.outputVector, outputVector)
 	}
 	#reorder to match input tree order
 	orderVector <- c()

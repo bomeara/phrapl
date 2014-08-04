@@ -771,7 +771,7 @@ TaxaToDrop<-function(assignFrame,taxaRetained) {
 	return(taxaToDrop)
 }
 
-PrepSubsampling<-function(assignmentsGlobal, observedTrees,popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
+PrepSubsampling<-function(assignmentsGlobal,observedTrees,popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
 outgroup=TRUE,outgroupPrune=TRUE){
 	if(is.null(nIndividualsDesired)){
 		nIndividualsDesired<-sum(popAssignments[[1]])
@@ -912,6 +912,10 @@ outgroup=TRUE,outgroupPrune=TRUE){
 	return(phyList)
 }
 
+GeneratePopScalingForSubsamples<-function(subsamplesPerGene,popScaling){
+	popScaling<-rep(popScaling,subsamplesPerGene)
+	return(popScaling)
+}
 
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file 
 #containing a tree for each locus. For each locus, subsampling can be done either by iteratively sampling 
