@@ -912,11 +912,6 @@ outgroup=TRUE,outgroupPrune=TRUE){
 	return(phyList)
 }
 
-GeneratePopScalingForSubsamples<-function(subsamplesPerGene,popScaling){
-	popScaling<-rep(popScaling,subsamplesPerGene)
-	return(popScaling)
-}
-
 #This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file 
 #containing a tree for each locus. For each locus, subsampling can be done either by iteratively sampling 
 #nIndividualsDesired from the entire dataset (with a minimum sample per population specified by minPerPop), 
