@@ -9,7 +9,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, ...) {
+	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, popScaling, ...) {
   modelID<-ReturnModel(p,migrationArrayMap)
   best.result <- c()
   best.result.objective <- badAIC
@@ -129,7 +129,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
     	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
     	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
     	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
-    	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero)
+    	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero, popScaling=popScaling)
     	initial.AIC<-append(initial.AIC,currentAIC)
     }
  
@@ -166,7 +166,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq)
+ 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq, popScaling=popScaling)
  	 		
 		if(debug) {
 # 	   	print(searchResults)
@@ -190,8 +190,10 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00),subsamplesPerGene=1,
-		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE, ...){
-
+		totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE, popScaling=NULL, ...){
+	if(is.null(popScaling)) {
+		popScaling <- rep(1, length(observedTrees))
+	}
 	if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
 		migrationArray<-migrationArray[modelRange]
 		migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
@@ -203,8 +205,10 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 	for(k in 1:length(popAssignments)){
 		write.table(CreateAssignment.df(popAssignments[[k]]),file=paste(tempdir(),"/assign",k,".txt",sep=""),
 			quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE,append=FALSE)
-		if(file.exists(paste(tempdir(),"/observed",k,".tre",sep=""))){
-			unlink(paste(tempdir(),"/observed",k,".tre",sep=""))
+		for(scaling.index in sequence(length(unique(popScaling)))) {
+			if(file.exists(paste(tempdir(),"/observed",k,".scaling.", popScaling[scaling.index],".tre",sep=""))){
+				unlink(paste(tempdir(),"/observed",k,".scaling.", popScaling[scaling.index],".tre",sep=""))
+			}
 		}
 	}
 	for(f in 1:length(observedTrees)){ #for each popAssignment
@@ -212,7 +216,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
         	observedTrees[[f]] <- c(observedTrees[[f]])
     	}
 		for(m in 1:length(observedTrees[[f]])){ #for each tree
-			write.tree(observedTrees[[f]][[m]],file=paste(tempdir(),"/observed",f,".tre",sep=""),append=TRUE)
+			write.tree(observedTrees[[f]][[m]],file=paste(tempdir(),"/observed",f,".scaling.", popScaling[m], ".tre",sep=""),append=TRUE)
 		}		
 	}
  
@@ -235,7 +239,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
   		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
-  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,...))
+  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling, ...))
   		
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
@@ -250,7 +254,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
   		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
-  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero, ...))
+  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero, popScaling=popScaling, ...))
   	}
 
 #  	 	print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
