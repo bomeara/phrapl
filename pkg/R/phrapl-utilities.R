@@ -479,14 +479,29 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 	return(n0multiplierIndividualsList)
 }
 
+GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
+	maxK<-maxK + 1 #to account for fact that first n0 multiplier is not free
+	popIntervalsList<-GenerateIntervals(popVector)
+	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector,popIntervalsList,maxK=maxK, maxN0K=maxN0K)
+	return(length(n0multiplierIndividualsList))
+}
+
 #now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters (times, n0multipliers, migration rates) under our chosen max
 #allow a model where migrations change anywhere along branch, or only at coalescent nodes? The problem with the latter is that you cannott fit some reasonable models: i.e., two populations persisting through time. Problem with the former is parameter space
-GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMigrationK=2, maxN0K=1, forceSymmetricalMigration=TRUE, forceTree=FALSE, verbose=FALSE) {
+GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMigrationK=2, maxN0K=1, forceSymmetricalMigration=TRUE,
+	forceTree=FALSE,verbose=FALSE,parallelRep=NULL) {
 	maxK<-maxK + 1 #to account for fact that first n0 multiplier is not free
 	popIntervalsList<-GenerateIntervals(popVector)
 	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector,popIntervalsList,maxK=maxK, maxN0K=maxN0K)
 	migrationIndividualsList<-list()
-	for (i in sequence(length(n0multiplierIndividualsList))) {
+
+	#Run for a specific tree history or for all at once?
+	if(!is.null(parallelRep)){
+		treeHistoryNum<-parallelRep
+	}else{
+		treeHistoryNum<-sequence(length(n0multiplierIndividualsList))
+	}
+	for (i in treeHistoryNum) {
 		if (verbose==TRUE) {
 			print(paste("doing ",i,"/",length(n0multiplierIndividualsList)))
 		}
@@ -542,9 +557,20 @@ GenerateMigrationIndividuals<-function(popVector, maxK=SetMaxK(popVector), maxMi
 					}
 				}
 				newIndividual<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)	
-				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK) {
+				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK){
 					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
-				}			
+				}
+				#Code for storing models separately for each tree history
+#				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK  && parameterize==TRUE){
+#					if(!exists(paste("migrationIndividualsList_",i,sep=""))){
+#						assign(paste("migrationIndividualsList_",i,sep=""),list())
+#						#Method for adding elements to dynamically named list
+#						assign(paste("migrationIndividualsList_",i,sep=""),
+#						{x<-get(paste("migrationIndividualsList_",i,sep=""))
+#						x[[length(get(paste("migrationIndividualsList_",i,sep=""))) + 1]]<-4
+#						x})
+#					}
+#				}			
 				numevaluations<-numevaluations+1
 				if(numevaluations<=dim(allMappings)[1]) {
 					thisMapping<-allMappings[numevaluations,]	
