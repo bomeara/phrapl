@@ -202,9 +202,8 @@ PassBounds <- function(parameterVector, parameterBounds) {
 
 ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mitochondrial, do 1/4
 #doing each class of parameters separately in case some aren't affected by the scaling
-	warning("Math not checked")
 	parameterVector[which(grepl("collapse", names(parameterVector)))] <- parameterVector[which(grepl("collapse", names(parameterVector)))]/NeScaling
-	parameterVector[which(grepl("n0", names(parameterVector)))] <- parameterVector[which(grepl("n0", names(parameterVector)))]/NeScaling
+	parameterVector[which(grepl("n0", names(parameterVector)))] <- parameterVector[which(grepl("n0", names(parameterVector)))]/1
 	parameterVector[which(grepl("migration", names(parameterVector)))] <- parameterVector[which(grepl("migration", names(parameterVector)))]/NeScaling
 	return(parameterVector)
 }
