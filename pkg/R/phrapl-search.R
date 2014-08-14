@@ -1,7 +1,7 @@
 #TO DO: If the optimal value is outside the bounds of the grid, offer warning or option to restart search centered at new grid
 #I have tweaked the code for SearchContinuousSpaceNLopter such that 1) different grid parameters were used and such that 2)the grid file is saved
 #with a different name for each run
-SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray, popAssignments, badAIC=100000000000000, 
+SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationArray, popAssignments, badAIC=100000000000000, 
 	maxParameterValue=100, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 	subsampleWeights.df=NULL,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
@@ -10,7 +10,11 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
 	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, popScaling, ...) {
-  modelID<-ReturnModel(p,migrationArrayMap)
+  if(!is.null(migrationArrayMap)){
+  	modelID<-ReturnModel(p,migrationArrayMap)
+  }else{
+  	modelID<-p
+  }
   best.result <- c()
   best.result.objective <- badAIC
   if(print.results) {
@@ -183,7 +187,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap, migrationArray,
 
 #This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
 #nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
-GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,migrationArray,popAssignments, 
+GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NULL,migrationArray,popAssignments, 
 		badAIC=100000000000000,maxParameterValue=100,nTrees=1e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		observedTrees=NULL,subsampleWeights.df=NULL, doWeights=TRUE, unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
@@ -201,7 +205,9 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
 	
 	if(length(modelRange) != length(migrationArray)) { #need to look at only particular rows
 		migrationArray<-migrationArray[modelRange]
-		migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
+		if(!is.null(migrationArrayMap)){
+			migrationArrayMap<-GenerateMigrationArrayMapTrunc(migrationArrayMap,modelRange)
+		}
 	}
 	if(is.null(subsampleWeights.df) && doWeights) {
    	subsampleWeights.df <- GetPermutationWeightsAcrossSubsamples(popAssignments, observedTrees)
@@ -228,8 +234,12 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)), migrationArrayMap,m
   AIC.values<-rep(NA,length(migrationArray))
   gridList<-list() #for storing model grids
   results.list<-list()
-  for (i in sequence(length(migrationArray))) {
-  	p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
+  for (i in sequence(length(migrationArray))){
+  	if(!is.null(migrationArrayMap)){
+  		p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
+  	}else{
+  		p<-i
+  	}
   	if(return.all) {
  		if(!is.null(startGrid)){
  			currentStartGrid<-startGrid[[i]] #imported startGrid must be a list

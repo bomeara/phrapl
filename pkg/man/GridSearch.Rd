@@ -13,7 +13,7 @@ traditional optimization approaches. However, it can still do a heuristic
 search.
 }
 \usage{
-GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap, 
+GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap=NULL, 
 migrationArray, popAssignments, badAIC = 1e+14, 
 maxParameterValue = 100, nTrees = 1e5, msPath = "ms", 
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
@@ -35,7 +35,8 @@ Integer vector: which models to examine. Do not specify to use default of all
 models.
 }
  \item{migrationArrayMap}{
-A data.frame containing information about all the models
+A data.frame containing information about all the models. Only required for
+heuristic search, not for grid search.
 }
   \item{migrationArray}{
 List containing all the models
