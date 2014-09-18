@@ -27,7 +27,7 @@ n0Starts = c(0.1, 0.5, 1, 2, 4),
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15, 4.64, 10), 
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
-dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, ...)
+dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL, ...)
 }
 \arguments{
    \item{modelRange}{
@@ -173,6 +173,16 @@ with the other estimates.
 A vector whose length is equal to the number of loci analyzed that gives the relative
 scaling of effective population size for each locus (e.g., diploid nuclear locus = 1,
 X-linked locus = 0.75, mtDNA locus = 0.25). Default is equal scaling for all loci.
+}
+  \item{checkpointFile}{
+Results can be printed to a file which acts as a checkpoint. If a job is stopped during
+a GridSearch, rather than starting the analysis over, if a file was previously specified 
+using this argument, the search will resume at the most recent iteration printed to the 
+file. Currently, this argument can only be used when running a single model in GridSearch. 
+However, if GridSearch is taking a long time when running multiple models at once, one 
+can save results more often by reducing the number of models run at a time. Thus, the 
+checkpointFile argument is only really necessary when you've got a single model running 
+that can't be broken up any further. 
 }
   \item{\dots}{
 Other items to pass to heuristic search functions.
