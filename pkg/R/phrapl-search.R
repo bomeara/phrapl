@@ -9,7 +9,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
 	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64,10.00), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,popScaling,
+	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,popScaling=NULL,
 	checkpointFile=NULL, ...) {
   if(!is.null(migrationArrayMap)){
   	modelID<-ReturnModel(p,migrationArrayMap)
@@ -140,13 +140,14 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
   			initial.AIC<-c()
   			startingPosition<-1
   		}
+  		if(file.exists(checkpointFile)){
+  			unlink(checkpointFile)
+  		}
   	}else{
   		initial.AIC<-c()
   		startingPosition<-1
   	}
-  	if(file.exists(checkpointFile)){
-  		unlink(checkpointFile)
-  	}
+
   	if(!is.null(checkpointFile)){
   		write.table(initial.AIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE)
   	}
@@ -227,7 +228,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		popScaling=NULL,checkpointFile=NULL, ...){
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
-		popScaling <- rep(1, length(observedTrees))
+		popScaling <- rep(1, length(observedTrees[[1]]))
 	}else{
 		#If popScaling defined, expand popScaling to repeat across subsamples
 		popScaling<-rep(popScaling,subsamplesPerGene)
