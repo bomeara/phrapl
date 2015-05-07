@@ -427,6 +427,66 @@ CreateStartGrid<-function(fineGrid){
 	return(startGrid)
 }
 
+#This function returns the number of grid points in a grid constructed for a given model and
+#grid start parameters (the value is not perfectly multiplicative as older collapse events with
+#smaller values than earlier collapse events are filtered out).
+GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
+	migrationStarts=NULL,n0multiplierStarts=NULL,
+	setCollapseZero=NULL){
+	paramNames<-MsIndividualParameters(migrationArray[[modelID]])
+
+	startingVectorList<-list()
+	nameCount<-1
+
+	#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
+	numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+	if(numCollapse < 0){ #If for some reason there are more fixed parameters than possible, reduce them
+		setCollapseZero<-sequence(sum(grepl("collapse",paramNames)))
+		numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+	}
+	if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
+		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(grep("collapse",paramNames)!=
+			setCollapseZero)]
+	}else{
+		collapses2estimate<-grep("collapse",paramNames,value=TRUE)
+	}
+	if(numCollapse > 0) {
+		for (i in sequence(numCollapse)) {
+			startingVectorList<-append(startingVectorList, list(collapseStarts))
+			names(startingVectorList)[nameCount]<-collapses2estimate[i]
+			nameCount<-nameCount + 1
+		} 
+	}
+
+	#Calculate number of n0 parameters (if just one, subtract it off)
+	if(sum(grepl("n0multiplier",paramNames)) == 1){
+	   numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
+	}else{
+	   numn0 <- sum(grepl("n0multiplier",paramNames))
+	}
+	if (numn0 > 0) {
+		for (i in sequence(numn0)) {
+			startingVectorList<-append(startingVectorList, list(n0Starts))
+			names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
+			nameCount<-nameCount + 1
+		} 
+	}	
+
+	#Calculate number of migration parameters
+	numMigration <- sum(grepl("migration",paramNames))
+	if (numMigration > 0) {
+		for (i in sequence(numMigration)) {
+			startingVectorList<-append(startingVectorList, list(migrationStarts))
+			names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
+			nameCount<-nameCount + 1
+		} 
+	}
+	startGrid<-CreateStartGrid(startingVectorList)
+	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+	
+	return(nrow(startGrid))
+}
+
 ##Match simulated trees to observed trees and export vector of matches
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
