@@ -2651,3 +2651,60 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 			file=paste(rdaFilename,"_subset",locusSubset,".rda",sep=""))
 	}
 }
+
+#The purpose of this function is to filter out high migration rates from the 
+#parameter grid after a phrapl GridSearch has been completed. The function
+#inputs a gridList object, filters out migration in accordance with a specified
+#criterion, and outputs the new gridList. One can then re-calculate overall AIC
+#and parameter values for this gridList using ExtractGridAICs and 
+#ExtractGridParameters functions. If criterion = FilterMigrationGreaterThanCollapse,
+#this will filter out any migration rate value that is greater than 
+#FilterMigrationGreaterThanCollapseMultiplier * the relevant collapse time. Thus, if
+#FilterMigrationGreaterThanCollapseMultiplier = 1, this will filter out any
+#parameter combination where migration is greater than tau.
+FilterGridForMigration<-function(gridList,migrationArray,popAssignments,criterion=NULL,
+	FilterMigrationGreaterThanCollapseMultiplier=1){
+
+	for(whichModel in 1:length(gridList)){ #for each model
+
+		currentParamNames<-MsIndividualParameters(migrationArray[[whichModel]])
+
+		#Get vector the gives the migration matrix at which each migration parameter first occurs
+		numMatrices<-length(migrationArray[[whichModel]]$migrationArray) / 
+			(length(popAssignments) * length(popAssignments))
+		whichMigMatrixVec<-c() #to store the matrix at which each migration parameter first occurs
+		for(j in 1:length(grep("migration",currentParamNames))){ #for each migration parameter
+			for(i in 1:numMatrices){ #for each matrix
+				if(length(grep(j,migrationArray[[whichModel]]$migrationArray[,,i])) > 0){
+					whichMigMatrixVec<-append(whichMigMatrixVec,i)
+					break()
+				}else{}
+			}
+		}
+
+		#Now filter the grid according to desired criterion 
+		gridList[[whichModel]]<-FilterMigrationByCriterion(gridListCurrent=gridList[[whichModel]],
+			migrationIndividual=migrationArray[[whichModel]],whichMigMatrixVec=whichMigMatrixVec,
+			criterion=criterion,FilterMigrationGreaterThanCollapseMultiplier=
+			FilterMigrationGreaterThanCollapseMultiplier)
+	}
+	return(gridList)
+}
+
+#This function is called by FilterGridForMigration when filtering a gridList according to a specified criterion
+FilterMigrationByCriterion<-function(gridListCurrent,migrationIndividual,whichMigMatrixVec,
+	criterion=NULL,FilterMigrationGreaterThanCollapseMultiplier=1){
+	paramNames<-MsIndividualParameters(migrationIndividual)
+	for(i in 1:length(grep("migration",paramNames))){ #For each migration parameter
+		currentCollapseColNum<-grep(paste("collapse_",whichMigMatrixVec[i],sep=""),colnames(gridListCurrent))
+		currentMigrationColNum<-grep(paste("migration_",i,sep=""),colnames(gridListCurrent))							
+		
+		#Criterion1: migration can't be larger than collapse
+		if(criterion=="FilterMigrationGreaterThanCollapse"){
+			gridListCurrent<-gridListCurrent[which((gridListCurrent[,currentCollapseColNum] * 
+				FilterMigrationGreaterThanCollapseMultiplier) >= 
+			gridListCurrent[currentMigrationColNum]),]
+		}
+	}
+	return(gridListCurrent)
+}	
