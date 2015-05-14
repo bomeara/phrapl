@@ -2707,4 +2707,41 @@ FilterMigrationByCriterion<-function(gridListCurrent,migrationIndividual,whichMi
 		}
 	}
 	return(gridListCurrent)
-}	
+}
+
+#This function calculates an index of divergence using a given tau and migration rate
+#from ms. To obtain this index, trees are iteratively simulated in ms with two species 
+#and three individuals under the given tau and migration rate (which can be asymmetrical). 
+#Then, the proportion of times that the given parameter values yield the true 
+#topology is calculated. This index gives something similar to what the genealogical sorting index does, 
+#except for a given set of migration and tau values instead of for groups on a tree: to what 
+#degree does the resulting location of alleles align with underlying species boundaries?
+#We've scaled the index to be between 0 and 1, such that 0 = panmixia and 1 = strong support 
+#for divergence between whatever lineages are defined by the given tau and migration rate. 
+#Except for extreme parameter values, there is a fairly high variance for the index, such that 
+#it should be caluculated using a large number of replicates (10,000 at a minimum).
+GetIntraspeciesCoalescentFraction<-function(tau,migration.in,migration.out=NULL,nreps=5000) {
+	if(is.null(migration.out)) {
+		migration.out<-migration.in
+	}
+	divergence<-c()
+	output<-system(paste("ms 3 ", nreps, " -T -I 2 2 1 -ej ",tau," 2 1 -m 1 2 ",migration.out," -m 2 1 ",migration.in,
+		" | grep ';'",sep=""),intern=TRUE)
+	intra.coalescence<-sapply(output,TestForWithinPopCoalescenceThreeSamplesOnly)
+	#Return the proportion of three taxon trees where 1 and 2 coalesce before either coalesces with 3
+	#Standardize so between 0 and 1
+	fraction<-sum(intra.coalescence)/length(intra.coalescence)
+	fraction_standardized<-(fraction - 0.333) / (1 - 0.333)
+	
+	return(fraction_standardized)
+}
+
+#Called within GetIntraspeciesCoalescentFraction
+ConvertTreeString <- function(x) {
+	return(read.tree(text=x))	
+}
+
+#Called within GetIntraspeciesCoalescentFraction
+TestForWithinPopCoalescenceThreeSamplesOnly <- function(x) {
+	return(2==sum(grepl("1_2",GetClades(ConvertTreeString(x)))))	
+}
