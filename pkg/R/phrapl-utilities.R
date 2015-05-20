@@ -727,6 +727,65 @@ FilterForFullyResolved <- function(migrationArray) {
 	# return(expansionmultiplierIndividualsList)
 # }
 
+GenerateMigrationIndividualsOneAtATime<-function(collapseList,migrationList,n0multiplierMap=NULL){
+	#The purpose of this function is create a single a priori migrationIndividual
+	#for a given collapse and migration history.
+	#The two inputs for this function are "collapseList" and "migrationList". 
+	#CollapseList is a list of collapse history vectors, one vector for each 
+	#coalescent event in the tree. So, collapseList = list(c(1,1,0),c(1,NA,1)) means 
+	#that there are two coalescent events: in the first event, population 1 and 2 
+	#coalesce while population 3 does not; in the second event, ancestral population 
+	#1-2 coalesces with population 3. 
+	#MigrationList is a list of migration matrices. There will be one migration matrix 
+	#for the present generation, plus any historical matrices that apply 
+	#(there will be as many matrices as there are collapse events).
+	#So, in the three population scenario, if there is symmetrical migration between 
+	#populations 1 and 2 and no historical migration, migrationList will be:
+
+	# migrationList<-list(
+	# t(array(c(
+	# NA, 1, 0,
+	# 1, NA, 0,
+	# 0, 0, NA),
+	# dim=c(3,3))),
+	# 
+	# t(array(c(
+	# NA, NA, 0,
+	# NA, NA, NA,
+	# 0,  NA, NA),
+	# dim=c(3,3))))
+
+	#Note that in R, arrays are constructed by reading in values from column 1 first then from 
+	#column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e., 
+	#first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the 
+	#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard 
+	#returns can be used to visualize these values in the form of matrices.
+	#If n0multiplierMap is NULL, it will be created based on the collapseList assuming equal 
+	#population sizes among populations.
+	
+	#Create collapase matrix from list
+	collapseVec<-c()
+	for(i in 1:length(collapseList)){
+		collapseVec<-append(collapseVec,collapseList[[i]])
+	}
+	collapseMatrix<-array(collapseVec,dim=c(length(collapseList[[1]]),length(collapseList)))
+
+	#Make n0multiplierMap if necessary
+	if(is.null(n0multiplierMap)){
+		collapseVec[!is.na(collapseVec)]<-1
+		n0multiplierMap<-array(collapseVec,dim=c(length(collapseList[[1]]),length(collapseList)))
+	}
+	#Make migrationArray
+	migrationVec<-c()
+	for(i in 1:length(migrationList)){
+		migrationVec<-append(migrationVec,migrationList[[i]])
+	}
+	migrationArray<-array(migrationVec,dim=c(nrow(migrationList[[1]]),ncol(migrationList[[1]]),
+		length(migrationList)))
+
+	return(MigrationIndividual<-Migrationindividual(collapseMatrix,complete=TRUE,n0multiplierMap,
+		migrationArray))
+}
 
 LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms") {
 	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
