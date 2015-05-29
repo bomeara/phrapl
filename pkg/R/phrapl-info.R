@@ -30,6 +30,43 @@ MsIndividualParameters<-function(migrationIndividual) {
 	return(parameterList)
 }
 
+#migration_1 from a particular model could be migration from Pop 1 to 2 in time interval 1, migration from 3 to 2 in interval 2, etc. This will get unambiguous names
+#so that they can be summarized across models. Output is a vector: entries are the unambiguous names, names are the names you get from MsIndividualParameters()
+#load("~/Documents/MyDocuments/Active/phrapl/pkg/data/MigrationArray_3pop_3K.rda")
+#a<-migrationArray[[70]]
+
+MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual) {
+	collapseMatrix<-migrationIndividual$collapseMatrix
+	complete<-migrationIndividual$complete
+	n0multiplierMap<-migrationIndividual$n0multiplierMap
+	migrationArray<-migrationIndividual$migrationArray
+	parameterList<-c()
+	unambiguousParameterList <- c()
+	populationNamesAssignments <- matrix(nrow=dim(collapseMatrix)[1], ncol=1)
+	populationNamesAssignments[,1] <- sequence(dim(collapseMatrix)[1]) #initially, everything starts off with its own name
+	if(max(collapseMatrix,na.rm=TRUE)>0) { #we have some collapses, so populations change their labels as they merge
+		for (i in dim(collapseMatrix)[2]) {
+		#	if(max(coll #now putting in something to append so that we know to which each population is assigned: i.e., in a collapse of 2 and 3, then both 2 and 3 get assigned to 2
+			populationNamesAssignments <- cbind(populationNamesAssignments , )
+		}
+	}
+	if (max(collapseMatrix,na.rm=TRUE)>0) {
+		for (i in sequence(KCollapseMatrix(collapseMatrix))) {
+			parameterList<-append(parameterList,paste("collapse_",i,sep="")) 
+			unambiguousParameterList <-append(unambiguousParameterList, paste("collapse_populations_",paste(which(collapseMatrix[,i]==1),collapse="-"),"_at_time_interval_",i,sep=""))
+		}
+	}
+	for (i in sequence(max(n0multiplierMap,na.rm=TRUE))) {
+		parameterList<-append(parameterList,paste("n0multiplier_",i,sep="")) 
+	}
+	for (i in sequence(max(migrationArray,na.rm=TRUE))) {
+		parameterList<-append(parameterList,paste("migration_",i,sep="")) 
+	}
+	print(unambiguousParameterList)
+	return(parameterList)
+}
+
+
 
 
 KAll<-function(migrationIndividual) {
