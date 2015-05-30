@@ -2016,7 +2016,7 @@ DoSingleRowExtraction <- function(x, param.mappings, all.parameters, model.index
 
 ExtractUnambiguousGridParameters<-function(migrationArray=migrationArray, result=result, rm.n0=TRUE) {
 	all.parameters <- unique(sort(sapply(migrationArray, MsIndividualParametersConversionToUnambiguous, unambiguous.only=TRUE)))
-	number.points.examined <- sum(sapply(result, dim)[1,])
+	#number.points.examined <- sum(sapply(result, dim)[1,])
 	overall.results <- c()
 	row.count = 0
 	for (model.index in sequence(length(migrationArray))) {
