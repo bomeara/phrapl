@@ -1996,6 +1996,38 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 	return(list(parameterValues,parameterIndexes))
 }
 
+DoSingleRowExtraction <- function(x, param.mappings, all.parameters, model.index) {
+	result.vector <- rep(NA, 2+length(all.parameters))
+	names(result.vector) <- c("model.index", "AIC", all.parameters)
+	for(parameter.index in 2:length(result.vector)) {
+		matching.element <- which(param.mappings[,1] == names(result.vector)[parameter.index])
+		if(length(matching.element)==1) {
+			if(param.mappings[matching.element,2]=="0") {
+				result.vector[parameter.index] <- 0	
+			} else {
+				result.vector[parameter.index] <- as.numeric(x[param.mappings[matching.element,2]])
+			}
+		} 	
+	}
+	result.vector[1]<-model.index
+	result.vector[2]<-as.numeric(x["AIC"])
+	return(result.vector)
+}
+
+ExtractUnambiguousGridParameters<-function(migrationArray=migrationArray, result=result, rm.n0=TRUE) {
+	all.parameters <- unique(sort(sapply(migrationArray, MsIndividualParametersConversionToUnambiguous, unambiguous.only=TRUE)))
+	number.points.examined <- sum(sapply(result, dim)[1,])
+	overall.results <- c()
+	row.count = 0
+	for (model.index in sequence(length(migrationArray))) {
+		param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[model.index]])
+		overall.results <- rbind(overall.results, t(apply(result[[model.index]], MARGIN=1, DoSingleRowExtraction, param.mappings=param.mappings, all.parameters=all.parameters, model.index=model.index)))	
+	}
+	if(rm.n0) {
+		overall.results <- overall.results[,!grepl("n0multiplier", colnames(overall.results))]	
+	}
+	return(overall.results)
+}
 
 
 #This function takes output from an exhaustive search and assembles parameter indexes and estimates

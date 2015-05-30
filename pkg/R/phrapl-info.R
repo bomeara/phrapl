@@ -35,7 +35,12 @@ MsIndividualParameters<-function(migrationIndividual) {
 #load("~/Documents/MyDocuments/Active/phrapl/pkg/data/MigrationArray_3pop_3K.rda")
 #a<-migrationArray[[70]]
 
-MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual) {
+#If the numbers are 4, 1, 3, 1, returns it as 3, 1, 2, 1
+RenumberWithoutGaps <- function(x) {
+	return(as.numeric(as.factor(x)))	
+}
+
+MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, unambiguous.only=FALSE) {
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
 	n0multiplierMap<-migrationIndividual$n0multiplierMap
@@ -45,25 +50,70 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual) {
 	populationNamesAssignments <- matrix(nrow=dim(collapseMatrix)[1], ncol=1)
 	populationNamesAssignments[,1] <- sequence(dim(collapseMatrix)[1]) #initially, everything starts off with its own name
 	if(max(collapseMatrix,na.rm=TRUE)>0) { #we have some collapses, so populations change their labels as they merge
-		for (i in dim(collapseMatrix)[2]) {
-		#	if(max(coll #now putting in something to append so that we know to which each population is assigned: i.e., in a collapse of 2 and 3, then both 2 and 3 get assigned to 2
-			populationNamesAssignments <- cbind(populationNamesAssignments , )
+		for (i in sequence(dim(collapseMatrix)[2])) {
+			populationNamesAssignments <- cbind(populationNamesAssignments , populationNamesAssignments[,dim(populationNamesAssignments)[2]])
+			merged <- sort(which(collapseMatrix[,i]==1))
+			for (merged.index in sequence(length(merged))) {
+				populationNamesAssignments[merged[merged.index],i+1]<-populationNamesAssignments[merged[1],i] #take the number of lower one
+			}
+			populationNamesAssignments[,i+1] <- RenumberWithoutGaps(populationNamesAssignments[,i+1])
 		}
 	}
+	populationNameMatrix <- matrix(nrow=dim(populationNamesAssignments)[1], ncol=dim(populationNamesAssignments)[2])
+	populationNameMatrix[,1] <- as.character(populationNamesAssignments[,1])
+	if(dim(populationNamesAssignments)[2]>=2) {
+		for(i in 2:dim(populationNamesAssignments)[2]) {
+			for (j in sequence(dim(populationNamesAssignments)[1])) {
+				populationNameMatrix[j,i] <- paste(sort(populationNameMatrix[which(populationNamesAssignments[,i]== populationNamesAssignments[j,i]),i-1]), collapse='-')
+				populationNameMatrix[j,i] <- paste(sort(unique(strsplit(populationNameMatrix[j,i], "-")[[1]])), collapse="-")
+			}
+		}
+	}
+	
 	if (max(collapseMatrix,na.rm=TRUE)>0) {
 		for (i in sequence(KCollapseMatrix(collapseMatrix))) {
 			parameterList<-append(parameterList,paste("collapse_",i,sep="")) 
-			unambiguousParameterList <-append(unambiguousParameterList, paste("collapse_populations_",paste(which(collapseMatrix[,i]==1),collapse="-"),"_at_time_interval_",i,sep=""))
+			unambiguousParameterList <-append(unambiguousParameterList, paste("collapse_pop_",paste(populationNameMatrix[which(collapseMatrix[,i]==1), i],collapse="_with_"),"_at_time_interval_",i,sep=""))
 		}
 	}
-	for (i in sequence(max(n0multiplierMap,na.rm=TRUE))) {
-		parameterList<-append(parameterList,paste("n0multiplier_",i,sep="")) 
+	# for (i in sequence(max(n0multiplierMap,na.rm=TRUE))) {
+		# parameterList<-append(parameterList,paste("n0multiplier_",i,sep="")) 
+	# }
+	for (row.index in sequence(dim(n0multiplierMap)[1])) {
+		for (col.index in sequence(dim(n0multiplierMap)[2])) {
+			focaln0value <- n0multiplierMap[row.index, col.index] 
+			if(!is.na(focaln0value)) {
+				parameterList<-append(parameterList,paste("n0multiplier_", focaln0value,sep="")) 
+				unambiguousParameterList<-append(unambiguousParameterList, paste("n0multiplier_pop_", populationNameMatrix[row.index, col.index],"_at_time_interval_", col.index, sep=""))
+			}
+		}	
+	}	
+	# for (i in sequence(max(migrationArray,na.rm=TRUE))) {
+		# parameterList<-append(parameterList,paste("migration_",i,sep="")) 
+	# }
+	for (from.index in sequence(dim(migrationArray)[1])) {
+		for (to.index in sequence(dim(migrationArray)[2])) {
+			for(time.index in sequence(dim(migrationArray)[3])) {
+				focal.migration <- migrationArray[from.index, to.index, time.index]
+				if(!is.na(focal.migration)) {
+					if(focal.migration ==0) {
+						parameterList <- append(parameterList,0)	
+					} else {
+						parameterList <- append(parameterList, paste("migration_",	focal.migration, sep=""))
+					}
+					unambiguousParameterList<-append(unambiguousParameterList, paste("migration_from_", populationNameMatrix[from.index, time.index],"_to_", populationNameMatrix[to.index, time.index], "_at_time_interval_", time.index, sep=""))
+
+				}
+			}
+		}
 	}
-	for (i in sequence(max(migrationArray,na.rm=TRUE))) {
-		parameterList<-append(parameterList,paste("migration_",i,sep="")) 
+
+	#print(unambiguousParameterList)
+	return.object <- unambiguousParameterList
+	if(!unambiguous.only) {
+		return.object <- cbind(unambiguous=unambiguousParameterList, default=parameterList)
 	}
-	print(unambiguousParameterList)
-	return(parameterList)
+	return(return.object)
 }
 
 
