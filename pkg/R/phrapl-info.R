@@ -30,16 +30,14 @@ MsIndividualParameters<-function(migrationIndividual) {
 	return(parameterList)
 }
 
-#migration_1 from a particular model could be migration from Pop 1 to 2 in time interval 1, migration from 3 to 2 in interval 2, etc. This will get unambiguous names
-#so that they can be summarized across models. Output is a vector: entries are the unambiguous names, names are the names you get from MsIndividualParameters()
-#load("~/Documents/MyDocuments/Active/phrapl/pkg/data/MigrationArray_3pop_3K.rda")
-#a<-migrationArray[[70]]
 
 #If the numbers are 4, 1, 3, 1, returns it as 3, 1, 2, 1
 RenumberWithoutGaps <- function(x) {
 	return(as.numeric(as.factor(x)))	
 }
 
+#migration_1 from a particular model could be migration from Pop 1 to 2 in time interval 1, migration from 3 to 2 in interval 2, etc. This will get unambiguous names
+#so that they can be summarized across models. Output is a matrix: unambiguous names on the left, standard names on the right
 MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, unambiguous.only=FALSE) {
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
