@@ -83,6 +83,22 @@
 \alias{TruncateToCells}
 \alias{getExponent}
 \alias{maxK}
+\alias{AdjustUsingBeta}
+\alias{ConvertTreeString}
+\alias{DoSingleRowExtraction}
+\alias{ExtractUnambiguousGridParameters}
+\alias{FilterGridForMigration}
+\alias{FilterMigrationByCriterion}
+\alias{GenerateMigrationIndividualsOneAtATime}
+\alias{GenerateSetLoci}
+\alias{GetIntraspeciesCoalescentFraction}
+\alias{GetLengthGridList}
+\alias{GetNumTreeHistories}
+\alias{GuessAssignments}
+\alias{MsIndividualParametersConversionToUnambiguous}
+\alias{RenumberWithoutGaps}
+\alias{ScaleParameterVectorByNe}
+\alias{TestForWithinPopCoalescenceThreeSamplesOnly}
 \title{Internal phrapl Functions}
 \description{
   Internal \pkg{phrapl} functions.
