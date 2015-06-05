@@ -12,7 +12,7 @@ other optional filtering criteria.
 \usage{
 GenerateMigrationIndividuals(popVector, maxK = SetMaxK(popVector), maxMigrationK = 2, 
     maxN0K = 1, forceSymmetricalMigration = TRUE, forceTree = FALSE, 
-    verbose = FALSE) 
+    verbose = FALSE, parallelRep = NULL) 
 }
 \arguments{
   \item{popVector}{
@@ -37,6 +37,10 @@ If TRUE, only models with fully resolved topologies are included in the model se
 }
   \item{verbose}{
 If TRUE, prints out status updates
+}
+  \item{parallelRep}{
+If running the function through loop in parallel on a cluster, this argument is assigned 
+a replicate number.
 }
 }
 \author{

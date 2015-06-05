@@ -2,13 +2,10 @@
 \alias{phrapl-example}
 \alias{example}
 \alias{TestData}
+\alias{popAssignments}
 \alias{migrationArray}
-\alias{migrationArrayMap}
 \alias{trees}
 \alias{assignFile}
-\alias{popAssignments}
-\alias{subsampledTrees}
-\alias{subsampleWeights}
 \title{
 A description for applying phrapl to a test dataset 
 }
