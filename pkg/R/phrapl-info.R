@@ -551,7 +551,7 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 	}
 	if (numn0 > 0) {
 		for (i in sequence(numn0)) {
-			startingVectorList<-append(startingVectorList, list(n0Starts))
+			startingVectorList<-append(startingVectorList, list(n0multiplierStarts))
 			names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
 			nameCount<-nameCount + 1
 		} 

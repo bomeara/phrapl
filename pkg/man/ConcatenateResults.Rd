@@ -12,7 +12,7 @@ imported.This is the major output of phrapl.
 }
 \usage{
 ConcatenateResults(rdaFilesPath = "./", rdaFiles = NULL, outFile = NULL, 
-addAICweights = TRUE, rmNaParameters = TRUE)
+addAICweights = TRUE, rmNaParameters = TRUE, addTime.elapsed = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -32,6 +32,9 @@ If TRUE, will add AICweights to the table.
 }
   \item{rmNaParameters}{
 If true, this removes all parameter columns from the table that only include NAs.
+}
+  \item{addTime.elapsed}{
+If elapsed time is being tracked, this adds a column for this.
 }
 }
 \details{

@@ -17,14 +17,14 @@ GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap=NULL,
 migrationArray, popAssignments, badAIC = 1e+14, 
 maxParameterValue = 100, nTrees = 1e5, msPath = "ms", 
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
-observedTrees, subsampleWeights.df = NULL, 
+observedTrees, subsampleWeights.df = NULL, doWeights = TRUE,
 unresolvedTest = TRUE, print.ms.string = FALSE, print.results = FALSE, 
 print.matches = FALSE, debug = FALSE, method = "nlminb", itnmax = NULL, 
 ncores = 1, results.file = NULL, maxtime = 0, maxeval = 0, return.all = TRUE, 
 numReps = 0, startGrid = NULL, 
 collapseStarts = c(0.3, 0.58, 1.11, 2.12, 4.07, 7.81, 15), 
 n0Starts = c(0.1, 0.5, 1, 2, 4), 
-migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15, 4.64, 10), 
+migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15), 
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
 dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL, ...)
@@ -73,6 +73,10 @@ Multiphylo object of the empirical trees.
   \item{subsampleWeights.df}{
 A dataframe of the weights for each subsample. If this is NULL, it is computed
 within GridSearch.
+}
+  \item{doWeights}{
+In no subsampleWeights.df object is called and doWeights = TRUE, subsample weights
+will be calculated for each tree prior to AIC calculation.
 }
   \item{unresolvedTest}{
 Boolean: deal with unresolved gene trees by looking for partial matches and 

@@ -2663,8 +2663,9 @@ return(modelWeightsScaled)
 #with a numerical suffix, i.e., _1, _2, _3, etc). Note that subsets are taken in order from the original
 #output files.
 GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migrationArray,
-	modelRange=c(1:length(migrationArray)),subsamplesPerGene,collapseStarts,migrationStarts,
-	n0multiplierStarts,setCollapseZero=NULL,cumulative=FALSE,nTrees,dAIC.cutoff=2,nEq=nEq){
+	modelRange=c(1:length(migrationArray)),subsamplesPerGene,popAssignments,
+	collapseStarts,migrationStarts,n0multiplierStarts,setCollapseZero=NULL,cumulative=FALSE,
+	nTrees,dAIC.cutoff=2,nEq=nEq,totalPopVector=NULL){
 
 	#Get matching vectors from Rout
     matchesTEMP<-system(paste("grep matches -A1 ",RoutFilename," | grep -v matches | grep 0",sep=""),intern=TRUE)
