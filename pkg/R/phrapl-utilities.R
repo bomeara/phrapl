@@ -1710,8 +1710,8 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1
 	params.vector<-rep(NA, length(AIC))
 	for (i in sequence(length(AIC))) {
 		#for K, subtract off fixed values
-		params.K[i]<-(ncol(result[[i]]) - 1) - length(setCollapseZero) - 1
-		params.vector[i]<-paste(colnames(result[[i]])[-1], sep=" ", collapse=" ")
+		params.K[i]<-(length(MsIndividualParameters(migrationArray[[i]])) - 1) - length(setCollapseZero)
+		params.vector[i]<-paste(MsIndividualParameters(migrationArray[[i]]), sep=" ", collapse=" ")
 		if(!is.null(setCollapseZero)){ #toss collapse parameter names when they are set to zero
 			params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-setCollapseZero],sep=" ",collapse=" ")
 		}
@@ -1947,10 +1947,11 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 					}
 				}
 			}
+			#Now take away from the parameters vector the used up parameter values
+			currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
 		}
 		
-		#Now take away from the parameters vector the used up parameter values
-		currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
+
 	
 	
 		#Third, make matrix of the migration estimates
@@ -2212,10 +2213,9 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 					}
 				}
 			}
+			#Now take away from the parameters vector the used up parameter values
+			currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
 		}
-		
-		#Now take away from the parameters vector the used up parameter values
-		currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
 
 	
 		#Third, make matrix of the migration estimates

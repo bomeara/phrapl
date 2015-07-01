@@ -248,11 +248,15 @@ PassBounds <- function(parameterVector, parameterBounds) {
 	n0multiplierParameters<-sort(parameterVector[grep("n0multiplier",names(parameterVector))])
 	migrationParameters<-sort(parameterVector[grep("migration",names(parameterVector))])
 	collapseParameters<-sort(parameterVector[grep("collapse",names(parameterVector))])
-	if(min(migrationParameters) < parameterBounds$minMigrationRate) {
-		return(FALSE)
+	if(length(migrationParameters) > 0){
+		if(min(migrationParameters) < parameterBounds$minMigrationRate) {
+			return(FALSE)
+		}
 	}
-	if(min(collapseParameters) <  parameterBounds$minCollapseTime) {
-		return(FALSE)
+	if(length(collapseParameters) > 0){
+		if(min(collapseParameters) <  parameterBounds$minCollapseTime) {
+			return(FALSE)
+		}
 	}
 	if(length(n0multiplierParameters)>1) { #have at least two
 		for (i in sequence(length(n0multiplierParameters)-1)) {
@@ -301,15 +305,40 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
 		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, popScaling){
 	parameterVector<-exp(par)
-  	names(parameterVector)<-MsIndividualParameters(migrationIndividual)
-	if(numReps > 0){ #only worry about weeding out values if doing numerical optimization
-  		if(!PassBounds(parameterVector, parameterBounds)) {
-			return(badAIC)
- 		}
-		if(max(parameterVector)>maxParameterValue) {
-			return(badAIC)
-		}
+	
+	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
+	if(length(parameterVector) < length(MsIndividualParameters(migrationIndividual))){
+  		#First, remove n0, so can get names
+  		names(parameterVector)<-MsIndividualParameters(migrationIndividual)[-grep("n0multiplier_1",
+  			MsIndividualParameters(migrationIndividual))]
+  		#Re-insert n0
+  		parameterVector<-c(parameterVector[grep("collapse",names(parameterVector))],"n0multiplier_1"=1,
+			parameterVector[grep("collapse",names(parameterVector),invert=TRUE)])
+	}else{
+		names(parameterVector)<-MsIndividualParameters(migrationIndividual)
 	}
+		
+	#If using optimization and setCollapseZero is not NULL, then set the relevant values to zero
+	if(!is.null(setCollapseZero)){
+		parameterVector[setCollapseZero]<-0
+	}
+	
+	#Weed out values outside of proposed bounds (only if doing numerical optimization)
+	if(numReps > 0){ 
+		if(!is.null(setCollapseZero)){
+  			if(!PassBounds(parameterVector[-setCollapseZero], parameterBounds)){
+				return(badAIC)
+			}
+		}else{
+			if(!PassBounds(parameterVector, parameterBounds)){
+				return(badAIC)
+			}
+ 		}
+#		if(max(parameterVector) > maxParameterValue) {
+#			return(badAIC)
+#		}
+	}
+	
  	if(print.results) {
  	   print(parameterVector) 
  	}
@@ -321,7 +350,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest,
-		doSNPs=doSNPs, popScaling=popScaling)
+		doSNPs=doSNPs,popScaling=popScaling)
 
  	 	#Apply weights to matches
 		if(!is.null(subsampleWeights.df)) {
@@ -351,6 +380,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq)	
   		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))		
 	}
+	
 	if(print.results) {
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))
 		resultsVector<-cbind(AICValue,lnLValue[1],parameterVector)
