@@ -183,28 +183,34 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     if(!is.null(gridSave)) {
     	save(thisGrid, file=gridSave)
     }
+    
+    #Finish off with nloptr optimization 
     for(rep in sequence(min(numReps, dim(startGrid)[1]))) {
  	   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
  	   startingVals <- unlist(startGrid[order(initial.AIC)[rep],]) #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
+
+ 	   #Always toss the first n0multiplier as it is never free
+ 	   startingVals<-startingVals[-grep("n0multiplier_1",names(startingVals))]
+ 	   
  	   if(debug) {
  	     print(startingVals) 
     	}
-		#Currently, nloptr optimization will not work because ReturnAIC is returning a list that includes the AIC plus summary information about the slopes used
-		#to estimate AIC (the eval_f can only use a function that returns AIC alone). If we want to save slope information while using nloptr, we could fix 
-		#ReturnAIC to return just AIC, but also to store the best slopes list using a global variable (something like "if(currentAIC[[1]]<previousAIC[[1]]){
-		#previousAIC<<-currentAIC}, which could be saved
+		
  	   	searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1,
- 	   		maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], popVector=popVector, 
+ 	   		maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], 
  	   		badAIC=badAIC, maxParameterValue=maxParameterValue,
  	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq, popScaling=popScaling)
- 	 		
-		if(debug) {
-# 	   	print(searchResults)
- 	   	}
+ 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling)
+
+		#If setCollapseZero is being used, convert optimized parameters to log(0)
+		if(!is.null(setCollapseZero)){
+			searchResults$solution[setCollapseZero]<-log(0)
+		}
+		
+		#Keep best values
  	   	if(searchResults$objective <= best.result.objective) {
  	   		best.result<-searchResults
  	   		best.result.objective<-searchResults$objective	
@@ -282,7 +288,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
   		maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
   		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
-  		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval, return.all=return.all,numReps=numReps,
+  		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
   		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling,
@@ -301,7 +307,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
   		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
-  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero, popScaling=popScaling,
+  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling,
   		checkpointFile=checkpointFile, ...))
   	}
 
@@ -316,7 +322,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 	for(k in 1:length(popAssignments)){
 		unlink(c(paste(tempdir(),"/assign",k,".txt",sep=""),paste(tempdir(),"/observed",k,".tre",sep=""),paste(tempdir(), "/mstrees.txt", sep="")))
 	}
-
+	print(results.list)
 	#Save table of best models
 	if(numReps==0){
 		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray,setCollapseZero=setCollapseZero)
