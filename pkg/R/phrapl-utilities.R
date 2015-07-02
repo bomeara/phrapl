@@ -2283,13 +2283,18 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAIC
 		#Combine results from the rda into dataframe
 		if(optimization==TRUE){
 			overall.results<-result[[3]][order(result[[3]][,1]),] #sort by model number (same order as parameters)
+			if(addTime.elapsed==TRUE){
+				current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],result[[4]],result[[5]])
+			}else{
+				current.results<-cbind(overall.results,result[[4]],result[[5]])
+			}
 		}else{
 			overall.results<-result[[2]][order(result[[2]][,1]),] #sort by model number (same order as parameters)
-		}
-		if(addTime.elapsed==TRUE){
-			current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],result[[3]],result[[4]])
-		}else{
-			current.results<-cbind(overall.results,result[[3]],result[[4]])
+			if(addTime.elapsed==TRUE){
+				current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],result[[3]],result[[4]])
+			}else{
+				current.results<-cbind(overall.results,result[[3]],result[[4]])
+			}
 		}
 		totalData<-rbind(totalData,current.results) #Add current.results to totalData
 		totalData<-totalData[order(totalData$models),] #Make sure totalData is all sorted by model
