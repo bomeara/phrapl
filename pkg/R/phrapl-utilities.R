@@ -2269,7 +2269,7 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 
 #This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models
 ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAICweights=TRUE,
-		rmNaParameters=TRUE,addTime.elapsed=FALSE){
+		rmNaParameters=TRUE,addTime.elapsed=FALSE,optimization=FALSE){
 	#If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
 		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
@@ -2281,7 +2281,11 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAIC
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
 
 		#Combine results from the rda into dataframe
-		overall.results<-result[[2]][order(result[[2]][,1]),] #sort by model number (same order as parameters)
+		if(optimization==TRUE){
+			overall.results<-result[[3]][order(result[[3]][,1]),] #sort by model number (same order as parameters)
+		}else{
+			overall.results<-result[[2]][order(result[[2]][,1]),] #sort by model number (same order as parameters)
+		}
 		if(addTime.elapsed==TRUE){
 			current.results<-cbind(overall.results,elapsedHrs=time.elapsed[,2],result[[3]],result[[4]])
 		}else{
