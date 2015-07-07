@@ -2,6 +2,6 @@ phrapl (phylogeography using approximated likelihoods) has moved from R-forge to
 
 ```r
 install.packages("devtools")
-devtools::install_github("phrapl", "bomeara")
+devtools::install_github("bomeara/phrapl")
 ```
 
