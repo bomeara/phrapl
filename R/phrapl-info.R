@@ -245,6 +245,17 @@ ProportionDifference <- function(a,b) {
 }
 
 PassBounds <- function(parameterVector, parameterBounds) {
+	#To makes sure later taus remain larger than earlier taus...
+	collapseParameters<-parameterVector[grep("collapse",names(parameterVector))]
+	if(length(collapseParameters)>1) { #have at least two
+		for(i in sequence(length(collapseParameters)-1)){
+			if(collapseParameters[i] > collapseParameters[i+1]){
+				return(FALSE)
+			}
+		}	
+	}
+	
+	#Now sort the parameter vectors in order to keep ratios within bounds
 	n0multiplierParameters<-sort(parameterVector[grep("n0multiplier",names(parameterVector))])
 	migrationParameters<-sort(parameterVector[grep("migration",names(parameterVector))])
 	collapseParameters<-sort(parameterVector[grep("collapse",names(parameterVector))])
@@ -279,13 +290,6 @@ PassBounds <- function(parameterVector, parameterBounds) {
 			}
 		}
 	}
-	if(length(collapseParameters)>1) { #have at least two
-		for(i in sequence(length(collapseParameters)-1)){
-			if(collapseParameters[i] > collapseParameters[i+1]){
-				return(FALSE)
-			}
-		}	
-	}
 	return(TRUE)
 }
 
@@ -301,7 +305,7 @@ ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mito
 ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		subsampleWeights.df=NULL,
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
-		badAIC=100000000000000,ncores=1,maxParameterValue=100,numReps=0,parameterBounds=list(minCollapseTime=0.1,
+		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
 		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL, popScaling){
 	parameterVector<-exp(par)
