@@ -2672,12 +2672,12 @@ return(modelWeightsScaled)
 #with a numerical suffix, i.e., _1, _2, _3, etc). Note that subsets are taken in order from the original
 #output files.
 GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migrationArray,
-	modelRange=c(1:length(migrationArray)),subsamplesPerGene,popAssignments,
-	collapseStarts,migrationStarts,n0multiplierStarts,setCollapseZero=NULL,cumulative=FALSE,
-	nTrees,dAIC.cutoff=2,nEq=nEq,totalPopVector=NULL){
+	modelRange=c(1:length(migrationArray)),subsamplesPerGene,popAssignments,collapseStarts,
+	migrationStarts,n0multiplierStarts,setCollapseZero=NULL,cumulative=FALSE,nTrees,
+	dAIC.cutoff=2,nEq=nEq){
 
 	#Get matching vectors from Rout
-    matchesTEMP<-system(paste("grep matches -A1 ",RoutFilename," | grep -v matches | grep 0",sep=""),intern=TRUE)
+    matchesTEMP<-system(paste("grep matches -A1 ",RoutFilename," | grep -v matches |grep -v -",sep=""),intern=TRUE)
     matches<-c()
     for(i in 1:length(matchesTEMP)){
     	matches<-append(matches,strsplit(matchesTEMP[i],"\"")[[1]][2])
@@ -2693,7 +2693,7 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 
     ##Creates a vector that repeats grid length per model
     sep_intervalsGrid<-c()
-    for(modelID in 1:length(migrationArray)){
+    for(modelID in 1:length(modelRange)){
         sep_intervalsGrid<-append(sep_intervalsGrid,c(as.numeric(rep(modelID,nrow(gridList[[modelID]])))))
     }
 
