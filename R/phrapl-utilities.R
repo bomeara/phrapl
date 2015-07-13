@@ -1716,8 +1716,10 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1
 			params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-setCollapseZero],sep=" ",collapse=" ")
 		}
 		#Remove first n0multiplier
-		params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier",strsplit(params.vector[i],
-			" ")[[1]])[1])],seo=" ",collapse=" ")
+        if(length(grep("n0multiplier_1",params.vector[i])) > 0){
+        	params.vector[i] <- paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier", 
+        		strsplit(params.vector[i]," ")[[1]])[1])], seo = " ", collapse = "")
+        }
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
@@ -1759,8 +1761,10 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 			params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-setCollapseZero],sep=" ",collapse=" ")
 		}
 		#Remove first n0multiplier
-		params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier",strsplit(params.vector[i],
-			" ")[[1]])[1])],seo=" ",collapse=" ")
+        if(length(grep("n0multiplier_1",params.vector[i])) > 0){
+        	params.vector[i] <- paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier", 
+        		strsplit(params.vector[i]," ")[[1]])[1])], seo = " ", collapse = "")
+        }
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
