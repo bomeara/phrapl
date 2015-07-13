@@ -1754,9 +1754,13 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 	params.K<-rep(NA, length(AIC))
 	params.vector<-rep(NA, length(AIC))
 	for (i in sequence(length(AIC))) {
-		#for K, subtract off fixed values
-		params.K[i]<-(ncol(result[[i]]) - 1) - length(setCollapseZero) - 1
 		params.vector[i]<-paste(colnames(result[[i]])[-1], sep=" ", collapse=" ")
+		#for K, subtract off fixed values
+		if(length(grep("n0multiplier_1",params.vector[i])) > 0){
+			params.K[i]<-(ncol(result[[i]]) - 1) - length(setCollapseZero) - 1
+		}else{
+			params.K[i]<-(ncol(result[[i]]) - 1) - length(setCollapseZero)
+		}
 		if(!is.null(setCollapseZero)){ #toss collapse parameter names when they are set to zero
 			params.vector[i]<-paste(strsplit(params.vector[i]," ")[[1]][-setCollapseZero],sep=" ",collapse=" ")
 		}
