@@ -2677,7 +2677,7 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 	dAIC.cutoff=2,nEq=nEq){
 
 	#Get matching vectors from Rout
-    matchesTEMP<-system(paste("grep matches -A1 ",RoutFilename," | grep -v matches |grep -v -",sep=""),intern=TRUE)
+    matchesTEMP<-system(paste("grep matches -A1 ",RoutFilename," | grep [0123456789]",sep=""),intern=TRUE)
     matches<-c()
     for(i in 1:length(matchesTEMP)){
     	matches<-append(matches,strsplit(matchesTEMP[i],"\"")[[1]][2])
