@@ -55,6 +55,11 @@ This will create a plot showing migration, population collapse, and other featur
 \value{
 Creates a stunning image.
 }
+\examples{
+data(MigrationArray_3pop_3K)
+pretty.model <- migrationArray[[15]]
+PlotModel2D(pretty.model)	
+}
 \author{
 Brian O'Meara
 }
