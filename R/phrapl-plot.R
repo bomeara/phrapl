@@ -194,3 +194,86 @@ SaveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
 #	system(paste("mv movie.gif movie", i, ".gif", sep=""))
 #	rgl.clear()
 #}
+
+PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1, arrow.col="red", arrow.lty="solid") {
+	if (is.null(parameterVector)) {
+        parameterVector.names <- MsIndividualParameters(migrationIndividual)
+        parameterVector <- sequence(length(parameterVector.names))
+        names(parameterVector) <- parameterVector.names
+    }
+    n0multiplierParameters <- parameterVector[grep("n0multiplier", 
+        names(parameterVector))]
+    migrationParameters <- parameterVector[grep("migration", 
+        names(parameterVector))]
+    collapseParameters <- parameterVector[grep("collapse", names(parameterVector))]
+    try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters))
+    try(migrationParameters <- migrationParameters/max(migrationParameters))
+    try(collapseParameters <- collapseParameters/max(collapseParameters))
+    collapseMatrix <- migrationIndividual$collapseMatrix
+    complete <- migrationIndividual$complete
+    n0multiplierMap <- migrationIndividual$n0multiplierMap
+    nPop <- sum(!is.na(collapseMatrix[, 1]))
+    plot(x=c(.5,nPop+.5), y=c(0.3,-1*(dim(collapseMatrix)[2]+.5)), type="n", xlab="", ylab="", xaxt="n", yaxt="n", bty="n")
+    current.terminal.pos <- cbind(x = 1, y = 0)
+    if (is.null(taxonNames)) {
+        taxonNames <- sequence(nPop)
+    }
+    for (i in sequence(nPop - 1)) {
+        current.terminal.pos <- rbind(current.terminal.pos, cbind(x = i+1, y = 0))
+    }
+    text(x = current.terminal.pos[, 1], y = current.terminal.pos[, 
+        2]+.2,  labels = taxonNames, col = "black", pos=3)
+   
+   
+    for (regime in sequence(dim(collapseMatrix)[2])) {
+        next.terminal.pos <- current.terminal.pos * NA
+        for (i in sequence(dim(collapseMatrix)[1])) {
+            if (!is.na(collapseMatrix[i, regime])) {
+                if (collapseMatrix[i, regime] == 0) {
+                  next.terminal.pos[i, ] <- current.terminal.pos[i, 
+                    ]
+                }
+                if (collapseMatrix[i, regime] == 1) {
+                  next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[, 
+                    regime] == 1), ])
+                    lines(x=c(current.terminal.pos[i,1], next.terminal.pos[i,1]), y=-rep(regime, 2), col=tree.col, lwd=tree.lwd, lend=2)
+                }
+                lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime-1, regime), col=tree.col, lwd=tree.lwd, lend=2)
+            }
+        }
+         local.migrationMatrix <- migrationIndividual$migrationArray[, 
+            , regime]
+        if (max(local.migrationMatrix, na.rm = TRUE) > 0) {
+            for (from.index in sequence(dim(local.migrationMatrix)[1])) {
+                for (to.index in sequence(dim(local.migrationMatrix)[2])) {
+                  if (from.index != to.index) {
+                    if (!is.na(local.migrationMatrix[from.index, 
+                      to.index])) {
+                      if (local.migrationMatrix[from.index, to.index] > 
+                        0) {
+                        offset = .5
+                        segment.limits=0.1
+                        curvedarrow(from=c(current.terminal.pos[from.index,1], -regime+offset), to=c(current.terminal.pos[to.index,1], -regime+offset), curve=0.02, arr.pos=1-segment.limits, endhead=TRUE, segment=c(segment.limits, 1-segment.limits), lcol=arrow.col, lwd=arrow.lwd, lty=arrow.lty, arr.col=arrow.col)
+                      }
+                    }
+                  }
+                }
+            }
+        }
+        if(regime == dim(collapseMatrix)[2]) { #let's add a gradient at the root
+        	n.alpha.step = 50
+
+        	final.ramp <- colorRampPalette(colors=c(tree.col, "white"))(n.alpha.step)
+	        for (i in sequence(dim(collapseMatrix)[1])) {
+	            if (!is.na(collapseMatrix[i, regime])) {
+	            	for (alpha.step in sequence(n.alpha.step)) {
+	                		lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime+0.6*(alpha.step-1)/n.alpha.step, regime+0.6*alpha.step/n.alpha.step), col=final.ramp[alpha.step], lwd=tree.lwd, lend=2)
+	                }
+	            }
+	        }
+
+        }
+        current.terminal.pos <- next.terminal.pos
+    }
+
+}
