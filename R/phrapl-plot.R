@@ -1,12 +1,3 @@
-#library(rgl)
-#library(lattice)
-#library(RColorBrewer)
-#library(polynom)
-#library(gmp)
-
-#load("/Users/bomeara/Documents/MyDocuments/Active/phrapl/pkg/data/migrationArray_npop3_maxK5.Rsave")
-
-
 Arrow3d2 <- function(base, tip, rad=1, col="red",offset=TRUE) {
 	length.out=10
 	if(!offset) {
