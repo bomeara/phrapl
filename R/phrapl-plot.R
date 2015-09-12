@@ -257,8 +257,10 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
         	final.ramp <- colorRampPalette(colors=c(tree.col, "white"))(n.alpha.step)
 	        for (i in sequence(dim(collapseMatrix)[1])) {
 	            if (!is.na(collapseMatrix[i, regime])) {
-	            	for (alpha.step in sequence(n.alpha.step)) {
-	                		lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime+0.6*(alpha.step-1)/n.alpha.step, regime+0.6*alpha.step/n.alpha.step), col=final.ramp[alpha.step], lwd=tree.lwd, lend=2)
+	            	if(collapseMatrix[i, regime]==0) {
+		            		for (alpha.step in sequence(n.alpha.step)) {
+		                		lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime+0.6*(alpha.step-1)/n.alpha.step, regime+0.6*alpha.step/n.alpha.step), col=final.ramp[alpha.step], lwd=tree.lwd, lend=2)
+		            		}
 	                }
 	            }
 	        }
