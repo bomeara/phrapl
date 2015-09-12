@@ -186,7 +186,7 @@ SaveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
 #	rgl.clear()
 #}
 
-PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1, arrow.col="red", arrow.lty="solid") {
+PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1, arrow.col="red", arrow.lty="solid", tip.cex=1, tip.col="black") {
 	if (is.null(parameterVector)) {
         parameterVector.names <- MsIndividualParameters(migrationIndividual)
         parameterVector <- sequence(length(parameterVector.names))
@@ -213,7 +213,7 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
         current.terminal.pos <- rbind(current.terminal.pos, cbind(x = i+1, y = 0))
     }
     text(x = current.terminal.pos[, 1], y = current.terminal.pos[, 
-        2]+.2,  labels = taxonNames, col = "black", pos=3)
+        2]+.2,  labels = taxonNames, col = tip.col, cex=tip.cex, pos=3)
    
    
     for (regime in sequence(dim(collapseMatrix)[2])) {
