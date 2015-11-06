@@ -8,5 +8,6 @@ Imports: ape, diagram, partitions, igraph, optimx, parallel, nloptr, Matrix, num
 Suggests: testthat, animation
 Description: Fits various phylogeographic models using approximate likelihood.
 Depends: R (>= 2.10.0)
+SystemRequirements: perl
 LazyData: no
 License: GPL (>= 2)
