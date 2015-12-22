@@ -7,7 +7,7 @@ CalculateModelAverages
 This function outputs model averaged parameter estimates
 }
 \usage{
-CalculateModelAverages(totalData = totalData, parmStartCol = 10)
+CalculateModelAverages(totalData = totalData, parmStartCol = 9)
 }
 \arguments{
   \item{totalData}{

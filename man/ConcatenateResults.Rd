@@ -4,16 +4,17 @@
 ConcatenateResults
 }
 \description{
-This function builds a table with details for each model analyzed using a grid or heuristic search. 
-It give AICs, model weights, details of each model, and parameter estimates and indexes. 
+This function builds a table with details for each model analyzed using a grid or heuristic search,
+which can be spread across several phrapl result files. 
+This table gives AICs, model weights, details of each model, and parameter estimates. 
 The function can either import one or more R object files (with the extention .rda) located in the 
 specified rdaFilePath, in which phrapl output is stored, or can be passed a vector of file names to be 
-imported.This is the major output of phrapl.
+imported. This is the major output of phrapl.
 }
 \usage{
-ConcatenateResults(rdaFilesPath = "./", rdaFiles = NULL, outFile = NULL, 
-addAICweights = TRUE, rmNaParameters = TRUE, addTime.elapsed = FALSE,
-optimization = FALSE)
+ConcatenateResults(rdaFilesPath = "./", rdaFiles = NULL, migrationArray,
+rm.n0 = FALSE, longNames = FALSE, addTime.elapsed = FALSE, addAICweights=TRUE,
+outFile = NULL, nonparmCols=5)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -25,20 +26,28 @@ results from \link{GridSearch} (default is the current dir).
 As an alternative to reading in all .rda files in the specified directory, a vector of file names (located in the 
 directory specified above) can be given.
 }
+  \item{migrationArray}{
+The migrationArray used in the phrapl analysis. The model numbers in the output table will be matched
+to those in the migrationArray, thus it is important that these match up properly.
+}
+  \item{rm.n0}{
+If TRUE, will exclude all n0multiplier parameters from the table
+}
+  \item{longNames}{
+If TRUE, will use long descriptive names for each parameter rather than abbreviations
+}
+  \item{addTime.elapsed}{
+If elapsed time is being tracked, this adds a column for this to the table.
+}
+  \item{addAICweights}{
+If true, model ranks, differences in AIC (dAIC) and AIC weights (wAIC) are calculated and printed
+to the table.
+}
   \item{outFile}{
 If specified, gives the file name to which an output table will be printed.
 }
-  \item{addAICweights}{
-If TRUE, will add AICweights to the table.
-}
-  \item{rmNaParameters}{
-If true, this removes all parameter columns from the table that only include NAs.
-}
-  \item{addTime.elapsed}{
-If elapsed time is being tracked, this adds a column for this.
-}
-  \item{optimization}{
-If true, results being culled are from runs that incorporated nloptr parameter optimization.
+  \item{nonparmCols}{
+This gives the number of columns in the phrapl output that do not contain parameters.
 }
 }
 \details{

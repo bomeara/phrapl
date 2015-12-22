@@ -27,7 +27,8 @@ n0Starts = c(0.1, 0.5, 1, 2, 4),
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15), 
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
-dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL, ...)
+dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
+parameter_ambiguous=FALSE, ...)
 }
 \arguments{
    \item{modelRange}{
@@ -187,6 +188,10 @@ However, if GridSearch is taking a long time when running multiple models at onc
 can save results more often by reducing the number of models run at a time. Thus, the 
 checkpointFile argument is only really necessary when you've got a single model running 
 that can't be broken up any further. 
+}
+  \item{parameter_ambiguous}{
+If true, calculates parameters with the ambiguous name format that was used prior to
+December 2015, rather than using the unambiguous parameter names format.
 }
   \item{\dots}{
 Other items to pass to heuristic search functions.
