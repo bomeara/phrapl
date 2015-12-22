@@ -2812,7 +2812,7 @@ ModelAverageEachModel<-function(totalData,parmStartCol){
 }
 
 #Calculate model averaged parameter values across a set of models
-CalculateModelAverages<-function(totalData = totalData, parmStartCol = 10){
+CalculateModelAverages<-function(totalData = totalData, parmStartCol = 9){
     #Add model averaged parameter estimates to a dataframe
     totalData <- totalData[order(totalData$AIC, totalData$models),]#sort parameters by AIC to match totalData
     totalData <- totalData[, grep(".*_I", colnames(totalData), invert = TRUE)]#Remove parameter index columns
