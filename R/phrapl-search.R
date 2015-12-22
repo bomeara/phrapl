@@ -231,7 +231,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.1,0.22,0.46,1,2.15),subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",
 		saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE, 
-		popScaling=NULL,checkpointFile=NULL, ...){
+		popScaling=NULL,checkpointFile=NULL,parameter_ambiguous=FALSE, ...){
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
 		popScaling <- rep(1, length(observedTrees[[1]]))
@@ -323,6 +323,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		unlink(c(paste(tempdir(),"/assign",k,".txt",sep=""),paste(tempdir(),"/observed",k,".tre",sep=""),paste(tempdir(), "/mstrees.txt", sep="")))
 	}
 	print(results.list)
+
 	#Save table of best models
 	if(numReps==0){
 		overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray,setCollapseZero=setCollapseZero)
@@ -330,23 +331,49 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		overall.results<-ExtractAICs(result=results.list,migrationArray=migrationArray,setCollapseZero=setCollapseZero)
 	}
 	overall.results$models <- modelRange #so if we've done subsampling, use right model numbers
-	#Save parameter estimates and parameter indexes to tables
-	if(numReps==0){
-		parameters<-ExtractGridParameters(migrationArray=migrationArray,result=gridList,
-			popVector=popAssignments[[1]],dAIC.cutoff=dAIC.cutoff)
-	}else{
-		parameters<-ExtractParameters(migrationArray=migrationArray,result=results.list,
-			popVector=popAssignments[[1]])
-	}
+
 	
-	#Add all results to list
-	if(numReps==0){
-		results.final<-list("AIC.Grid"=gridList,"overall.results"=overall.results,
-			"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
-	}else{
-		results.final<-list("search.results"=results.list,"AIC.Grid"=gridList,
-			"overall.results"=overall.results,"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
-	}
+	####Get parameters using the old ambiguous method (ExtractGridParameters)
+	if(parameter_ambiguous==TRUE){	
+		#Save parameter estimates and parameter indexes to tables
+		if(numReps==0){
+			parameters<-ExtractGridParameters(migrationArray=migrationArray,result=gridList,
+				popVector=popAssignments[[1]],dAIC.cutoff=dAIC.cutoff)
+		}else{
+			parameters<-ExtractParameters(migrationArray=migrationArray,result=results.list,
+				popVector=popAssignments[[1]])
+		}
 	
+		#Add all results to list
+		if(numReps==0){
+			results.final<-list("AIC.Grid"=gridList,"overall.results"=overall.results,
+				"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
+		}else{
+			results.final<-list("search.results"=results.list,"AIC.Grid"=gridList,
+				"overall.results"=overall.results,"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
+		}
+	}else{
+		
+		#Get parameters using new unambiguous method (ExtractUnambiguousGridParameters)		
+		if(numReps==0){
+			##Get unambiguous parameters (grid)
+			parameters<-ExtractUnambiguousGridParameters(overall.results=overall.results,gridList=gridList,
+				migrationArray=migrationArray,sortParameters=TRUE,sortModelsAIC=TRUE)
+			
+			##Concatenate overall.results and parameters
+			results.final<-list("AIC.Grid"=gridList,"overall.results"=cbind(overall.results,
+				parameters[,-c(1:2)]))
+		}else{
+			##Get unambiguous parameters (grid)
+			parameters<-ExtractUnambiguousNLoptrParameters(overall.results=overall.results,
+				nLoptrResultsList=results.list,migrationArray=migrationArray,sortParameters=TRUE,
+				sortModelsAIC=TRUE)
+			
+			##Concatenate overall.results and parameters
+			results.final<-list("search.results"=results.list,"AIC.Grid"=gridList,
+				"overall.results"=cbind(overall.results,parameters[,-c(1:2)]))
+		}
+	}
+
 	ifelse(return.all, return(results.final), return(AIC.values))     
 }

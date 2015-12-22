@@ -1787,12 +1787,23 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 	return(overall.results)
 }
 
-#This function takes output from an exhaustive search and assembles parameter indexes and estimates
-#based on a set of models. A list containing two tables is outputted: one containing parameter indexes
-#and one containing parameter estimates
-#This function takes output from an exhaustive search and assembles parameter indexes and estimates
-#based on a set of models. A list containing two tables is outputted: one containing parameter indexes
-#and one containing parameter estimates
+
+
+
+
+
+
+###############################Post-analysis Functions####################
+
+
+#This function takes output from an exhaustive search (using nLoptr optimization), and assembles parameter 
+#indexes and estimates based on a set of models. A list containing two tables is outputted: one containing 
+#parameter indexesand one containing parameter estimates
+#Note that this function produces some parameters that entail ambiguous names (for example, for ancestral
+#migration rates, it can't distinguish different topologies). Thus, this method of calculating parameters
+#has been abandoned (December 2015) in favor of an unambiguous naming method, implemented using the 
+#function ExtractUnambiguousNLoptrParameters. However, this old method can be implemented in a GridSearch
+#by setting parameter_ambiguous=FALSE.
 ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
@@ -2005,43 +2016,14 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 	return(list(parameterValues,parameterIndexes))
 }
 
-DoSingleRowExtraction <- function(x, param.mappings, all.parameters, model.index) {
-	result.vector <- rep(NA, 2+length(all.parameters))
-	names(result.vector) <- c("model.index", "AIC", all.parameters)
-	for(parameter.index in 2:length(result.vector)) {
-		matching.element <- which(param.mappings[,1] == names(result.vector)[parameter.index])
-		if(length(matching.element)==1) {
-			if(param.mappings[matching.element,2]=="0") {
-				result.vector[parameter.index] <- 0	
-			} else {
-				result.vector[parameter.index] <- as.numeric(x[param.mappings[matching.element,2]])
-			}
-		} 	
-	}
-	result.vector[1]<-model.index
-	result.vector[2]<-as.numeric(x["AIC"])
-	return(result.vector)
-}
-
-ExtractUnambiguousGridParameters<-function(migrationArray=migrationArray, result=result, rm.n0=TRUE) {
-	all.parameters <- unique(sort(sapply(migrationArray, MsIndividualParametersConversionToUnambiguous, unambiguous.only=TRUE)))
-	#number.points.examined <- sum(sapply(result, dim)[1,])
-	overall.results <- c()
-	row.count = 0
-	for (model.index in sequence(length(migrationArray))) {
-		param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[model.index]])
-		overall.results <- rbind(overall.results, t(apply(result[[model.index]], MARGIN=1, DoSingleRowExtraction, param.mappings=param.mappings, all.parameters=all.parameters, model.index=model.index)))	
-	}
-	if(rm.n0) {
-		overall.results <- overall.results[,!grepl("n0multiplier", colnames(overall.results))]	
-	}
-	return(overall.results)
-}
-
-
-#This function takes output from an exhaustive search and assembles parameter indexes and estimates
-#based on a set of models. A list containing two tables is outputted: one containing parameter indexes
-#and one containing parameter estimates
+#This function takes output from a grid search and assembles parameter 
+#indexes and estimates based on a set of models. A list containing two tables is outputted: one containing 
+#parameter indexesand one containing parameter estimates
+#Note that this function produces some parameters that entail ambiguous names (for example, for ancestral
+#migration rates, it can't distinguish different topologies). Thus, this method of calculating parameters
+#has been abandoned (December 2015) in favor of an unambiguous naming method, implemented using the 
+#function ExtractUnambiguousGridParameters. However, this old method can be implemented in a GridSearch
+#by setting parameter_ambiguous=FALSE.
 ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE,dAIC.cutoff=2){
 
 	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
@@ -2269,15 +2251,315 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 	return(list(parameterValues,parameterIndexes))
 }
 
+#For a given phrapl result object and migrationArray, this function makes a table of
+#model averaged parameter values for each parameter and model. The parameters are
+#unambiguous in that tip population information is included in ancestral population names.
+#This function is implemented at the end of a GridSearch and is called when parameters
+#are estimated using a parameter grid.
+ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,migrationArray,
+	rm.n0=FALSE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
 
+	#Add parameters
+	all.parameters <- unique(sort(sapply(migrationArray, 
+		MsIndividualParametersConversionToUnambiguous,unambiguous.only = TRUE)))
+	results.temp <- c()
+	row.count = 0
 
+	#Get models    
+	whichGrid<-1
+	for (models in overall.results$models){ #Get current models
+		param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[whichGrid]],
+			longNames=longNames)
+		results.temp <- rbind(results.temp, t(apply(gridList[[whichGrid]], 
+			MARGIN = 1, DoSingleRowExtraction, param.mappings = param.mappings, 
+			all.parameters = all.parameters, models = models)))
+	   whichGrid<-whichGrid + 1
+	}
 
+	#Convert all zero values to NA
+	#Note that if tau = NA, this means tau was set to zero in the analysis and thus should stay
+	#that way for model averaging
+	results.temp<-data.frame(results.temp, check.names=FALSE, row.names=c(1:nrow(results.temp)))
+	if(longNames==TRUE){
+		results.temp[, !grepl("collapse",colnames(results.temp))][,-(0:nonparmCols)][results.temp[,
+			!grepl("collapse",colnames(results.temp))][,-(0:nonparmCols)] == 0] <- NA
+	}else{
+		results.temp[, !grepl("t",colnames(results.temp))][,-(0:nonparmCols)][results.temp[,
+			!grepl("t",colnames(results.temp))][,-(0:nonparmCols)] == 0] <- NA
+	}
+	#Remove undesired parameters
+	if(rm.n0==TRUE){
+		if(longNames==TRUE){
+    		results.temp<-results.temp[,!grepl("n0multiplier", colnames(results.temp))]
+    	}else{
+    		results.temp<-results.temp[,!grepl("n", colnames(results.temp))]
+    	}
+	}
+			
+	#Model average parameters
+	modelAveragedResults<-ModelAverageEachModel(totalData=results.temp,parmStartCol=(nonparmCols + 1))
 
-###############################Post-analysis Functions####################
+	#Sort parameter columns into desired order
+	if(sortParameters == TRUE){
+		modelAveragedResults<-sortParameterTable(modelAveragedResults,(nonparmCols + 1),longNames=longNames)
+	}
+	
+    #Sort models
+    if(sortModelsAIC == TRUE){
+    	modelAveragedResults<-modelAveragedResults[order(modelAveragedResults$AIC),]
+    }
+    return(modelAveragedResults)   
+}
 
-#This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models
-ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAICweights=TRUE,
+#For a given phrapl result object and migrationArray, this function makes a table of
+#model averaged parameter values for each parameter and model. The parameters are
+#unambiguous in that tip population information is included in ancestral population names.
+#This function is implemented at the end of a GridSearch and is called when parameters
+#are estimated using nLoptr optimization.
+ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsList=NULL,migrationArray,
+	rm.n0=FALSE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
+
+	#Add parameters
+	all.parameters <- unique(sort(sapply(migrationArray, 
+		MsIndividualParametersConversionToUnambiguous,unambiguous.only = TRUE)))
+	results.all <- c()
+	row.count = 0
+
+	#Get models    
+	whichRep<-1
+	for (models in overall.results$models){ #Get current models
+		param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[whichRep]],
+			longNames=longNames)
+		param.mappings.temp<-param.mappings
+
+		#Get nLoptr parameters
+		param.unique<-unique(param.mappings.temp[,2])[which(unique(param.mappings.temp[,2]) != "0")]
+		#If there is only 1 n0multiplier, toss it, as nLoptr doesn't return this value
+		if(length(grep("n0multiplier",param.unique,value=TRUE)) == 1){
+			oneN0multi<-TRUE
+			param.unique<-param.unique[grep("n0multiplier",param.unique,invert=TRUE)]
+			param.mappings.temp[,2][which(param.mappings.temp[,2] == "n0multiplier_1")]<-"1"
+		}
+		nLoptr.parameters<-exp(nLoptrResultsList[[whichRep]]$solution)
+		nLoptr.AIC<-nLoptrResultsList[[whichRep]]$AIC
+		names(nLoptr.parameters)<-param.unique
+
+		##DoSingleRowExtraction Stuff
+		result.vector <- rep(NA, 2+length(all.parameters))
+		names(result.vector) <- c("models", "AIC", all.parameters)
+		for(parameter.index in 2:length(result.vector)) {
+			matching.element <- which(param.mappings.temp[,1] == names(result.vector)[parameter.index])
+			if(length(matching.element)==1) {
+				if(param.mappings.temp[matching.element,2]=="0") {
+					result.vector[parameter.index] <- 0	
+				}
+				if(param.mappings.temp[matching.element,2]=="1") {
+					result.vector[parameter.index] <- 1	
+				}
+				if(param.mappings.temp[matching.element,2] != "0" && param.mappings.temp[matching.element,2] != "1") {
+					result.vector[parameter.index] <- as.numeric(nLoptr.parameters[param.mappings.temp[matching.element,2]])
+				}
+			} 	
+		}
+		result.vector[1]<-models
+		result.vector[2]<-nLoptrResultsList[[whichRep]][[17]]	
+		results.all<-rbind(results.all,result.vector)
+		whichRep<-whichRep + 1
+	}
+
+	#Convert all zero values to NA
+	#Note that if tau = NA, this means tau was set to zero in the analysis and thus should stay
+	#that way for model averaging
+	results.all<-data.frame(results.all, check.names=FALSE, row.names=c(1:nrow(results.all)))
+	if(longNames==TRUE){
+		results.all[, !grepl("collapse",colnames(results.all))][,-(0:nonparmCols)][results.all[,
+			!grepl("collapse",colnames(results.all))][,-(0:nonparmCols)] == 0] <- NA
+	}else{
+		results.all[, !grepl("t",colnames(results.all))][,-(0:nonparmCols)][results.all[,
+			!grepl("t",colnames(results.all))][,-(0:nonparmCols)] == 0] <- NA
+	}
+	#Remove undesired parameters
+	if(rm.n0==TRUE){
+		if(longNames==TRUE){
+    		results.all<-results.all[,!grepl("n0multiplier", colnames(results.all))]
+    	}else{
+    		results.all<-results.all[,!grepl("n", colnames(results.all))]
+    	}
+	}
+	
+	#Remove parameters that only contain NA's
+	results.all <- RemoveParameterNAs(results.all)
+			
+	#Sort parameter columns into desired order
+	if(sortParameters == TRUE){
+		results.all<-sortParameterTable(results.all,(nonparmCols + 1),longNames=longNames)
+	}
+	
+    #Sort models
+    if(sortModelsAIC == TRUE){
+    	results.all<-results.all[order(results.all$AIC),]
+    }
+    return(results.all)   
+}
+
+#This function concatenates together results from separate phrapl runs using the merge function. 
+#It accommodates the new way that GridSearch calculates model averaged parameter values for unambiguous 
+#parameters (implemented in December 2015). These parameters are calculated in a GridSearch using the 
+#function ExtractUnambiguousGridParameters for Grid runs or the ExtractUnambiguousNLoptrParameters function
+#for optimization runs. 
+#Just point to a directory of one or more rda files that can each contain phrapl results for one or more models. 
+#With older phrapl run output files, one can get the new unambiguous parameters using the function 
+#ConcatenateResults_unambiguousParametersForOldRuns.
+#Or, to get ambiguous parameters (the old way) from these older result files, use the function
+#ConcatenateResults_ambiguousParameters.
+ConcatenateResults<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray, 
+	rm.n0=FALSE, longNames=FALSE, nonparmCols=5, addTime.elapsed=FALSE, outFile=NULL){
+    
+    #If a vector of rda file names is not provided, then read them in from the given path
+	if(is.null(rdaFiles)){
+		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
+	}
+    
+    #Stuff from ConcatenateResults
+    totalData<-data.frame()
+	result <- c()
+	time.elapsed <- c()
+	row.counter<-1
+	if(addTime.elapsed == TRUE){
+		nonparmColsWithTime<-nonparmCols + 1
+	}
+	for (rep in 1:length(rdaFiles)){
+		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
+
+		#Combine results from the rda into dataframe
+		current.results<-result$overall.results[order(result$overall.results$models),] #sort by model number (same order as parameters)
+		if(addTime.elapsed==TRUE){
+			current.results<-cbind(current.results[,1:nonparmCols],elapsedHrs=time.elapsed[,2],
+				current.results[,(nonparmCols + 1):ncol(current.results)])
+			nonparmCols<-nonparmColsWithTime
+		}
+		
+		#Add current.results to totalData
+    	#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
+    	#unique such that they can be merged. The row is tossed eventually.
+		row.column<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
+    	colnames(row.column)<-"row.column"
+    	current.results<-cbind(row.column,current.results)
+    	
+    	if(rep == 1){
+			totalData<-rbind(totalData,current.results)
+    	}else{ 
+    		totalData<-merge(totalData,current.results,all=TRUE)
+    	}
+    	row.counter<-nrow(totalData) + 1
+	}
+	
+	#Remove undesired parameters
+	if(rm.n0==TRUE){
+		if(longNames==TRUE){
+    		totalData<-totalData[,!grepl("n0multiplier", colnames(totalData))]
+    	}else{
+    		totalData<-totalData[,!grepl("n", colnames(totalData))]
+    	}
+	}
+	
+	#Sort parameter columns into desired order
+    totalData<-sortParameterTable(totalData,(nonparmCols + 2),longNames=longNames)
+	
+	#Make sure totalData is all sorted by model
+	totalData<-totalData[order(totalData$models),] 
+	
+	#Remove row counter column
+	totalData<-totalData[,-1]
+	row.names(totalData)<-1:nrow(totalData)    
+	
+	#Print table
+	if(!is.null(outFile)){
+		write.table(totalData,outFile,quote=FALSE,sep="\t",row.names=FALSE)
+	}
+	
+    return(totalData)
+}	
+
+#This function concatenates together results from separate phrapl runs.
+#This differs from ConcatenateResults in that it can be used on phrapl results produced prior to adding
+#unambiguous parameter estimation (but only for a grid, not if optimization was used). 
+#Thus, for old phrapl result files (prior to ~December 2015), this can model
+#average parameter values directly from the AIC.Grid to produce unambiguous parameter estimates.
+ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray, 
+	rm.n0=FALSE, longNames=FALSE, nonparmCols=2, addTime.elapsed=FALSE, outFile=NULL){
+    
+    #If a vector of rda file names is not provided, then read them in from the given path
+	if(is.null(rdaFiles)){
+		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
+	}
+    
+    #Stuff from ConcatenateResults
+    totalData<-data.frame()
+	result <- c()
+	time.elapsed <- c()
+
+	for (rep in 1:length(rdaFiles)){
+		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
+
+		#Combine results from the rda into dataframe
+		current.results<-result$overall.results[order(result$overall.results$models),] #sort by model number (same order as parameters)
+		if(addTime.elapsed==TRUE){
+			current.results<-cbind(current.results,elapsedHrs=time.elapsed[,2])
+		}
+	
+		#Get unambiguous, model-averaged parameters
+		modelAveragedResults<-ExtractUnambiguousGridParameters(overall.results=result$overall.results,
+			gridList=result$AIC.Grid,migrationArray=migrationArray[result$overall.results$models],
+			nonparmCols=nonparmCols,longNames=longNames,rm.n0=rm.n0,sortParameters=FALSE,sortModelsAIC=FALSE)    
+    	
+    	#Add parameters estimates to current.results
+    	current.results<-cbind(current.results,modelAveragedResults[-(0:nonparmCols)])
+
+		#Add current.results to totalData
+    	#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
+    	#unique such that they can be merged. The row is tossed eventually.
+		row.column<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
+    	colnames(row.column)<-"row.column"
+    	current.results<-cbind(row.column,current.results)
+
+    	if(rep == 1){
+			totalData<-rbind(totalData,current.results)
+    	}else{ 
+    		totalData<-merge(totalData,current.results,all=TRUE)
+    	}
+    	row.counter<-nrow(totalData) + 1
+	}	
+	
+	#Sort parameter columns into desired order
+	beginParm<-ncol(result$overall.results)
+	if(addTime.elapsed == TRUE){
+		beginParm<-beginParm + 1
+	}
+    totalData<-sortParameterTable(totalData,(beginParm + 1),longNames=longNames)
+	
+	#Make sure totalData is all sorted by model
+	totalData<-totalData[order(totalData$models),]    
+	
+	#Remove row counter column
+	totalData<-totalData[,-1]
+	row.names(totalData)<-1:nrow(totalData)  
+	
+	#Print table
+	if(!is.null(outFile)){
+		write.table(totalData,outFile,quote=FALSE,sep="\t",row.names=FALSE)
+	}
+	
+    return(totalData)
+}
+    
+#This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models.
+#For phrapl results calculated prior to the switch-over to unambiguous parameter names (~December 2015),
+#this function summarizes parameters the "old way", using ambiguous parameter names. To get summaries using
+#unambiguous parameter names from old results files, use the function ConcatenateResults_unambiguousParametersForOldRuns
+ConcatenateResults_ambiguousParameters<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAICweights=TRUE,
 		rmNaParameters=TRUE,addTime.elapsed=FALSE,optimization=FALSE){
+
 	#If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
 		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
@@ -2326,8 +2608,254 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL,outFile=NULL,addAIC
 	
 	return(totalData[order(totalData$dAIC,totalData$models),])
 }
-	            
+
+#Function for sorting parameter table
+#Use in conjunction with ExtractUnambiguousGridParameters and ConcatenateResults
+sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
+    parmsOnly<-overall.results[,parmStartCol:ncol(overall.results)]
+    if(longNames==TRUE){
+	    overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
+    		parmsOnly[, grep("collapse",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    			grep("collapse",colnames(parmsOnly))]))],
+    		parmsOnly[, grep("n0multiplier",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    			grep("n0multiplier",colnames(parmsOnly))]))],
+    		parmsOnly[, grep("migration",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    			grep("migration",colnames(parmsOnly))]))])
+    }else{
+    	overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
+    		parmsOnly[, grep("t",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("t",colnames(parmsOnly))]))],
+    		parmsOnly[, grep("n",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("n",colnames(parmsOnly))]))],
+    		parmsOnly[, grep("m",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("m",colnames(parmsOnly))]))])
+    	}
+    return(overall.results)
+}
+
+#Make a list of parameters for a model, renamed such that all parameters are unambiguous
+#Used in conjunction with ExtractUnambiguousGridParameters
+MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, unambiguous.only = FALSE,
+	longNames=FALSE){
+    collapseMatrix <- migrationIndividual$collapseMatrix
+    complete <- migrationIndividual$complete
+    n0multiplierMap <- migrationIndividual$n0multiplierMap
+    migrationArray <- migrationIndividual$migrationArray
+    parameterList <- c()
+    unambiguousParameterList <- c()
+
+	#First, assign population names for each generation
+    populationNamesAssignments <- matrix(nrow = dim(collapseMatrix)[1], 
+        ncol = 1)
+    populationNamesAssignments[, 1] <- sequence(dim(collapseMatrix)[1])
+    if (max(collapseMatrix, na.rm = TRUE) > 0) {
+        for (i in sequence(dim(collapseMatrix)[2])) {
+            populationNamesAssignments <- cbind(populationNamesAssignments, 
+                populationNamesAssignments[, dim(populationNamesAssignments)[2]])
+            merged <- sort(which(collapseMatrix[, i] == 1))
+            for (merged.index in sequence(length(merged))) {
+                populationNamesAssignments[merged[merged.index], 
+                  i + 1] <- populationNamesAssignments[merged[1], 
+                  i]
+            }
+            populationNamesAssignments[, i + 1] <- RenumberWithoutGaps(populationNamesAssignments[, 
+                i + 1])
+        }
+    }
+
+	#Then define ancestral population names such that component tip population names are incorporated
+    populationNameMatrix <- matrix(nrow = dim(populationNamesAssignments)[1], 
+        ncol = dim(populationNamesAssignments)[2])
+    populationNameMatrix[, 1] <- as.character(populationNamesAssignments[, 
+        1])
+    if (dim(populationNamesAssignments)[2] >= 2) {
+        for (i in 2:dim(populationNamesAssignments)[2]) {
+            for (j in sequence(dim(populationNamesAssignments)[1])) {
+                populationNameMatrix[j, i] <- paste(sort(populationNameMatrix[which(populationNamesAssignments[, 
+                  i] == populationNamesAssignments[j, i]), i - 
+                  1]), collapse = "-")
+                populationNameMatrix[j, i] <- paste(sort(unique(strsplit(populationNameMatrix[j, 
+                  i], "-")[[1]])), collapse = "-")
+            }
+        }
+    }
+    
+    #Now with these new names, name collapse parameters
+    if (max(collapseMatrix, na.rm = TRUE) > 0) {
+        for (i in sequence(KCollapseMatrix(collapseMatrix))) {
+            parameterList <- append(parameterList, paste("collapse_", 
+                i, sep = ""))
+            if(longNames == TRUE){
+            	unambiguousParameterList <- append(unambiguousParameterList, 
+             	   paste("collapse_pop_", paste(populationNameMatrix[which(collapseMatrix[, 
+                	  i] == 1), i], collapse = "_with_"), "_at_time_interval_", 
+                	  i, sep = ""))
+            }else{
+	           	unambiguousParameterList <- append(unambiguousParameterList, 
+             	   paste("t", i, "_", paste(populationNameMatrix[which(collapseMatrix[, 
+                	  i] == 1), i], collapse = "."), sep = ""))
+            }
+        }
+    }
+    
+    #Name n0 parameters
+    for (row.index in sequence(dim(n0multiplierMap)[1])) {
+        for (col.index in sequence(dim(n0multiplierMap)[2])) {
+            focaln0value <- n0multiplierMap[row.index, col.index]
+            if (!is.na(focaln0value)) {
+                parameterList <- append(parameterList, paste("n0multiplier_", 
+                  focaln0value, sep = ""))
+            	if(longNames == TRUE){
+					unambiguousParameterList <- append(unambiguousParameterList, 
+					paste("n0multiplier_pop_", populationNameMatrix[row.index, 
+                    col.index], "_at_time_interval_", col.index,sep = ""))
+            	}else{
+                	unambiguousParameterList <- append(unambiguousParameterList, 
+						paste("n", col.index, "_", populationNameMatrix[row.index, 
+                   	 	col.index], sep = ""))
+                }
+            }
+        }
+    }
+    
+    #Name migration parameters
+    for (from.index in sequence(dim(migrationArray)[1])) {
+        for (to.index in sequence(dim(migrationArray)[2])) {
+            for (time.index in sequence(dim(migrationArray)[3])) {
+                focal.migration <- migrationArray[from.index, 
+                  to.index, time.index]
+                if (!is.na(focal.migration)) {
+					if (focal.migration == 0) {
+						parameterList <- append(parameterList, 0)
+					}else{
+						parameterList <- append(parameterList, paste("migration_", 
+						focal.migration, sep = ""))
+ 					}
+					if(longNames == TRUE){                  
+						unambiguousParameterList <- append(unambiguousParameterList, 
+                    		paste("migration_from_", populationNameMatrix[from.index, 
+							time.index], "_to_", populationNameMatrix[to.index, 
+                      		time.index], "_at_time_interval_", time.index, sep = ""))
+                    }else{
+                    	unambiguousParameterList <- append(unambiguousParameterList, 
+                    		paste("m", time.index, "_", populationNameMatrix[from.index, 
+							time.index], ".", populationNameMatrix[to.index, 
+                      		time.index], sep = ""))
+                    }
+                }
+            }
+        }
+    }
+    
+    return.object <- unambiguousParameterList
+    if (!unambiguous.only) {
+        return.object <- cbind(unambiguous = unambiguousParameterList, 
+            default = parameterList)
+    }
+    return(return.object)
+}
+
+#Extract parameters from a PHRAPL result for a given migrationIndividual
+#To be used in conjunction with ExtractUnambiguousGridParameters
+DoSingleRowExtraction <- function(x, param.mappings, all.parameters, models) {
+	result.vector <- rep(NA, 2+length(all.parameters))
+	names(result.vector) <- c("models", "AIC", all.parameters)
+	for(parameter.index in 2:length(result.vector)) {
+		matching.element <- which(param.mappings[,1] == names(result.vector)[parameter.index])
+		if(length(matching.element)==1) {
+			if(param.mappings[matching.element,2]=="0") {
+				result.vector[parameter.index] <- 0	
+			} else {
+				result.vector[parameter.index] <- as.numeric(x[param.mappings[matching.element,2]])
+			}
+		} 	
+	}
+	result.vector[1]<-models
+	result.vector[2]<-as.numeric(x["AIC"])
+	return(result.vector)
+}
+
+#Utility function used in conjunction with MsIndividualParametersConversionToUnambiguous
+#Handles bookkeeping (stitches together missing entries: c(4, 1, 3, 1) becomes c(3, 1, 2, 1)) 
+RenumberWithoutGaps<-function(x){
+    return(as.numeric(as.factor(x)))
+}
+
+#Function for getting model averaged parameter estimate for a particular model (across a grid)
+#Use in conjunction with ExtractUnambiguousGridParameters
+ModelAverageEachModel<-function(totalData,parmStartCol){
+	first<-TRUE
+	for(i in sort(unique(totalData$models))){
+		totalData_m<-totalData[which(totalData$models == i),]
+		totalData_m<-cbind(totalData_m[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
+			GetAICweights(totalData_m),totalData_m[parmStartCol:ncol(totalData_m)])
+		modelAverages_m<-CalculateModelAverages(totalData_m,parmStartCol=(parmStartCol + 3))
+		modelAverages_m<-cbind(totalData_m[1,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
+			modelAverages_m)
+		if(first == TRUE){
+			modelAverages<-modelAverages_m
+		}else{
+			modelAverages<-merge(modelAverages,modelAverages_m,all=TRUE)
+		}
+		first<-FALSE
+	}
+	return(modelAverages)
+}
+
+#Calculate model averaged parameter values across a set of models
+CalculateModelAverages<-function(totalData = totalData, parmStartCol = 10){
+    #Add model averaged parameter estimates to a dataframe
+    totalData <- totalData[order(totalData$AIC, totalData$models),]#sort parameters by AIC to match totalData
+    totalData <- totalData[, grep(".*_I", colnames(totalData), invert = TRUE)]#Remove parameter index columns
+    
+    #Remove parameter columns that contain only NAs
+    totalData <- RemoveParameterNAs(totalData)
+   
+   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)	
+    modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
+        totalData$wAIC))
+    colnames(modelAverages)<-colnames(totalData)[-c(0:(parmStartCol - 1))]
+    modelAverages <- apply(modelAverages, 2, sum, na.rm = TRUE)
+
+	#Convert modelAverages into a dataframe
+    modelAveragesMat <- data.frame(matrix(modelAverages, nrow = 1, 
+        ncol = length(names(modelAverages))))
+    colnames(modelAveragesMat) <- names(modelAverages)
+    modelAverages <- modelAveragesMat
+  
+    return(modelAverages)
+}
+
+#Calculate dAICs, model ranks, and model weights
+GetAICweights<-function(totalData=totalData){
+	#Calculate change in AIC values from best model
+	if(nrow(totalData) > 1){
+		totalData<-totalData[order(totalData$AIC,totalData$models),] #sort by AIC, then by model
+		dAIC=array(0)
+		for(rep4 in 2:nrow(totalData)){
+			dAIC<-c(dAIC,round((totalData$AIC[rep4] - totalData$AIC[1]),digits=3))
+		}
 	
+		#Add a model rank column				
+		rank=array(1)
+		for(rep3 in 2:nrow(totalData)){
+			if(totalData$AIC[rep3]==totalData$AIC[rep3-1]){
+				rank=c(rank,rank[rep3-1])
+			}else{
+				rank=c(rank,rank[rep3-1]+1)
+			}
+		}
+
+		#Calculate Weights across subsamples
+		currentExp<-sapply(dAIC,getExponent)
+		wAIC<-currentExp / sum(currentExp)
+		dAICRankWeights<-data.frame(cbind(models=totalData$models,rank,dAIC,wAIC))
+		dAICRankWeights<-dAICRankWeights[order(dAICRankWeights$models),]
+		return(dAICRankWeights[,-1])
+	}else{
+		#If there's only one row, of course don't need to model average
+		dAICRankWeights<-data.frame("rank"=1,"dAIC"=0,"wAIC"=1)
+		return(dAICRankWeights)
+	}		
+}
+
 #Function used for calculating AIC weights
 getExponent<-function(x){
 	return(exp(-0.5 * x))
@@ -2367,33 +2895,6 @@ RemoveParameterNAs<-function(totalData){
 	}
 	
 	return(totalData)
-}
-
-#Calculate dAICs, model ranks, and model weights
-GetAICweights<-function(totalData=totalData){
-	#Calculate change in AIC values from best model
-	totalData<-totalData[order(totalData$AIC,totalData$models),] #sort by AIC, then by model
-	dAIC=array(0)
-	for(rep4 in 2:nrow(totalData)){
-		dAIC<-c(dAIC,round((totalData$AIC[rep4] - totalData$AIC[1]),digits=3))
-	}
-	
-	#Add a model rank column				
-	rank=array(1)
-	for(rep3 in 2:nrow(totalData)){
-		if(totalData$AIC[rep3]==totalData$AIC[rep3-1]){
-			rank=c(rank,rank[rep3-1])
-		}else{
-			rank=c(rank,rank[rep3-1]+1)
-		}
-	}
-
-	#Calculate Weights across subsamples
-	currentExp<-sapply(dAIC,getExponent)
-	wAIC<-currentExp / sum(currentExp)
-	dAICRankWeights<-data.frame(cbind(models=totalData$models,rank,dAIC,wAIC))
-	dAICRankWeights<-dAICRankWeights[order(dAICRankWeights$models),]
-	return(dAICRankWeights[,-1])
 }
 
 #Get weights for three model types (Isolation only, migration only, isolation + migration)
@@ -2436,25 +2937,13 @@ GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 	}	
 }
 
-#Calculate model averaged parameter values across a set of models
-CalculateModelAverages<-function(totalData=totalData,parmStartCol=10){
-	#Add model averaged parameter estimates to a dataframe
-	totalData<-totalData[order(totalData$AIC,totalData$models),] #sort parameters by AIC to match totalData
-	totalData<-totalData[,grep(".*_I",colnames(totalData),invert=TRUE)] #Remove parameter index columns
-										
-	#Remove parameter columns that contain only NAs
-	totalData<-RemoveParameterNAs(totalData)
-		
-	#Calculate model averaged parameter estimates (NA's are ignored if present in some models)					
-	modelAverages<-na.pass(totalData[,parmStartCol:ncol(totalData)] * totalData$wAIC)
-	modelAverages<-apply(modelAverages,2,sum,na.rm=TRUE)
-					
-	#Convert modelAverages into a dataframe
-	modelAveragesMat<-data.frame(matrix(modelAverages,nrow=1,ncol=length(names(modelAverages))))
-	colnames(modelAveragesMat)<-names(modelAverages)
-	modelAverages<-modelAveragesMat
-	return(modelAverages)
-}
+
+
+
+
+
+
+
 
 
 ################Functions summarizing across subsamples, models, and treatments
