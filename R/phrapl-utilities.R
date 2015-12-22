@@ -2476,7 +2476,8 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	#Add model ranks, dAIC, and wAIC
 	if(addAICweights==TRUE){
 		dAICRankWeights<-GetAICweights(totalData)
-		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])					
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])		
+		totalData<-totalData[order(totalData$dAIC,totalData$models),]			
 	}
 	
 	#Print table
@@ -2554,7 +2555,8 @@ ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFi
 	#Add model ranks, dAIC, and wAIC
 	if(addAICweights==TRUE){
 		dAICRankWeights<-GetAICweights(totalData)
-		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])					
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])		
+		totalData<-totalData[order(totalData$dAIC,totalData$models),]				
 	}
 	
 	#Print table
