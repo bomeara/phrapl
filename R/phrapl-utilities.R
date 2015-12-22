@@ -2412,8 +2412,8 @@ ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsL
 #ConcatenateResults_unambiguousParametersForOldRuns.
 #Or, to get ambiguous parameters (the old way) from these older result files, use the function
 #ConcatenateResults_ambiguousParameters.
-ConcatenateResults<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray, 
-	rm.n0=FALSE, longNames=FALSE, nonparmCols=5, addTime.elapsed=FALSE, outFile=NULL){
+ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm.n0=FALSE, 
+	longNames=FALSE, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL, nonparmCols=5){
     
     #If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
@@ -2473,6 +2473,12 @@ ConcatenateResults<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationAr
 	totalData<-totalData[,-1]
 	row.names(totalData)<-1:nrow(totalData)    
 	
+	#Add model ranks, dAIC, and wAIC
+	if(addAICweights==TRUE){
+		dAICRankWeights<-GetAICweights(totalData)
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])					
+	}
+	
 	#Print table
 	if(!is.null(outFile)){
 		write.table(totalData,outFile,quote=FALSE,sep="\t",row.names=FALSE)
@@ -2487,7 +2493,7 @@ ConcatenateResults<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationAr
 #Thus, for old phrapl result files (prior to ~December 2015), this can model
 #average parameter values directly from the AIC.Grid to produce unambiguous parameter estimates.
 ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray, 
-	rm.n0=FALSE, longNames=FALSE, nonparmCols=2, addTime.elapsed=FALSE, outFile=NULL){
+	rm.n0=FALSE, longNames=FALSE, nonparmCols=2, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL){
     
     #If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
@@ -2498,7 +2504,7 @@ ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFi
     totalData<-data.frame()
 	result <- c()
 	time.elapsed <- c()
-
+	row.counter<-1
 	for (rep in 1:length(rdaFiles)){
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
 
@@ -2544,6 +2550,12 @@ ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFi
 	#Remove row counter column
 	totalData<-totalData[,-1]
 	row.names(totalData)<-1:nrow(totalData)  
+	
+	#Add model ranks, dAIC, and wAIC
+	if(addAICweights==TRUE){
+		dAICRankWeights<-GetAICweights(totalData)
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])					
+	}
 	
 	#Print table
 	if(!is.null(outFile)){
