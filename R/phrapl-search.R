@@ -231,7 +231,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		migrationStarts=c(0.1,0.22,0.46,1,2.15),subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",
 		saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE, 
-		popScaling=NULL,checkpointFile=NULL,parameter_ambiguous=FALSE, ...){
+		popScaling=NULL,checkpointFile=NULL,parameter.ambiguous=FALSE, ...){
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
 		popScaling <- rep(1, length(observedTrees[[1]]))
@@ -322,7 +322,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 	for(k in 1:length(popAssignments)){
 		unlink(c(paste(tempdir(),"/assign",k,".txt",sep=""),paste(tempdir(),"/observed",k,".tre",sep=""),paste(tempdir(), "/mstrees.txt", sep="")))
 	}
-	print(results.list)
+#	print(results.list)
 
 	#Save table of best models
 	if(numReps==0){
@@ -334,7 +334,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 
 	
 	####Get parameters using the old ambiguous method (ExtractGridParameters)
-	if(parameter_ambiguous==TRUE){	
+	if(parameter.ambiguous==TRUE){	
 		#Save parameter estimates and parameter indexes to tables
 		if(numReps==0){
 			parameters<-ExtractGridParameters(migrationArray=migrationArray,result=gridList,
