@@ -10,7 +10,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=FALSE,popScaling=NULL,checkpointFile=NULL, ...) {
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL, ...) {
   if(!is.null(migrationArrayMap)){
   	modelID<-ReturnModel(p,migrationArrayMap)
   }else{
@@ -246,7 +246,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.1,0.22,0.46,1,2.15),
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
-		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=FALSE,popScaling=NULL,checkpointFile=NULL,
+		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
 		parameter.ambiguous=FALSE, ...){
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
