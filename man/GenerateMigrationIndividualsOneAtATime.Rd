@@ -1,4 +1,6 @@
 \name{GenerateMigrationIndividualsOneAtATime}
+\alias{GenerateMigrationIndividualsOneAtATime}
+\alias{GenerateMigrationIndividualOneAtATime}
 \title{
 GenerateMigrationIndividualsOneAtATime
 }
