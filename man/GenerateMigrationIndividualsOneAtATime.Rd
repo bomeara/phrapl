@@ -31,17 +31,17 @@ for the present generation, plus any historical matrices that apply
 So, in the three population scenario, if there is symmetrical migration between 
 populations 1 and 2 and no historical migration, migrationList will be:
 
-migrationList<-list(
- 	t(array(c(
- 	NA, 1, 0,
- 	1, NA, 0,
- 	0, 0, NA),
+migrationList<-list(\cr
+ 	t(array(c(\cr
+	NA, 1, 0,\cr
+	1, NA, 0,\cr
+	0, 0, NA),\cr
  	dim=c(3,3))),
  
- 	t(array(c(
- 	NA, NA, 0,
- 	NA, NA, NA,
- 	0,  NA, NA),
+ 	t(array(c(\cr
+	NA, NA, 0,\cr
+	NA, NA, NA,\cr
+	0,  NA, NA),\cr
  	dim=c(3,3))))
 
 Note that in R, arrays are constructed by reading in values from column 1 first then from 
