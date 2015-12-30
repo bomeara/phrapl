@@ -173,8 +173,10 @@ default is 2 AIC points.
 }
   \item{rm.n0}{
 A boolean indicating whether n0multiplier parameter estimates should be outputted
-with the other estimates. This de-clutters output if one is not analyzing models that vary
-population sizes. This must be set to TRUE if one wishes to vary population size.
+with the other estimates, even if the value is always the same. 
+This de-clutters output if one is not analyzing models that vary
+population sizes. Note that phrapl checks whether there are multiple n0multiplier values 
+in the inputted migrationArray; if there are, rm.n0 is automatically switched to be FALSE.
 }
   \item{popScaling}{
 A vector whose length is equal to the number of loci analyzed that gives the relative
