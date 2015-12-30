@@ -89,7 +89,6 @@
 \alias{ExtractUnambiguousGridParameters}
 \alias{FilterGridForMigration}
 \alias{FilterMigrationByCriterion}
-\alias{GenerateMigrationIndividualsOneAtATime}
 \alias{GenerateSetLoci}
 \alias{GetIntraspeciesCoalescentFraction}
 \alias{GetLengthGridList}
