@@ -14,6 +14,7 @@ MsIndividualParameters<-function(migrationIndividual) {
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
 	n0multiplierMap<-migrationIndividual$n0multiplierMap
+	growthMap<-migrationIndividual$growthMap
 	migrationArray<-migrationIndividual$migrationArray
 	parameterList<-c()
 	if (max(collapseMatrix,na.rm=TRUE)>0) {
@@ -23,6 +24,9 @@ MsIndividualParameters<-function(migrationIndividual) {
 	}
 	for (i in sequence(max(n0multiplierMap,na.rm=TRUE))) {
 		parameterList<-append(parameterList,paste("n0multiplier_",i,sep="")) 
+	}
+	for (i in sequence(max(growthMap,na.rm=TRUE))) {
+		parameterList<-append(parameterList,paste("growth_",i,sep="")) 
 	}
 	for (i in sequence(max(migrationArray,na.rm=TRUE))) {
 		parameterList<-append(parameterList,paste("migration_",i,sep="")) 
@@ -141,7 +145,8 @@ CreateAssignment.df<-function(popVector) {
 ReturnModel<-function(p,migrationArrayMap) {
    prunedResults<-subset(migrationArrayMap, migrationArrayMap$collapseMatrix.number==p[1])
    prunedResults<-subset(prunedResults, prunedResults$n0multiplierMap.number==p[2])
-   prunedResults<-subset(prunedResults, prunedResults$migrationArray.number==p[3])
+   prunedResults<-subset(prunedResults, prunedResults$growthMap.number==p[3])
+   prunedResults<-subset(prunedResults, prunedResults$migrationArray.number==p[4])
    if(dim(prunedResults)[1]==1) {
       return(prunedResults$model) 
    }
@@ -170,6 +175,7 @@ PassBounds <- function(parameterVector, parameterBounds) {
 	
 	#Now sort the parameter vectors in order to keep ratios within bounds
 	n0multiplierParameters<-sort(parameterVector[grep("n0multiplier",names(parameterVector))])
+	growthParameters<-sort(parameterVector[grep("growth",names(parameterVector))])
 	migrationParameters<-sort(parameterVector[grep("migration",names(parameterVector))])
 	collapseParameters<-sort(parameterVector[grep("collapse",names(parameterVector))])
 	if(length(migrationParameters) > 0){
@@ -189,6 +195,11 @@ PassBounds <- function(parameterVector, parameterBounds) {
 			}
 		}
 	}
+	if(length(growthParameters) > 0){
+		if(min(abs(growthParameters)) <  parameterBounds$minGrowth) {
+			return(FALSE)
+		}
+	}
 	if(length(migrationParameters)>1) { #have at least two
 		for (i in sequence(length(migrationParameters)-1)) {
 			if (ProportionDifference(migrationParameters[i], migrationParameters[i+1]) < parameterBounds$minMigrationRatio) {
@@ -203,6 +214,13 @@ PassBounds <- function(parameterVector, parameterBounds) {
 			}
 		}
 	}
+	if(length(growthParameters)>1) { #have at least two
+		for (i in sequence(length(growthParameters)-1)) {
+			if (ProportionDifference(growthParameters[i], growthParameters[i+1]) < parameterBounds$minGrowthRatio) {
+				return(FALSE)
+			}
+		}
+	}
 	return(TRUE)
 }
 
@@ -211,6 +229,7 @@ ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mito
 	parameterVector[which(grepl("collapse", names(parameterVector)))] <- parameterVector[which(grepl("collapse", names(parameterVector)))]/NeScaling
 	parameterVector[which(grepl("n0", names(parameterVector)))] <- parameterVector[which(grepl("n0", names(parameterVector)))]/1
 	parameterVector[which(grepl("migration", names(parameterVector)))] <- parameterVector[which(grepl("migration", names(parameterVector)))]/NeScaling
+	parameterVector[which(grepl("growth", names(parameterVector)))] <- parameterVector[which(grepl("growth", names(parameterVector)))]/NeScaling
 	return(parameterVector)
 }
 
@@ -219,8 +238,9 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		subsampleWeights.df=NULL,
 		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
-		minCollapseRatio=0,minN0Ratio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),subsamplesPerGene=1,
-		totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,popScaling){
+		minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
+		subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
+		setCollapseZero=NULL,popScaling){
 	parameterVector<-exp(par)
 	
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -390,8 +410,11 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 		if(length(grep("n0multiplier",colnames(parmRangesExtended)[rep])) != 0){
 			gridSize<-gridSizeVector[2]
 		}
-		if(length(grep("migration",colnames(parmRangesExtended)[rep])) != 0){
+		if(length(grep("growth",colnames(parmRangesExtended)[rep])) != 0){
 			gridSize<-gridSizeVector[3]
+		}
+		if(length(grep("migration",colnames(parmRangesExtended)[rep])) != 0){
+			gridSize<-gridSizeVector[4]
 		}
 									
 		#Calculate internal grid values	
@@ -455,6 +478,19 @@ CreateStartGrid<-function(fineGrid){
 		startGrid[[1]]<-startGrid[[1]][which(uniqueN0s==TRUE),]
 	}
 
+	#Toss growth parameters that are equal
+	howManyGrowths<-length(grep("growth",names(startGrid[[1]])))
+	if(howManyGrowths > 1){
+		#Get vector of detailing rows with the same growth
+		growthCols<-startGrid[[1]][,grep("growth",names(startGrid[[1]]))] #growth columns only
+		uniqueGrowths<-c()
+		for(r in 1:nrow(growthCols)){
+			uniqueGrowths<-append(uniqueGrowths,length(unique(simplify2array(growthCols[r,])))==
+				length(simplify2array(growthCols[r,])))
+		}
+		#Toss rows with duplicate growths (if more than 1 free growth param)
+		startGrid[[1]]<-startGrid[[1]][which(uniqueGrowths==TRUE),]
+	}
 	startGrid[[1]]<-log(startGrid[[1]]) #since we are optimizing in log space
 	return(startGrid)
 }
@@ -463,7 +499,7 @@ CreateStartGrid<-function(fineGrid){
 #grid start parameters (the value is not perfectly multiplicative as older collapse events with
 #smaller values than earlier collapse events are filtered out).
 GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
-	migrationStarts=NULL,n0multiplierStarts=NULL,
+	migrationStarts=NULL,n0multiplierStarts=NULL,growthStarts=NULL,
 	setCollapseZero=NULL){
 	paramNames<-MsIndividualParameters(migrationArray[[modelID]])
 
@@ -504,6 +540,16 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 		} 
 	}	
 
+	#Calculate number of growth parameters
+	numGrowth <- sum(grepl("growth",paramNames))
+	if (numGrowth > 0) {
+		for (i in sequence(numGrowth)) {
+			startingVectorList<-append(startingVectorList, list(growthStarts))
+			names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
+			nameCount<-nameCount + 1
+		} 
+	}
+	
 	#Calculate number of migration parameters
 	numMigration <- sum(grepl("migration",paramNames))
 	if (numMigration > 0) {

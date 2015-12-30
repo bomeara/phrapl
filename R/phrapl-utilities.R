@@ -149,8 +149,9 @@ N0multiplierindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap) 
 	return(tI)
 }
 
-Migrationindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap,migrationArray) {
-	tI<-list(collapseMatrix=collapseMatrix,complete=complete,n0multiplierMap=n0multiplierMap,migrationArray=migrationArray)
+Migrationindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap,growthMap,migrationArray) {
+	tI<-list(collapseMatrix=collapseMatrix,complete=complete,n0multiplierMap=n0multiplierMap,
+		growthMap=growthMap,migrationArray=migrationArray)
 	class(tI)<-"migrationindividual"
 	return(tI)
 }
@@ -161,29 +162,34 @@ Expansionmultiplierindividual<-function(collapseMatrix, complete, expansionmulti
 	return(tI)
 }
 
-
-
 CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,nTrees=1,createSeed=TRUE) {
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
 	n0multiplierMap<-migrationIndividual$n0multiplierMap
+	growthMap<-migrationIndividual$growthMap
 	migrationArray<-migrationIndividual$migrationArray
 	nPop<-length(popVector)
 	numSteps<-dim(collapseMatrix)[2]
 	n0multiplierParameters<-parameterVector[grep("n0multiplier",names(parameterVector))]
+	growthParameters<-parameterVector[grep("growth",names(parameterVector))]
 	migrationParameters<-parameterVector[grep("migration",names(parameterVector))]
 	collapseParameters<-parameterVector[grep("collapse",names(parameterVector))]
 	
-	if (1>2 ) {
+	if(1>2 ){
 # stop(paste("Incorrect parameterVector: you passed ",length(parameterVector),"entries but it needs",length(parameterList),"entries:",paste(parameterList,sep=" ",collapse="")))
-	}
-	else {
+	}else{
 		msString<-paste("-T -I",nPop,paste(popVector,sep=" ", collapse=" "),sep=" ")
 		
 #do values at present
 		initialN0multipler<-""
+		initialGrowth<-""
 		for (i in 1:nPop) {
 			initialN0multipler<-paste(initialN0multipler,"-n",i,sprintf("%f",n0multiplierParameters[n0multiplierMap[i,1] ]),sep=" ")
+			if(growthMap[i,1] > 0){
+				initialGrowth<-paste(initialGrowth,"-g",i,sprintf("%f",growthParameters[growthMap[i,1] ]),sep=" ")
+			}else{
+				initialGrowth<-paste(initialGrowth,"-g",i,sprintf("%f",0),sep=" ")
+			}
 		}
 		
 		initialMigration<-"-ma"
@@ -202,7 +208,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 				}
 			}
 		}
-		msString<-paste(msString,initialN0multipler,initialMigration,sep=" ")
+		msString<-paste(msString,initialN0multipler,initialGrowth,initialMigration,sep=" ")
 		
 #is there a collapse in the first gen?
 		if (max(collapseMatrix[,1],na.rm=TRUE)>0) { #remember that everything goes to the lowest index population with state ==1
@@ -219,9 +225,18 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 			for (generation in 2:numSteps) {
 				collapseTime<-collapseParameters[generation-1]
 				n0multiplierPositions<-which(!is.na(n0multiplierMap[,generation]))
+				growthPositions<-which(!is.na(growthMap[,generation]))
 				for (n0multiplierPosIndex in 1:length(n0multiplierPositions)) {
 					n0multiplierPos<-n0multiplierPositions[n0multiplierPosIndex]
 					msString<-paste(msString,"-en",sprintf("%f",collapseTime),sprintf("%f",n0multiplierPos),sprintf("%f",n0multiplierParameters[n0multiplierMap[n0multiplierPos,generation] ]),sep=" ")
+				}
+				for (growthPosIndex in 1:length(growthPositions)) {
+					growthPos<-growthPositions[growthPosIndex]
+					if(growthMap[growthPos,generation] > 0){
+						msString<-paste(msString,"-eg",sprintf("%f",collapseTime),sprintf("%f",growthPos),sprintf("%f",growthParameters[growthMap[growthPos,generation] ]),sep=" ")
+					}else{
+						msString<-paste(msString,"-eg",sprintf("%f",collapseTime),sprintf("%f",growthPos),sprintf("%f",0),sep=" ")
+					}
 				}
 				
 				for (fromPos in 1:nPop) {
@@ -1499,35 +1514,43 @@ CombineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.
 }
 
 GenerateMigrationArrayMap<-function(migrationArray) {
-  migrationArrayMap<-data.frame(matrix(c(1,1,1,1,1,1,1),nrow=1)) #uses the first entry in migrationArray
-  for (model in 2:length(migrationArray)) {
-    newRow<-c(model,rep(NA,6))
-    for (comparison in sequence(dim(migrationArrayMap)[1])) {
-      comparisonRow<-as.integer(migrationArrayMap[comparison,])
-     if(identical(migrationArray[[comparisonRow[3] ]]$collapseMatrix, migrationArray[[model]]$collapseMatrix)) {
-       newRow[2:3]<-comparisonRow[2:3]
-     }
-     if(identical(migrationArray[[comparisonRow[5] ]]$n0multiplierMap, migrationArray[[model]]$n0multiplierMap)) {
-       newRow[4:5]<-comparisonRow[4:5]
-     }
-     if(identical(migrationArray[[comparisonRow[7] ]]$migrationArray, migrationArray[[model]]$migrationArray)) {
-       newRow[6:7]<-comparisonRow[6:7]
-     }
-    }
-    if(is.na(newRow[2])) {
-      newRow[2:3]<-c(1+max(migrationArrayMap[,2]),model)
-    }
-    if(is.na(newRow[4])) {
-      newRow[4:5]<-c(1+max(migrationArrayMap[,4]),model)
-    }
-   if(is.na(newRow[6])) {
-      newRow[6:7]<-c(1+max(migrationArrayMap[,6]),model)
-    }
-    migrationArrayMap<-rbind(migrationArrayMap,newRow)
-  }
-  names(migrationArrayMap)<-c("model","collapseMatrix.number","collapseMatrix.parent","n0multiplierMap.number","n0multiplierMap.parent","migrationArray.number","migrationArray.parent")
+	migrationArrayMap<-data.frame(matrix(c(1,1,1,1,1,1,1,1,1),nrow=1)) #uses the first entry in migrationArray
+	for (model in 2:length(migrationArray)) {
+		newRow<-c(model,rep(NA,8))
+    	for (comparison in sequence(dim(migrationArrayMap)[1])) {
+      		comparisonRow<-as.integer(migrationArrayMap[comparison,])
+     		if(identical(migrationArray[[comparisonRow[3] ]]$collapseMatrix, migrationArray[[model]]$collapseMatrix)) {
+       			newRow[2:3]<-comparisonRow[2:3]
+     		}
+    		if(identical(migrationArray[[comparisonRow[5] ]]$n0multiplierMap, migrationArray[[model]]$n0multiplierMap)) {
+       			newRow[4:5]<-comparisonRow[4:5]
+    		}
+     		if(identical(migrationArray[[comparisonRow[7] ]]$growthMap, migrationArray[[model]]$growthMap)) {
+       			newRow[4:5]<-comparisonRow[6:7]
+     		}
+     		if(identical(migrationArray[[comparisonRow[9] ]]$migrationArray, migrationArray[[model]]$migrationArray)) {
+       			newRow[6:7]<-comparisonRow[8:9]
+     		}
+    	}	
+    	if(is.na(newRow[2])) {
+      		newRow[2:3]<-c(1+max(migrationArrayMap[,2]),model)
+    	}
+    	if(is.na(newRow[4])) {
+      		newRow[4:5]<-c(1+max(migrationArrayMap[,4]),model)
+   	 	}
+		if(is.na(newRow[6])) {
+      		newRow[6:7]<-c(1+max(migrationArrayMap[,6]),model)
+    	}
+		if(is.na(newRow[8])) {
+      		newRow[8:9]<-c(1+max(migrationArrayMap[,8]),model)
+    	}
+    	migrationArrayMap<-rbind(migrationArrayMap,newRow)
+  	}
+  names(migrationArrayMap)<-c("model","collapseMatrix.number","collapseMatrix.parent","n0multiplierMap.number","n0multiplierMap.parent",
+  	"growthMap.number","growthMap.parent","migrationArray.number","migrationArray.parent")
   return(migrationArrayMap)
-}
+}	
+
 
 #only works on island models (no collapse)
 ReturnSymmetricMigrationOnly<-function(migrationArray) {
@@ -2633,12 +2656,15 @@ sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
     			grep("collapse",colnames(parmsOnly))]))],
     		parmsOnly[, grep("n0multiplier",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
     			grep("n0multiplier",colnames(parmsOnly))]))],
+    		parmsOnly[, grep("growth",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    			grep("growth",colnames(parmsOnly))]))],
     		parmsOnly[, grep("migration",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
     			grep("migration",colnames(parmsOnly))]))])
     }else{
     	overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
     		parmsOnly[, grep("t",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("t",colnames(parmsOnly))]))],
     		parmsOnly[, grep("n",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("n",colnames(parmsOnly))]))],
+    		parmsOnly[, grep("g",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("g",colnames(parmsOnly))]))],
     		parmsOnly[, grep("m",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("m",colnames(parmsOnly))]))])
     	}
     return(overall.results)
@@ -2651,6 +2677,7 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
     collapseMatrix <- migrationIndividual$collapseMatrix
     complete <- migrationIndividual$complete
     n0multiplierMap <- migrationIndividual$n0multiplierMap
+    growthMap <- migrationIndividual$growthMap
     migrationArray <- migrationIndividual$migrationArray
     parameterList <- c()
     unambiguousParameterList <- c()
@@ -2723,6 +2750,26 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
             	}else{
                 	unambiguousParameterList <- append(unambiguousParameterList, 
 						paste("n", col.index, "_", populationNameMatrix[row.index, 
+                   	 	col.index], sep = ""))
+                }
+            }
+        }
+    }
+    
+    #Name growth parameters
+    for (row.index in sequence(dim(growthMap)[1])) {
+        for (col.index in sequence(dim(growthMap)[2])) {
+            focal.growth <- growthMap[row.index, col.index]
+            if (!is.na(focal.growth)) {
+                parameterList <- append(parameterList, paste("growth_", 
+                  focal.growth, sep = ""))
+            	if(longNames == TRUE){
+					unambiguousParameterList <- append(unambiguousParameterList, 
+					paste("growth_pop_", populationNameMatrix[row.index, 
+                    col.index], "_at_time_interval_", col.index,sep = ""))
+            	}else{
+                	unambiguousParameterList <- append(unambiguousParameterList, 
+						paste("g", col.index, "_", populationNameMatrix[row.index, 
                    	 	col.index], sep = ""))
                 }
             }

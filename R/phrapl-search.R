@@ -5,12 +5,12 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	maxParameterValue=20, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 	subsampleWeights.df=NULL,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
-	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1, minCollapseRatio=0, 
-	minN0Ratio=0.1, minMigrationRate=0.05, minMigrationRatio=0.1), numReps=0, startGrid=startGrid, 
-	collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
-	migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,gridSaveFile=NULL,subsamplesPerGene=1,
-	totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,popScaling=NULL,
-	checkpointFile=NULL, ...) {
+	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1,
+	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1), 
+	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
+	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
+	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
+	setCollapseZero=NULL,popScaling=NULL,checkpointFile=NULL, ...) {
   if(!is.null(migrationArrayMap)){
   	modelID<-ReturnModel(p,migrationArrayMap)
   }else{
@@ -65,6 +65,16 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     			nameCount<-nameCount + 1
     		} 
     	}	
+    	
+    	#Calculate number of growth parameters
+    	numGrowth <- sum(grepl("growth",paramNames))
+    	if (numGrowth > 0) {
+    		for (i in sequence(numGrowth)) {
+    			startingVectorList<-append(startingVectorList, list(growthStarts))
+    			names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
+    			nameCount<-nameCount + 1
+    		} 
+    	}
     	
     	#Calculate number of migration parameters
     	numMigration <- sum(grepl("migration",paramNames))
@@ -229,9 +239,10 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
-		migrationStarts=c(0.1,0.22,0.46,1,2.15),subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",
-		saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE, 
-		popScaling=NULL,checkpointFile=NULL,parameter.ambiguous=FALSE, ...){
+		growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.1,0.22,0.46,1,2.15),
+		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
+		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
+		parameter.ambiguous=FALSE, ...){
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
 		popScaling <- rep(1, length(observedTrees[[1]]))
@@ -273,7 +284,8 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   results.list<-list()
   for (i in sequence(length(migrationArray))){
   	if(!is.null(migrationArrayMap)){
-  		p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], migrationArrayMap$migrationArray.number[i])
+  		p<-c(migrationArrayMap$collapseMatrix.number[i], migrationArrayMap$n0multiplierMap.number[i], 
+  			migrationArrayMap$growthMap.number[i], migrationArrayMap$migrationArray.number[i])
   	}else{
   		p<-i
   	}
@@ -289,10 +301,10 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
   		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
   		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
-  		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
-  		subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
-  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling,
-  		checkpointFile=checkpointFile, ...))
+  		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
+  		migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
+  		subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
+  		setCollapseZero=setCollapseZero,popScaling=popScaling,checkpointFile=checkpointFile, ...))
   		
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
 #  		print(result.indiv[[1]])
@@ -305,7 +317,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		maxParameterValue=maxParameterValue, nTrees=nTrees, msPath=msPath,comparePath=comparePath,ncores=ncores,
   		unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
-  		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,migrationStarts=migrationStarts,
+  		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
   		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling,
   		checkpointFile=checkpointFile, ...))
