@@ -85,8 +85,6 @@
 \alias{maxK}
 \alias{AdjustUsingBeta}
 \alias{ConvertTreeString}
-\alias{DoSingleRowExtraction}
-\alias{ExtractUnambiguousGridParameters}
 \alias{FilterGridForMigration}
 \alias{FilterMigrationByCriterion}
 \alias{GenerateSetLoci}
@@ -94,10 +92,17 @@
 \alias{GetLengthGridList}
 \alias{GetNumTreeHistories}
 \alias{GuessAssignments}
-\alias{MsIndividualParametersConversionToUnambiguous}
-\alias{RenumberWithoutGaps}
 \alias{ScaleParameterVectorByNe}
 \alias{TestForWithinPopCoalescenceThreeSamplesOnly}
+\alias{DoSingleRowExtraction}
+\alias{ExtractUnambiguousGridParameters}
+\alias{ExtractUnambiguousNLoptrParameters}
+\alias{ConcatenateResults_unambiguousParametersForOldRuns}
+\alias{ConcatenateResults_ambiguousParameters}
+\alias{sortParameterTable}
+\alias{MsIndividualParametersConversionToUnambiguous}
+\alias{RenumberWithoutGaps}
+\alias{ModelAverageEachModel}
 \title{Internal phrapl Functions}
 \description{
   Internal \pkg{phrapl} functions.
