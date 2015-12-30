@@ -18,7 +18,7 @@ migrationArray, popAssignments, badAIC = 1e+14,
 maxParameterValue = 20, nTrees = 1e5, msPath = "ms", 
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
 observedTrees, subsampleWeights.df = NULL, doWeights = TRUE,
-unresolvedTest = TRUE, print.ms.string = FALSE, print.results = FALSE, 
+unresolvedTest = TRUE, print.ms.string = FALSE, print.results = TRUE, 
 print.matches = FALSE, debug = FALSE, method = "nlminb", itnmax = NULL, 
 ncores = 1, results.file = NULL, maxtime = 0, maxeval = 0, return.all = TRUE, 
 numReps = 0, startGrid = NULL, 
@@ -27,7 +27,7 @@ n0Starts = c(0.1, 0.5, 1, 2, 4),
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15), 
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
-dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
+dAIC.cutoff=2, rm.n0 = FALSE, popScaling = NULL, checkpointFile = NULL,
 parameter.ambiguous = FALSE, ...)
 }
 \arguments{
@@ -87,10 +87,11 @@ correcting for that.
 Mostly for debugging, Boolean on whether to verbosely print out the calls to ms.
 }
   \item{print.results}{
-Mostly for debugging, Boolean on whether to verbosely print out the results.
+If TRUE, after each simulation cycle, parameters and AICs are printed to the screen.
 }
   \item{print.matches}{
-Mostly for debugging, Boolean on whether to verbosely print out the matches.}
+Mostly for debugging, Boolean on whether to verbosely print out the matches.
+}
   \item{debug}{
 Whether to print out additional debugging information.
 }
@@ -172,7 +173,8 @@ default is 2 AIC points.
 }
   \item{rm.n0}{
 A boolean indicating whether n0multiplier parameter estimates should be outputted
-with the other estimates.
+with the other estimates. This de-clutters output if one is not analyzing models that vary
+population sizes.
 }
   \item{popScaling}{
 A vector whose length is equal to the number of loci analyzed that gives the relative

@@ -13,7 +13,7 @@ imported. This is the major output of phrapl.
 }
 \usage{
 ConcatenateResults(rdaFilesPath = "./", rdaFiles = NULL, migrationArray,
-rm.n0 = FALSE, longNames = FALSE, addTime.elapsed = FALSE, addAICweights=TRUE,
+rm.n0 = TRUE, longNames = FALSE, addTime.elapsed = FALSE, addAICweights=TRUE,
 outFile = NULL, nonparmCols=5)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -31,7 +31,8 @@ The migrationArray used in the phrapl analysis. The model numbers in the output 
 to those in the migrationArray, thus it is important that these match up properly.
 }
   \item{rm.n0}{
-If TRUE, will exclude all n0multiplier parameters from the table
+If TRUE, will exclude all n0multiplier parameters from the table. This is a way to de-clutter parameter
+output if models do not vary population size.
 }
   \item{longNames}{
 If TRUE, will use long descriptive names for each parameter rather than abbreviations
