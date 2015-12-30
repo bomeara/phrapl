@@ -31,24 +31,24 @@ for the present generation, plus any historical matrices that apply
 So, in the three population scenario, if there is symmetrical migration between 
 populations 1 and 2 and no historical migration, migrationList will be:
 
- migrationList<-list(
- t(array(c(
- NA, 1, 0,
- 1, NA, 0,
- 0, 0, NA),
+ migrationList<-list(\n
+ t(array(c(\n
+ NA, 1, 0,\n
+ 1, NA, 0,\n
+ 0, 0, NA),\n
  dim=c(3,3))),
  
- t(array(c(
- NA, NA, 0,
- NA, NA, NA,
- 0,  NA, NA),
+ t(array(c(\n
+ NA, NA, 0,\n
+ NA, NA, NA,\n
+ 0,  NA, NA),\n
  dim=c(3,3))))
 
-#Note that in R, arrays are constructed by reading in values from column 1 first then from 
-#column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e., 
-#first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the 
-#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard 
-#returns can be used to visualize these values in the form of matrices.
+Note that in R, arrays are constructed by reading in values from column 1 first then from 
+column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e., 
+first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the 
+arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard 
+returns can be used to visualize these values in the form of matrices.
 }
 \usage{
 GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,n0multiplierList=n0multiplierList,
@@ -94,25 +94,25 @@ List of migration rate matrices in the model
 # 
 # #Create list of migration matrices
 # migration_1<-t(array(c(
-# 			NA, 0, 0, 0,
-# 			0, NA, 0, 0,
-# 			0, 0, NA, 1,
-# 			0, 0, 1, NA),
-# 			dim=c(4,4)))
+# 	NA, 0, 0, 0,
+# 	0, NA, 0, 0,
+# 	0, 0, NA, 1,
+# 	0, 0, 1, NA),
+# 	dim=c(4,4)))
 # 
 # migration_2<-t(array(c(
-# 			NA, 0, 0, NA,
-# 			1, NA, 0, NA,
-# 			0, 0, NA, NA,
-# 			NA,NA,NA, NA),
-# 			dim=c(4,4)))
+# 	NA, 0, 0, NA,
+# 	1, NA, 0, NA,
+# 	0, 0, NA, NA,
+# 	NA,NA,NA, NA),
+# 	dim=c(4,4)))
 # 
 # migration_3<-t(array(c(
-# 			NA, NA, 0, NA,
-# 			NA, NA, NA,NA,
-# 			0,  NA, NA,NA,
-# 			NA, NA, NA,NA),
-# 			dim=c(4,4)))
+# 	NA, NA, 0, NA,
+# 	NA, NA, NA,NA,
+# 	0,  NA, NA,NA,
+# 	NA, NA, NA,NA),
+# 	dim=c(4,4)))
 # 
 # migrationList<-list(migration_1,migration_2,migration_3)
 # 
@@ -131,16 +131,16 @@ List of migration rate matrices in the model
 # 
 # #Create list of migration matrices
 # migration_1<-t(array(c(
-# 			NA, 2, 1,
-# 			2, NA, 1,
-# 			1, 1, NA),
-# 			dim=c(3,3)))
+# 	NA, 2, 1,
+# 	2, NA, 1,
+# 	1, 1, NA),
+# 	dim=c(3,3)))
 # 
 # migration_2<-t(array(c(
-# 			NA, NA, 3,
-# 			NA, NA, NA,
-# 			3,  NA, NA),
-# 			dim=c(3,3)))
+# 	NA, NA, 3,
+# 	NA, NA, NA,
+# 	3,  NA, NA),
+# 	dim=c(3,3)))
 # 
 # migrationList<-list(migration_1,migration_2)
 # 
