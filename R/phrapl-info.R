@@ -236,11 +236,11 @@ ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mito
 #Return AIC for a given model and tree
 ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		subsampleWeights.df=NULL,
-		unresolvedTest=TRUE,print.results=FALSE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
+		unresolvedTest=TRUE,print.results=TRUE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
 		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
 		subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-		setCollapseZero=NULL,popScaling){
+		setCollapseZero=NULL,rm.n0=FALSE,popScaling){
 	parameterVector<-exp(par)
 	
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -276,8 +276,12 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		}
 	}
 	
- 	if(print.results) {
- 	   print(parameterVector) 
+ 	if(print.results){
+ 		if(rm.n0){
+ 			print(parameterVector[-(grep("n0multiplier",names(parameterVector)))])
+ 		}else{
+ 			print(parameterVector)
+		} 
  	}
 
  	#Do tree matching

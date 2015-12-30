@@ -4,13 +4,13 @@
 SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationArray, popAssignments, badAIC=100000000000000, 
 	maxParameterValue=20, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 	subsampleWeights.df=NULL,
-	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",
+	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=TRUE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1,
 	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1), 
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,popScaling=NULL,checkpointFile=NULL, ...) {
+	setCollapseZero=NULL,rm.n0=FALSE,popScaling=NULL,checkpointFile=NULL, ...) {
   if(!is.null(migrationArrayMap)){
   	modelID<-ReturnModel(p,migrationArrayMap)
   }else{
@@ -169,7 +169,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	   	 	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
    		 	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
    		 	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
-   		 	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling)
+   		 	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,
+   		 	popScaling=popScaling)
    		 	
    		 	initial.AIC<-append(initial.AIC,currentAIC)
 			if(!is.null(checkpointFile)){
@@ -177,8 +178,12 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     		}
     	}
  	}
-    if(debug) {
-    	print(cbind(AIC=initial.AIC,exp(startGrid)))
+    if(debug){
+    	if(rm.n0){
+    		print(cbind(AIC=initial.AIC,exp(startGrid[,-(grep("n0multiplier",colnames(startGrid)))])))
+    	}else{
+    		print(cbind(AIC=initial.AIC,exp(startGrid)))
+    	}
     }
 
 	#Save the grid as object
@@ -213,7 +218,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling)
+ 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling)
 
 		#If setCollapseZero is being used, convert optimized parameters to log(0)
 		if(!is.null(setCollapseZero)){
@@ -236,12 +241,12 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NULL,migrationArray,popAssignments, 
 		badAIC=100000000000000,maxParameterValue=20,nTrees=1e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		observedTrees,subsampleWeights.df=NULL, doWeights=TRUE, unresolvedTest=TRUE,
-		print.ms.string=FALSE,print.results=FALSE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
+		print.ms.string=FALSE,print.results=TRUE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
 		collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 		growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.1,0.22,0.46,1,2.15),
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
-		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
+		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=FALSE,popScaling=NULL,checkpointFile=NULL,
 		parameter.ambiguous=FALSE, ...){
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
@@ -304,14 +309,19 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
   		migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
   		subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
-  		setCollapseZero=setCollapseZero,popScaling=popScaling,checkpointFile=checkpointFile, ...))
+  		setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile, ...))
+  		
+  		if(rm.n0){
+  			result.indiv[[2]]<-result.indiv[[2]][,-(grep("n0multiplier",colnames(result.indiv[[2]])))]
+  		}
   		
 		gridList[[length(gridList)+1]]<-result.indiv[[2]] #make list of model grids
-#  		print(result.indiv[[1]])
+
   		if(!is.null(result.indiv[[1]])) {
   			AIC.values[i]<-result.indiv[[1]]$objective	
   		}
   		results.list<-append(results.list, list(result.indiv[[1]]))
+
   	} else {
   		try(AIC.values[i]<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
   		maxParameterValue=maxParameterValue, nTrees=nTrees, msPath=msPath,comparePath=comparePath,ncores=ncores,
@@ -319,7 +329,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
   		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
   		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
-  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,popScaling=popScaling,
+  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
   		checkpointFile=checkpointFile, ...))
   	}
 

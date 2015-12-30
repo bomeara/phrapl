@@ -2280,7 +2280,7 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 #This function is implemented at the end of a GridSearch and is called when parameters
 #are estimated using a parameter grid.
 ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,migrationArray,
-	rm.n0=FALSE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
+	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
 
 	#Add parameters
 	all.parameters <- unique(sort(sapply(migrationArray, 
@@ -2340,7 +2340,7 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 #This function is implemented at the end of a GridSearch and is called when parameters
 #are estimated using nLoptr optimization.
 ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsList=NULL,migrationArray,
-	rm.n0=FALSE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
+	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
 
 	#Add parameters
 	all.parameters <- unique(sort(sapply(migrationArray, 
@@ -2435,7 +2435,7 @@ ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsL
 #ConcatenateResults_unambiguousParametersForOldRuns.
 #Or, to get ambiguous parameters (the old way) from these older result files, use the function
 #ConcatenateResults_ambiguousParameters.
-ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm.n0=FALSE, 
+ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm.n0=TRUE, 
 	longNames=FALSE, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL, nonparmCols=5){
     
     #If a vector of rda file names is not provided, then read them in from the given path
@@ -2517,7 +2517,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 #Thus, for old phrapl result files (prior to ~December 2015), this can model
 #average parameter values directly from the AIC.Grid to produce unambiguous parameter estimates.
 ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray, 
-	rm.n0=FALSE, longNames=FALSE, nonparmCols=2, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL){
+	rm.n0=TRUE, longNames=FALSE, nonparmCols=2, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL){
     
     #If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
