@@ -27,7 +27,7 @@ n0Starts = c(0.1, 0.5, 1, 2, 4),
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15), 
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
-dAIC.cutoff=2, rm.n0 = FALSE, popScaling = NULL, checkpointFile = NULL,
+dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
 parameter.ambiguous = FALSE, ...)
 }
 \arguments{
@@ -174,7 +174,7 @@ default is 2 AIC points.
   \item{rm.n0}{
 A boolean indicating whether n0multiplier parameter estimates should be outputted
 with the other estimates. This de-clutters output if one is not analyzing models that vary
-population sizes.
+population sizes. This must be set to TRUE if one wishes to vary population size.
 }
   \item{popScaling}{
 A vector whose length is equal to the number of loci analyzed that gives the relative
