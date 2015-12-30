@@ -248,6 +248,13 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
 		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
 		parameter.ambiguous=FALSE, ...){
+		
+	#If multiple n0multiplier values exists in the migrationArray, then make rm.n0 FALSE, else, leave it as specified
+	n0Values<-unlist(migrationArray)
+	if(length(unique(n0Values[grep("n0multiplier",names(n0Values))][!is.na(n0Values[grep("n0multiplier",names(n0Values))])])) > 1){
+		rm.n0<-FALSE
+	}	
+	
 	#If no popScaling defined, assume same scalar across loci
 	if(is.null(popScaling)) {
 		popScaling <- rep(1, length(observedTrees[[1]]))
