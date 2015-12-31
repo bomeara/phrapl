@@ -50,11 +50,13 @@ KCollapseMatrix<-function(collapseMatrix) {
 	return(length(which(maxVector>0)))
 }
 
-
 KN0multiplierMap<-function(n0multiplierMap) {
 	return(max(n0multiplierMap,na.rm=TRUE)-1) #-1 since first n0 is not free
 }
 
+KGrowthMap<-function(growthMap) {
+	return(max(growthMap,na.rm=TRUE))
+}
 
 FractionNonZeroMigration <- function(migrationIndividual) {
 	return(sum(migrationIndividual$migrationArray[!is.na(migrationIndividual$migrationArray)]>0) / sum(!is.na(migrationIndividual$migrationArray)) )	
