@@ -480,25 +480,77 @@ GenerateIntervals<-function(popVector) {
 #subject to staying within the maximum number of free parameters.
 #Note that unlike for migration or growth, the minimum maximum number of n0multiplier parameters is one (instead of zero).
 #This function now also adds in all possible growth models, which are generated using GenerateGrowthIndividuals
+#The option has also been added to fix the n0muliplierMap or growthMap (or both) to be a particular matrix. These can be 
+#specified in the form of lists as n0multiplierList and growthList. Note that this must only be done when a single popInterval
+#is specified (i.e., the collapse topology must also be fixed).
 GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector),maxK=SetMaxK(popVector),maxN0K=Inf,
-	maxGrowthK=Inf){
+	maxGrowthK=Inf,n0multiplierList=NULL,growthList=NULL){
 	n0multiplierIndividualsList<-list()
-	for (i in sequence(length(popIntervalsList))) {
-		n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
-		numLineages=sum(n0multiplierMapTemplate,na.rm=TRUE)
-		possibleMappings<-AllParamCombinations(numCells=numLineages,minVal=1,maxVal=max(1,min(maxN0K,maxK-KPopInterval(popIntervalsList[[i]]))),
-			allowableMaxInitial=1)
-		for (mappingIndex in sequence(dim(possibleMappings)[1])) {
-			thisMapping<-possibleMappings[mappingIndex,]
-			n0multiplierMap<-n0multiplierMapTemplate
-			whichPositions <- which(n0multiplierMap==1)
-			n0multiplierMap[whichPositions]<-thisMapping
-			#Add in all possible growth models to each n0multiplierIndividual
-			growthMapList<-GenerateGrowthIndividuals(popVector=popVector,popInterval=popIntervalsList[[i]],maxK=maxK,maxGrowthK=maxGrowthK)
-			for(j in sequence(length(growthMapList))){
-				growthMap<-growthMapList[[j]]
+	for (i in sequence(length(popIntervalsList))){
+		
+		#If a particular n0multiplierMap is specified (in addition to a specified collapseMatrix), then just append this to each popInterval
+		if(!is.null(n0multiplierList)){
+			n0multiplierVec<-c()
+			for(j in 1:length(n0multiplierList)){
+				n0multiplierVec<-append(n0multiplierVec,n0multiplierList[[j]])
+			}
+			n0multiplierMap<-array(n0multiplierVec,dim=c(length(n0multiplierList[[1]]),length(n0multiplierList)))
+			
+			#Add in all possible growth models to each n0multiplierIndividual		
+			#If a particular growthMap is specified (in addition to a specified collapseMatrix), append it to each popInterval
+			if(!is.null(growthList)){
+				growthVec<-c()
+				for(k in 1:length(growthList)){
+					growthVec<-append(growthVec,growthList[[k]])
+				}
+				growthMap<-array(growthVec,dim=c(length(growthList[[1]]),length(growthList)))
 				n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierGrowthindividual(popIntervalsList[[i]]$collapseMatrix,
 					popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
+			
+			}else{
+			
+				#Else, do all possible growth maps
+				growthMapList<-GenerateGrowthIndividuals(popVector=popVector,popInterval=popIntervalsList[[i]],maxK=maxK,maxGrowthK=maxGrowthK)
+				for(k in sequence(length(growthMapList))){
+					growthMap<-growthMapList[[k]]
+					n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierGrowthindividual(popIntervalsList[[i]]$collapseMatrix,
+						popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
+				}
+			}
+			
+		#Else, do all possible n0multiplier maps
+		}else{	
+			n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
+			numLineages=sum(n0multiplierMapTemplate,na.rm=TRUE)
+			possibleMappings<-AllParamCombinations(numCells=numLineages,minVal=1,maxVal=max(1,min(maxN0K,maxK-KPopInterval(popIntervalsList[[i]]))),
+				allowableMaxInitial=1)
+			for (mappingIndex in sequence(dim(possibleMappings)[1])) {
+				thisMapping<-possibleMappings[mappingIndex,]
+				n0multiplierMap<-n0multiplierMapTemplate
+				whichPositions <- which(n0multiplierMap==1)
+				n0multiplierMap[whichPositions]<-thisMapping
+				
+				#Add in all possible growth models to each n0multiplierIndividual
+				#If a particular growthMap is specified (in addition to a specified collapseMatrix), append it to each popInterval
+				if(!is.null(growthList)){
+					growthVec<-c()
+					for(k in 1:length(growthList)){
+						growthVec<-append(growthVec,growthList[[k]])
+					}
+					growthMap<-array(growthVec,dim=c(length(growthList[[1]]),length(growthList)))
+					n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierGrowthindividual(popIntervalsList[[i]]$collapseMatrix,
+						popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
+			
+				}else{
+			
+					#Else, do all possible growth maps
+					growthMapList<-GenerateGrowthIndividuals(popVector=popVector,popInterval=popIntervalsList[[i]],maxK=maxK,maxGrowthK=maxGrowthK)
+					for(k in sequence(length(growthMapList))){
+						growthMap<-growthMapList[[k]]
+						n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierGrowthindividual(popIntervalsList[[i]]$collapseMatrix,
+							popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
+					}
+				}
 			}
 		}
 	}
@@ -536,18 +588,88 @@ GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
 }
 
 #Now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters 
-#(times, n0multipliers, migration rates) under our chosen max.
+#(times, n0multipliers, growth parameters, and migration rates) under our chosen max.
 #Do we allow a model where migrations change anywhere along branch, or only at coalescent nodes? 
 #The problem with the latter is that you cannot fit some reasonable models: i.e., two populations persisting through time. 
 #Problem with the former is parameter space.
-GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1,maxGrowthK=0,maxMigrationK=1,
-	forceSymmetricalMigration=TRUE,forceTree=FALSE,verbose=FALSE,parallelRep=NULL) {
 
+#In general, this function produces a list of all possible demographic models given a number of populations (specified by popVector), 
+#specified numbers of free parameters, and other optional filtering criteria. The list of models is call a migrationArray (a name which,
+#confusingly, is also given to migration matrices within a model) and each model is referred to as a migrationIndividual. 
+
+#Each migrationIndividual is composed of four major demographic components: 
+#1. The coalescence history (the collapseMatrix, in which rows correspond to populations and columns correspond to temporal events)
+#2. Population size scalar parameters (the n0multiplierMap, with the same dimensions as CollapseMatrix)
+#3. Growth (alpha) parameters (the growthMap, also with the same dimensions as CollapseMatrix)
+#4. Migration rate matrices (the migrationArray, where the number of matrices is equal to the number of temporal events specified by
+#	the collapseMatrix.
+
+#One can specify the total maximum number of free parameters (maxK), and also specify the maximum number of free parameters for a given
+#parameter type (e.g., maxN0K, maxGrowthK, and maxMigrationK). Note that maxGrowthK and maxMigrationK can be set to zero; however the
+#lowest possible value for N0K is one (in which case all population sizes are the same).
+
+#Specific demographic components can also be fixed, such that the migrationArray generated only varies subsets of parameters. Fixed
+#components are specified by collapseList, n0multiplierList, growthList, and migrationList. Note that a collapseList must always be
+#specified in order to specify any other demographic component. The format for specifying collapseList, n0multiplierList, and 
+#growthList are the same: a list of vectors. A vector contains parameter values for each population (e.g., becoming the rows in
+#collapseMatrix), and each vector in the list represents a different temporal event (e.g., becoming the columns in collapseMatrix).
+#For example, collapseList = list(c(1,1,0),c(1,NA,1)) means that there are two coalescent events: in the first event, population 1 and 2 
+#coalesce while population 3 does not; in the second event, ancestral population 1-2 coalesces with population 3. 
+
+#MigrationLists differ in that a list of matrices, rather than vectors, must be specified. There will be one migration matrix 
+#for the present generation, plus any historical matrices that apply (there will be as many matrices as there are collapse events).
+#So, in the three population scenario, if there is symmetrical migration between populations 1 and 2 and no historical migration, 
+#migrationList will be:
+
+# migrationList<-list(
+# t(array(c(
+# NA, 1, 0,
+# 1, NA, 0,
+# 0, 0, NA),
+# dim=c(3,3))),
+# 
+# t(array(c(
+# NA, NA, 0,
+# NA, NA, NA,
+# 0,  NA, NA),
+# dim=c(3,3))))
+
+#Note that in R, arrays are constructed by reading in values from column 1 first then from column 2, etc. However, it is more intuitive 
+#to construct migration matrices by rows (i.e., first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the 
+#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard returns can be used to visualize these values 
+#in the form of matrices.
+
+#Other methods of model filtering (using forceSymmetricalMigration or forceTree) can also be implemented.
+GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1,maxGrowthK=0,maxMigrationK=1,
+	collapseList=NULL,n0multiplierList=NULL,growthList=NULL,migrationList=NULL,forceSymmetricalMigration=TRUE,
+	forceTree=FALSE,verbose=FALSE,parallelRep=NULL) {
+	
+	#Check for compatibilities among inputs
+	if((!is.null(n0multiplierList) || !is.null(growthList) || !is.null(migrationList)) && is.null(collapseList)){
+		return(message("Error: when specifying n0multiplierList, growthList, or migrationLists, a collapseList must also be specified."))
+	}
+	
+	#Some preliminaries
 	maxK<-maxK + 1 #to account for fact that first n0 multiplier is not free
-	popIntervalsList<-GenerateIntervals(popVector)
-	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector=popVector,popIntervalsList=popIntervalsList,
-		maxK=maxK,maxN0K=maxN0K,maxGrowthK=maxGrowthK)
 	migrationIndividualsList<-list()
+		
+	#If a fixed collapse scenario is specified, use that
+	if(!is.null(collapseList)){
+		collapseVec<-c()
+		for(j in 1:length(collapseList)){
+			collapseVec<-append(collapseVec,collapseList[[j]])
+		}
+		collapseMatrix<-array(collapseVec,dim=c(length(collapseList[[1]]),length(collapseList)))
+		popIntervalsList<-list(Popinterval(collapseMatrix,complete=TRUE))
+	}else{
+	
+	#Else, do all possible collapse scenarios
+		popIntervalsList<-GenerateIntervals(popVector)
+	}
+	
+	#Copy these models across various possible n0multiplier and growth parameter scenarios
+	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector=popVector,popIntervalsList=popIntervalsList,
+		maxK=maxK,maxN0K=maxN0K,maxGrowthK=maxGrowthK,n0multiplierList=n0multiplierList,growthList=growthList)
 
 	#Run for a specific tree history or for all at once?
 	if(!is.null(parallelRep)){
@@ -564,107 +686,140 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 		growthMap<-n0multiplierIndividualsList[[i]]$growthMap
 		numFinalPops<-dim(collapseMatrix)[1]
 		numSteps<-dim(collapseMatrix)[2]
-		if((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) + KGrowthMap(growthMap) )<=maxK){
-			
-			#If no migration desired, just create empty matrices
-			if(maxMigrationK == 0){
-				migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix)),
-					dimnames=c("from","to","generation"))
-				for(interval in 1:ncol(collapseMatrix)) {
-					for(fromPop in 1:nrow(collapseMatrix)) {
-						for(toPop in 1:nrow(collapseMatrix)) {
-							if(fromPop!=toPop) {
-								if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
-									migrationArray[fromPop,toPop,interval]<-0
-								}
-							}else{
-								if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && 
-									toPop>fromPop) { #so only fill top diagonal
-									migrationArray[fromPop,toPop,interval]<-0							
-								}
-							}
-						}
-					}
+		
+		#Check for input compatibilities
+		if((paste(dim(collapseMatrix),collapse="") != paste(dim(n0multiplierMap),collapse="")) || 
+		(paste(dim(collapseMatrix),collapse="") != paste(dim(growthMap),collapse="")) ||
+		(paste(dim(growthMap),collapse="") != paste(dim(n0multiplierMap),collapse=""))){
+			return(message("Error: specified collapseLists, n0multiplierLists, and growthLists must have the same dimensions"))
+		}
+		
+		if((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) + KGrowthMap(growthMap) ) <= maxK){
+
+			#If a specific migrationArray is specified, just use that one
+			if(!is.null(migrationList)){
+				migrationVec<-c()
+				for(i in 1:length(migrationList)){
+					migrationVec<-append(migrationVec,migrationList[[i]])
 				}
+				migrationArray<-array(migrationVec,dim=c(nrow(migrationList[[1]]),ncol(migrationList[[1]]),
+					length(migrationList)))
+
+				#Check for input compatibilities
+				if(dim(collapseMatrix)[1] != dim(migrationArray)[1] || dim(collapseMatrix)[2] != dim(migrationArray)[3]){
+					return(message("Error: specified collapseLists and migrationLists must have the same dimensions"))
+				}
+				
 				newIndividual<-Migrationindividual(collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
 					n0multiplierMap,growthMap,migrationArray)	
 				#Toss models in which genes cannot coalesce or which exceed the max number of parameters	
 				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual) < maxK){
 					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
 				}
+
+			#Otherwise...
 			}else{
-		
-				#Else, produce all possible matrices
-				migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
-				for (interval in 1:numSteps) {
-					for (fromPop in 1:numFinalPops) {
-						for (toPop in 1:numFinalPops) {
-							if (fromPop!=toPop) {
-								if(!forceSymmetricalMigration) {
-									if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
-										migrationTemplate[fromPop,toPop,interval]<-1
+
+				#If no migration desired, just create empty matrices
+				if(maxMigrationK == 0){
+					migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix)),
+						dimnames=c("from","to","generation"))
+					for(interval in 1:ncol(collapseMatrix)) {
+						for(fromPop in 1:nrow(collapseMatrix)) {
+							for(toPop in 1:nrow(collapseMatrix)) {
+								if(fromPop!=toPop) {
+									if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
+										migrationArray[fromPop,toPop,interval]<-0
 									}
-								} else {
-									if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && toPop>fromPop) { #so only fill top diagonal
-										migrationTemplate[fromPop,toPop,interval]<-1
-									}								
-								}
-							}
-						}
-					}
-				}
-				numPairs=sum(migrationTemplate,na.rm=TRUE)
-				mappingMaxKAllowed <- min(maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) ),maxMigrationK)
-			
-				evaluateMapping<-TRUE
-				if (mappingMaxKAllowed<=0) {
-					evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
-				}
-				allMappings<-AllParamCombinations(numPairs, 0, mappingMaxKAllowed, 1)
-				if(verbose==TRUE) {
-					print(paste("  there are ", dim(allMappings)[1], " migration mappings to try", sep=""))	
-				}
-				thisMapping<-allMappings[1,]
-				numevaluations=1
-				while(evaluateMapping){
-					migrationArray<-migrationTemplate
-					whichPositions <- which(migrationArray==1)
-					migrationArray[whichPositions]<-thisMapping
-					if(forceSymmetricalMigration) {
-						for (interval in 1:numSteps) {
-							for (fromPop in 1:numFinalPops) {
-								for (toPop in 1:numFinalPops) {
-									if (toPop<fromPop) {
-										migrationArray[fromPop,toPop,interval]<-migrationArray[toPop,fromPop,interval]
+								}else{
+									if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && 
+										toPop>fromPop) { #so only fill top diagonal
+										migrationArray[fromPop,toPop,interval]<-0							
 									}
 								}
 							}
 						}
 					}
-					newIndividual<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
+					newIndividual<-Migrationindividual(collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
 						n0multiplierMap,growthMap,migrationArray)	
-					if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK){
+					#Toss models in which genes cannot coalesce or which exceed the max number of parameters	
+					if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual) < maxK){
 						migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
 					}
-					#Code for storing models separately for each tree history
-	#				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK  && parameterize==TRUE){
-	#					if(!exists(paste("migrationIndividualsList_",i,sep=""))){
-	#						assign(paste("migrationIndividualsList_",i,sep=""),list())
-	#						#Method for adding elements to dynamically named list
-	#						assign(paste("migrationIndividualsList_",i,sep=""),
-	#						{x<-get(paste("migrationIndividualsList_",i,sep=""))
-	#						x[[length(get(paste("migrationIndividualsList_",i,sep=""))) + 1]]<-4
-	#						x})
-	#					}
-	#				}			
-					numevaluations<-numevaluations+1
-					if(numevaluations<=dim(allMappings)[1]) {
-						thisMapping<-allMappings[numevaluations,]	
-					} else {
-						evaluateMapping<-FALSE	
+				}else{
+		
+					#Else, produce all possible matrices
+					migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
+					for (interval in 1:numSteps) {
+						for (fromPop in 1:numFinalPops) {
+							for (toPop in 1:numFinalPops) {
+								if (fromPop!=toPop) {
+									if(!forceSymmetricalMigration) {
+										if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval])) {
+											migrationTemplate[fromPop,toPop,interval]<-1
+										}
+									} else {
+										if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && toPop>fromPop) { #so only fill top diagonal
+											migrationTemplate[fromPop,toPop,interval]<-1
+										}								
+									}
+								}
+							}
+						}
 					}
-				}#end while
-			}#end else		
+					numPairs=sum(migrationTemplate,na.rm=TRUE)
+					mappingMaxKAllowed <- min(maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) ),maxMigrationK)
+			
+					evaluateMapping<-TRUE
+					if (mappingMaxKAllowed<=0) {
+						evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
+					}
+					allMappings<-AllParamCombinations(numPairs, 0, mappingMaxKAllowed, 1)
+					if(verbose==TRUE) {
+						print(paste("  there are ", dim(allMappings)[1], " migration mappings to try", sep=""))	
+					}
+					thisMapping<-allMappings[1,]
+					numevaluations=1
+					while(evaluateMapping){
+						migrationArray<-migrationTemplate
+						whichPositions <- which(migrationArray==1)
+						migrationArray[whichPositions]<-thisMapping
+						if(forceSymmetricalMigration) {
+							for (interval in 1:numSteps) {
+								for (fromPop in 1:numFinalPops) {
+									for (toPop in 1:numFinalPops) {
+										if (toPop<fromPop) {
+											migrationArray[fromPop,toPop,interval]<-migrationArray[toPop,fromPop,interval]
+										}
+									}
+								}
+							}
+						}
+						newIndividual<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
+							n0multiplierMap,growthMap,migrationArray)	
+						if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK){
+							migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
+						}
+						#Code for storing models separately for each tree history
+		#				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK  && parameterize==TRUE){
+		#					if(!exists(paste("migrationIndividualsList_",i,sep=""))){
+		#						assign(paste("migrationIndividualsList_",i,sep=""),list())
+		#						#Method for adding elements to dynamically named list
+		#						assign(paste("migrationIndividualsList_",i,sep=""),
+		#						{x<-get(paste("migrationIndividualsList_",i,sep=""))
+		#						x[[length(get(paste("migrationIndividualsList_",i,sep=""))) + 1]]<-4
+		#						x})
+		#					}
+		#				}			
+						numevaluations<-numevaluations+1
+						if(numevaluations<=dim(allMappings)[1]) {
+							thisMapping<-allMappings[numevaluations,]	
+						} else {
+							evaluateMapping<-FALSE	
+						}
+					}#end while
+				}#end else (zero versus non-zero parameters)
+			}#end else (specified matrix versus non-specified matrix)		
 		}#end if
 	}#end for
 	if(forceTree) {
@@ -712,7 +867,9 @@ FilterForFullyResolved <- function(migrationArray) {
          migrationIndividualsToKill<-append( migrationIndividualsToKill,i)
       }
    }
-   migrationArray<-migrationArray[-1*migrationIndividualsToKill]
+	if(!is.null(migrationIndividualsToKill)){
+		migrationArray<-migrationArray[-1*migrationIndividualsToKill]
+	}
    return(migrationArray)
 }
 
