@@ -828,6 +828,20 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 	return(migrationIndividualsList)
 }
 
+#This function takes an old migrationArray without growth and adds a growth
+#element (with zero growth parameters) to each model. This allows one to use
+#an old migrationArray in PHRAPL 2.0 (i.e., PHRAPL with growth)
+AddGrowthToAMigrationArray<-function(migrationArray){
+	for(i in 1:length(migrationArray)){
+		growthMap<-migrationArray[[i]]$collapseMatrix
+		growthMap[!is.na(growthMap)]<-0	
+		migrationArray[[i]]<-Migrationindividual(migrationArray[[i]]$collapseMatrix,
+			migrationArray[[i]]$complete,migrationArray[[i]]$n0multiplierMap,
+			growthMap,migrationArray[[i]]$migrationArray)
+	}
+	return(migrationArray)
+}
+
 # #this will create a set of models with no populations merging. However, not all populations need to have migration to every other population
 # GenerateMigrationIndividualsNoCollapseAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervalsNoCollapse(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE,file=NULL) {
   # migrationArray<-GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList, maxK, verbose=verbose, file=NULL)
