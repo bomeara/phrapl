@@ -7,7 +7,8 @@ GenerateMigrationArrayMap
 
 This function was meant to declare the matrix of model space search for a given
 \link{migrationArray}. It will generate a table which contains of all the 
-parameter switches for each model.
+parameter switches for each model. This is only a required input if estimating
+parameters using optimization rather than a grid search.
 }
 \usage{
 GenerateMigrationArrayMap(migrationArray)

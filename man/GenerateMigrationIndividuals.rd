@@ -31,7 +31,7 @@ demographic component. The format for specifying collapseList, n0multiplierList,
 the same: as a list of vectors. A vector contains parameter values for each population (e.g., 
 becoming the rows in collapseMatrix), and each vector in the list represents a different temporal 
 event (e.g., becoming the columns in collapseMatrix). 
-For example, collapseList = list(c(1,1,0),c(1,NA,1)) means that there are two coalescent events: 
+For example, collapseList = list(c(1,1,0),c(2,NA,2)) means that there are two coalescent events: 
 in the first event, population 1 and 2 coalesce while population 3 does not; in the second event, 
 ancestral population 1-2 coalesces with population 3. 
 
@@ -128,7 +128,7 @@ For more information, please see the user manual.
 # 
 # #Fix a tree
 # collapse_1<-c(1,1,0)
-# collapse_2<-c(1,NA,1)
+# collapse_2<-c(2,NA,2)
 # collapseList<-list(collapse_1,collapse_2)
 # 
 # #Fix migration

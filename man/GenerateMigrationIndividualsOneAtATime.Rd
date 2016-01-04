@@ -12,7 +12,7 @@ growthMap, and migrationList.
 
 CollapseList is the only set of parameters that must be specified. This gives a
 list of collapse history vectors, one vector for each 
-coalescent event in the tree. So, collapseList = list(c(1,1,0),c(1,NA,1)) means 
+coalescent event in the tree. So, collapseList = list(c(1,1,0),c(2,NA,2)) means 
 that there are two coalescent events: in the first event, population 1 and 2 
 coalesce while population 3 does not; in the second event, ancestral population 
 1-2 coalesces with population 3. 
@@ -82,8 +82,8 @@ List of migration rate matrices in the model
 # 
 # #Create list of collapse histories
 # collapse_1<-c(0,0,1,1)
-# collapse_2<-c(1,1,0,NA)
-# collapse_3<-c(1,NA,1,NA)
+# collapse_2<-c(2,2,0,NA)
+# collapse_3<-c(3,NA,3,NA)
 # collapseList<-list(collapse_1,collapse_2,collapse_3)
 # 
 # #Create list of growth histories
@@ -126,7 +126,7 @@ List of migration rate matrices in the model
 # 
 # #Create list of collapse histories
 # collapse_1<-c(1,1,0)
-# collapse_2<-c(1,NA,1)
+# collapse_2<-c(2,NA,2)
 # collapseList<-list(collapse_1,collapse_2)
 # 
 # #Create list of migration matrices
