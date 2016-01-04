@@ -615,7 +615,7 @@ GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
 #specified in order to specify any other demographic component. The format for specifying collapseList, n0multiplierList, and 
 #growthList are the same: a list of vectors. A vector contains parameter values for each population (e.g., becoming the rows in
 #collapseMatrix), and each vector in the list represents a different temporal event (e.g., becoming the columns in collapseMatrix).
-#For example, collapseList = list(c(1,1,0),c(1,NA,1)) means that there are two coalescent events: in the first event, population 1 and 2 
+#For example, collapseList = list(c(1,1,0),c(2,NA,2)) means that there are two coalescent events: in the first event, population 1 and 2 
 #coalesce while population 3 does not; in the second event, ancestral population 1-2 coalesces with population 3. 
 
 #MigrationLists differ in that a list of matrices, rather than vectors, must be specified. There will be one migration matrix 
@@ -994,7 +994,7 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 
 	#CollapseList is the only set of parameters that must be specified. This gives a
 	#list of collapse history vectors, one vector for each 
-	#coalescent event in the tree. So, collapseList = list(c(1,1,0),c(1,NA,1)) means 
+	#coalescent event in the tree. So, collapseList = list(c(1,1,0),c(2,NA,2)) means 
 	#that there are two coalescent events: in the first event, population 1 and 2 
 	#coalesce while population 3 does not; in the second event, ancestral population 
 	#1-2 coalesces with population 3. 
