@@ -128,10 +128,12 @@ ColCountIf<-function(x,val) {
 }
 
 ColCountLast<-function(x,val) {
-	return(length(which(x[,dim(x)[2]]==val)))
+	return(length(which(x[,dim(x)[2]]>=val)))
 }
 
-
+ColCountLastZero<-function(x,val) {
+	return(length(which(x[,dim(x)[2]]==val)))
+}
 
 Popinterval<-function(collapseMatrix,complete=FALSE) {
 #collapse matrix has populations as rows and each generation going back in time as columns
@@ -257,7 +259,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 #is there a collapse in this gen?
 				if (max(collapseMatrix[,generation],na.rm=TRUE)>0) { #remember that everything goes to the lowest index population with state ==1
 					initialCollapse<-""
-					popsToCollapse<-which(collapseMatrix[,generation]==1)
+					popsToCollapse<-which(collapseMatrix[,generation]>=1)
 					for (i in 2:length(popsToCollapse)) {
 						initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[generation]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
 					}
@@ -297,7 +299,7 @@ UpdateCompletes<-function(popIntervalsList) {
 		if (ColCountLast(abs(popIntervalsList[[i]]$collapseMatrix),1)==0) {
 			popIntervalsList[[i]]$complete<-TRUE #end up with having no more collapses
 		}
-		else if (ColCountLast(popIntervalsList[[i]]$collapseMatrix,0)==0) {
+		else if (ColCountLastZero(popIntervalsList[[i]]$collapseMatrix,0)==0) {
 			popIntervalsList[[i]]$complete<-TRUE #end up as one population
 		}
 	}
@@ -313,10 +315,9 @@ CompleteIntervals<-function(popIntervalsList) {
 			lastGen<-currentParent$collapseMatrix[,dim(currentParent$collapseMatrix)[2] ]
 #all those in the lastGen in state 1 were merged into one population, identified by the one with the lowest id
 			survPop=length(which(lastGen==0))
-			if (length(which(abs(lastGen)==1))>0) {
+			if (length(which(abs(lastGen)>=1))>0) {
 				survPop=survPop+1
-			}
-			else {
+			}else{
 				stop("this population was complete")
 			}
 			rawIntervals<-c()
@@ -324,16 +325,17 @@ CompleteIntervals<-function(popIntervalsList) {
 				rawIntervals<-blockparts(c(1:survPop),survPop,include.fewer=TRUE)
 				rawIntervals<-rawIntervals[,ColMax(rawIntervals)<=1] #we are okay with having all zeros: no population collapse
 				rawIntervals<-rawIntervals[,ColCountIf(rawIntervals,1)!=1] #we want intervals that have all zeros or at least two ones. What does it mean to have one lineage coalesce with itself?
-			}
-			else {
+			}else{
 				rawIntervals=matrix(c(0,1),nrow=1)
 			}
-			rowMapping<-c(min(which(abs(lastGen)==1)),which(lastGen==0))
+			rowMapping<-c(min(which(abs(lastGen)>=1)),which(lastGen==0))
 			rawIntervalsRescaled<-matrix(NA,ncol=dim(rawIntervals)[2],nrow=length(lastGen))
 			for (j in 1:length(rowMapping)) {
 				rawIntervalsRescaled[rowMapping[j], ]<-rawIntervals[j,]
 			}
-			for (k in 1:dim(rawIntervalsRescaled)[2]) {
+			for (k in 1:dim(rawIntervalsRescaled)[2]){
+				collapseValue<-max(currentParent$collapseMatrix[,dim(currentParent$collapseMatrix)[2]],na.rm=TRUE)
+				rawIntervalsRescaled[,k][which(rawIntervalsRescaled[,k] == 1)]<-collapseValue + 1
 				newPopIntervalsList[[length(newPopIntervalsList)+1]]<-Popinterval(cbind(currentParent$collapseMatrix,matrix(rawIntervalsRescaled[,k],ncol=1)))
 			}
 		}
@@ -642,7 +644,7 @@ GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
 #Other methods of model filtering (using forceSymmetricalMigration or forceTree) can also be implemented.
 GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1,maxGrowthK=0,maxMigrationK=1,
 	collapseList=NULL,n0multiplierList=NULL,growthList=NULL,migrationList=NULL,forceSymmetricalMigration=TRUE,
-	forceTree=FALSE,verbose=FALSE,parallelRep=NULL) {
+	forceTree=FALSE,verbose=FALSE,parallelRep=NULL){
 	
 	#Check for compatibilities among inputs
 	if((!is.null(n0multiplierList) || !is.null(growthList) || !is.null(migrationList)) && is.null(collapseList)){
