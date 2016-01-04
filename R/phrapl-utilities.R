@@ -3153,7 +3153,23 @@ ModelAverageEachModel<-function(totalData,parmStartCol){
 }
 
 #Calculate model averaged parameter values across a set of models
-CalculateModelAverages<-function(totalData = totalData, parmStartCol = 9){
+#The model averages can be calculated using one of two different methods, controlled by averageAcrossAllModels.
+#If TRUE, each parameter is model averaged across all models in the dataset, even if that model
+#does not include the given parameter. In these cases where a parameter is absent (i.e., the value 
+#is NA) this method simply assumes that the value for that parameter is zero. If FALSE, each 
+#parameter is model averaged by only considering those models that include the relevant parameter.
+ 
+#The former method may be most appropriate for migration, as models that exclude this parameter 
+#are effectively setting migration to zero. However, the latter method may be more appropriate
+#for the collapse time parameter (t) given that when a model excluding a particular coalescent 
+#event recieves high support, this can be subject to different interpretations. For example, this
+#could signal that these two populations are so similar that coalescence time between them is
+#effectively zero. However, it could also signal that these two populations are very distinct, 
+#but that they coalesce with other populations prior to coalescing with each other.
+
+#parmStartCol gives the column number in totalData in which the parameter values begin. If using default 
+#PHRAPL output, this should be column 9.
+CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStartCol = 9){
     #Add model averaged parameter estimates to a dataframe
     totalData <- totalData[order(totalData$AIC, totalData$models),]#sort parameters by AIC to match totalData
     totalData <- totalData[, grep(".*_I", colnames(totalData), invert = TRUE)]#Remove parameter index columns
@@ -3161,18 +3177,37 @@ CalculateModelAverages<-function(totalData = totalData, parmStartCol = 9){
     #Remove parameter columns that contain only NAs
     totalData <- RemoveParameterNAs(totalData)
    
-   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)	
-    modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
-        totalData$wAIC))
-    colnames(modelAverages)<-colnames(totalData)[-c(0:(parmStartCol - 1))]
-    modelAverages <- apply(modelAverages, 2, sum, na.rm = TRUE)
+   #If model averaging across all models...
+   if(averageAcrossAllModels == TRUE){
+     
+	   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)	
+		modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
+			totalData$wAIC))
+		colnames(modelAverages)<-colnames(totalData)[-c(0:(parmStartCol - 1))]
+		modelAverages <- apply(modelAverages, 2, sum, na.rm = TRUE)
 
-	#Convert modelAverages into a dataframe
-    modelAveragesMat <- data.frame(matrix(modelAverages, nrow = 1, 
-        ncol = length(names(modelAverages))))
-    colnames(modelAveragesMat) <- names(modelAverages)
-    modelAverages <- modelAveragesMat
-  
+		#Convert modelAverages into a dataframe
+		modelAveragesMat <- data.frame(matrix(modelAverages, nrow = 1, 
+			ncol = length(names(modelAverages))))
+		colnames(modelAveragesMat) <- names(modelAverages)
+		modelAverages <- modelAveragesMat
+	
+	#Else, model average across only those models that contain the parameter
+	}else{
+  		
+  		modelAveragesVec<-c()
+		for(j in parmStartCol:ncol(totalData)){
+			totalDataTemp<-totalData[which(!is.na(totalData[,j])),]
+			totalDataTemp<-totalDataTemp[order(totalDataTemp$models),] #GetAICweights exports in order of model
+			wAIC.df<-GetAICweights(totalDataTemp)
+			modelAverages<-totalDataTemp[,j] * wAIC.df$wAIC
+			modelAverages<-sum(modelAverages)
+			modelAveragesVec<-append(modelAveragesVec,modelAverages)
+		}
+		modelAverages<-data.frame(matrix(modelAveragesVec,nrow=1,ncol=length(modelAveragesVec)))
+		colnames(modelAverages)<-colnames(totalData)[parmStartCol:ncol(totalData)]
+  	}
+  		
     return(modelAverages)
 }
 
