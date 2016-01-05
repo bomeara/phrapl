@@ -844,6 +844,133 @@ AddGrowthToAMigrationArray<-function(migrationArray){
 	return(migrationArray)
 }
 
+AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL,growthVec=NULL,migrationMat=NULL){
+	if(class(migrationArray) == "migrationindividual"){
+		migrationArray<-list(migrationArray)
+	}
+	for(i in 1:length(migrationArray)){	
+		collapseMatrixOld<-migrationArray[[i]]$collapseMatrix
+		n0multiplierMapOld<-migrationArray[[i]]$n0multiplierMap
+		growthMapOld<-migrationArray[[i]]$growthMap
+		migrationArrayOld<-migrationArray[[i]]$migrationArray
+				
+		if(eventTime > dim(collapseMatrixOld)[2]){
+			return(warning("Error: The specified eventTime exceeds the current number of collapse events"))
+		}
+		
+		#Insert new time event
+		collapseMatrix<-matrix(NA,nrow=dim(collapseMatrixOld)[1],ncol=(dim(collapseMatrixOld)[2] + 1))
+		adjust<-0
+		for(colTime in 1:(dim(collapseMatrixOld)[2] + 1)){
+			if(eventTime != colTime){
+				collapseMatrix[,colTime]<-collapseMatrixOld[,(colTime - adjust)]
+			}else{
+				adjust<-1
+			}
+		}
+		
+		#Insert new n0multiplier
+		n0multiplierMap<-matrix(NA,nrow=dim(n0multiplierMapOld)[1],ncol=(dim(n0multiplierMapOld)[2] + 1))
+		n0multiplierMapOldReset<-n0multiplierMapOld
+		adjust<-0
+		for(n0Time in 1:(dim(n0multiplierMapOld)[2] + 1)){
+			n0multiplierMapOld<-n0multiplierMapOldReset
+			if(eventTime != n0Time){
+				n0multiplierMap[,n0Time]<-n0multiplierMapOld[,(n0Time - adjust)]
+			}else{
+				if(!is.null(n0multiplierVec)){
+					if(length(n0multiplierVec) == 1){
+						n0multiplierVecNew<-n0multiplierMapOld[,n0Time]
+						n0multiplierVecNew[!is.na(n0multiplierVecNew)]<-n0multiplierVec
+						n0multiplierMap[,n0Time]<-n0multiplierVecNew
+					}else{
+						if(length(n0multiplierMapOld[,n0Time][!is.na(n0multiplierMapOld[,n0Time])]) !=
+							length(n0multiplierVec[!is.na(n0multiplierVec)])){
+							return(warning("Error: The number of n0multiplier values specified does not match the desired history"))
+						}
+						n0multiplierMapOld[,n0Time][!is.na(n0multiplierMapOld[,n0Time])]<-
+							n0multiplierVec[!is.na(n0multiplierVec)]
+						n0multiplierMap[,n0Time]<-n0multiplierMapOld[,n0Time]				
+					}				
+				}else{
+					n0multiplierMap[,n0Time]<-n0multiplierMapOld[,n0Time]
+				}
+				adjust<-1
+			}
+		}
+
+		#Insert new growth
+		growthMap<-matrix(NA,nrow=dim(growthMapOld)[1],ncol=(dim(growthMapOld)[2] + 1))
+		growthMapOldReset<-growthMapOld
+		adjust<-0
+		for(gTime in 1:(dim(growthMapOld)[2] + 1)){
+			growthMapOld<-growthMapOldReset
+			if(eventTime != gTime){
+				growthMap[,gTime]<-growthMapOld[,(gTime - adjust)]
+			}else{
+				if(!is.null(growthVec)){
+					if(length(growthVec) == 1){
+						growthVecNew<-growthMapOld[,gTime]
+						growthVecNew[!is.na(growthVecNew)]<-growthVec
+						growthMap[,gTime]<-growthVecNew
+					}else{
+						if(length(growthMapOld[,gTime][!is.na(growthMapOld[,gTime])]) !=
+							length(growthVec[!is.na(growthVec)])){
+							return(warning("Error: The number of growth values specified does not match the desired history"))
+						}
+						growthMapOld[,gTime][!is.na(growthMapOld[,gTime])]<-
+							growthVec[!is.na(growthVec)]
+						growthMap[,gTime]<-growthMapOld[,gTime]				
+					}				
+				}else{
+					growthMap[,gTime]<-growthMapOld[,gTime]
+				}
+				adjust<-1
+			}
+		}
+
+		#Insert new migration
+		numberOfValuesPerMatrix<-length(migrationArrayOld) / dim(migrationArrayOld)[3]
+		migrationArrayNew<-array(rep(NA,(length(migrationArrayOld) + numberOfValuesPerMatrix)),
+			dim=c(sqrt(numberOfValuesPerMatrix),sqrt(numberOfValuesPerMatrix),(dim(migrationArrayOld)[3] + 1)))
+		migrationArrayOldReset<-migrationArrayOld
+		adjust<-0
+		
+		for(migTime in 1:(dim(migrationArrayOld)[3] + 1)){
+			migrationArrayOld<-migrationArrayOldReset
+			if(eventTime != migTime){
+				migrationArrayNew[,,migTime]<-migrationArrayOld[,,(migTime - adjust)]
+			}else{
+				if(!is.null(migrationMat)){
+					if(length(migrationMat) == 1){
+						migrationMatNew<-migrationArrayOld[,,migTime]
+						migrationMatNew[!is.na(migrationMatNew)]<-migrationMat
+						migrationArrayNew[,,migTime]<-migrationMatNew
+					}else{
+						if(length(migrationArrayOld[,,migTime][!is.na(migrationArrayOld[,,migTime])]) !=
+							length(migrationMat[!is.na(migrationMat)])){
+							return(warning("Error: The number of migration values specified does not match the desired history"))
+						}
+						migrationArrayOld[,,migTime][!is.na(migrationArrayOld[,,migTime])]<-migrationMat[!is.na(migrationMat)]
+						migrationArrayNew[,,migTime]<-migrationArrayOld[,,migTime]				
+					}	
+		
+				}else{
+					migrationArrayNew[,,migTime]<-migrationArrayOld[,,migTime]
+				}
+				adjust<-1
+			}
+		}
+
+		#Update migrationIndividual components
+		migrationArray[[i]]$collapseMatrix<-collapseMatrix
+		migrationArray[[i]]$n0multiplierMap<-n0multiplierMap
+		migrationArray[[i]]$growthMap<-growthMap
+		migrationArray[[i]]$migrationArray<-migrationArrayNew
+	}
+	return(migrationArray)
+}
+
 # #this will create a set of models with no populations merging. However, not all populations need to have migration to every other population
 # GenerateMigrationIndividualsNoCollapseAllowNoMigration<-function(popVector,n0multiplierIndividualsList=GenerateN0multiplierIndividuals(popVector,popIntervalsList=GenerateIntervalsNoCollapse(popVector,maxK=SetMaxK(popVector)),maxK=SetMaxK(popVector)), maxK=SetMaxK(popVector), verbose=FALSE,file=NULL) {
   # migrationArray<-GenerateMigrationIndividualsAllowNoMigration(popVector,n0multiplierIndividualsList, maxK, verbose=verbose, file=NULL)
