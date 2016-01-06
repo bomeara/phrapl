@@ -1,7 +1,7 @@
 \name{RunRaxml}
 \alias{RunRaxml}
 \title{
-RunRaxml
+Run Raxml on a set of trees
 }
 \description{
 This function runs RAxML through phrapl. The function will produce an input 

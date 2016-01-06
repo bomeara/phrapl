@@ -1,7 +1,7 @@
 \name{GenerateMigrationArrayMap}
 \alias{GenerateMigrationArrayMap}
 \title{
-GenerateMigrationArrayMap
+Generate a MigrationArrayMap
 }
 \description{
 

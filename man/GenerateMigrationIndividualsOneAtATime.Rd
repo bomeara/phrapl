@@ -2,13 +2,35 @@
 \alias{GenerateMigrationIndividualsOneAtATime}
 \alias{GenerateMigrationIndividualOneAtATime}
 \title{
-GenerateMigrationIndividualsOneAtATime
+Generate a single a priori PHRAPL model (MigrationIndividual)
 }
 \description{
-The purpose of this function is create a single a priori migrationIndividual
+This function creates a single a priori model (migrationIndividual)
 for a given collapse, n0multiplier, growth, and migration history.
-The four inputs for this function are collapseList, n0multiplierMap, 
-growthMap, and migrationList. 
+}
+\usage{
+GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,n0multiplierList=n0multiplierList,
+	growthList=growthList,migrationList=migrationList)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{collapseList}{
+List of collapse histories in the model
+}
+  \item{n0multiplierList}{
+List of population size scalars in the model
+}
+  \item{growthList}{
+List of growth rate scalars in the model
+}
+  \item{migrationList}{
+List of migration rate matrices in the model
+}
+}
+\details{
+The four inputs for this function - collapseList, n0multiplierMap, 
+growthMap, and migrationList - specify parameter indexes for the four
+major demographic components that can be modeled using PHRAPL. 
 
 CollapseList is the only set of parameters that must be specified. This gives a
 list of collapse history vectors, one vector for each 
@@ -48,26 +70,7 @@ Note that in R, arrays are constructed by reading in values from column 1 first 
 etc. However, it is more intuitive to construct migration matrices by rows (i.e., first listing 
 values for row 1, then row 2, etc). Thus, in the example above, arrays are entered as rows, and 
 then transposed (using "t"). Also, spacing and hard returns can be used to visualize these values 
-in the form of matrices.
-}
-\usage{
-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,n0multiplierList=n0multiplierList,
-	growthList=growthList,migrationList=migrationList)
-}
-%- maybe also 'usage' for other objects documented here.
-\arguments{
-  \item{collapseList}{
-List of collapse histories in the model
-}
-  \item{n0multiplierList}{
-List of population size scalars in the model
-}
-  \item{growthList}{
-List of growth rate scalars in the model
-}
-  \item{migrationList}{
-List of migration rate matrices in the model
-}
+in the form of matrices.	
 }
 \author{
   Nathan Jackson and Brian O'Meara

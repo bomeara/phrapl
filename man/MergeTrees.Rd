@@ -1,7 +1,7 @@
 \name{MergeTrees}
 \alias{MergeTrees}
 \title{
-MergeTrees
+Merge Trees
 }
 \description{
 This function merges all the *.tre files in a directory into a single file 

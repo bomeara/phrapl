@@ -1,7 +1,7 @@
 \name{MsIndividualParameters}
 \alias{MsIndividualParameters}
 \title{
-MsIndividualParameters
+Show the Parameters within a given PHRAPL model (migrationIndividual)
 }
 \description{
 Show the distribution of parameters of a certain model for a given

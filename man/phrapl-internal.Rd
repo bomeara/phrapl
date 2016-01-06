@@ -103,7 +103,6 @@
 \alias{MsIndividualParametersConversionToUnambiguous}
 \alias{RenumberWithoutGaps}
 \alias{ModelAverageEachModel}
-\alias{AddGrowthToAMigrationArray}
 \title{Internal phrapl Functions}
 \description{
   Internal \pkg{phrapl} functions.

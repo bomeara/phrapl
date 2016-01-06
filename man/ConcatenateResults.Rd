@@ -1,7 +1,7 @@
 \name{ConcatenateResults}
 \alias{ConcatenateResults}
 \title{
-ConcatenateResults
+Concatenate PHRAPL Results from Different Runs
 }
 \description{
 This function builds a table with details for each model analyzed using a grid or heuristic search,

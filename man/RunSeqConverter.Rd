@@ -1,7 +1,7 @@
 \name{RunSeqConverter}
 \alias{RunSeqConverter}
 \title{
-RunSeqConverter
+Run SeqConverter to convert across sequence formats
 }
 \description{
 This function runs a perl script that takes one or more sequence files in nexus,

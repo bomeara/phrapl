@@ -1,7 +1,7 @@
 \name{CalculateModelAverages}
 \alias{CalculateModelAverages}
 \title{
-CalculateModelAverages
+Calculate Model Averages
 }
 \description{
 This function outputs model averaged parameter estimates for a set of models.
