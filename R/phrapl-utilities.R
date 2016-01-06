@@ -830,10 +830,16 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 	return(migrationIndividualsList)
 }
 
-#This function takes an old migrationArray without growth and adds a growth
-#element (with zero growth parameters) to each model. This allows one to use
-#an old migrationArray in PHRAPL 2.0 (i.e., PHRAPL with growth)
+# Previous versions of PHRAPL produced model lists (migrationArrays) that lack growth
+# matrices (growthMaps). However, growthMaps must now be present to analyze models in PHRAPL, 
+# even if growth parameters are not incorporated in the model. Thus, to facilitate the analysis 
+# of old migrationArrays, this function takes as input a  migrationArray lacking growthMaps
+# and adds an empty growthMap to each model (i.e., a growthMap filled with zeros) within the 
+# migrationArray.
 AddGrowthToAMigrationArray<-function(migrationArray){
+	if(class(migrationArray) == "migrationindividual"){
+		migrationArray<-list(migrationArray)
+	}
 	for(i in 1:length(migrationArray)){
 		growthMap<-migrationArray[[i]]$collapseMatrix
 		growthMap[!is.na(growthMap)]<-0	
@@ -844,6 +850,37 @@ AddGrowthToAMigrationArray<-function(migrationArray){
 	return(migrationArray)
 }
 
+# This function integrates a non-coalescence demographic event within a model
+# or set of models. This can be useful if one wants to posit shifts in a parameter that
+# do not correspond to a splitting event (e.g., one would like migration to only occur 
+# for a given length of time after a split, but then to cease).
+# 
+# To use this function, one must specify a model (migrationIndividual) or set of models
+# (migrationArray). If a set of models is specified, these models must all contain the 
+# same number of populations and the same number of collapse events (i.e., the collapseMatrix
+# compenent within each migrationIndividual must have the same dimensions). 
+# 
+# The relative timing of the desired new event must be specified as a single number using 
+# eventTime. An eventTime of 1 will place a new event (i.e., column) in the first column 
+# position within the collapseMatrix (and the other columns will be shifted to the right). 
+# An eventTime of 2 will place the new column in the second position, etc. The eventTime
+# cannot exceed the number of events (i.e., columns) within the original collapseMatrix.
+# The added column will consist entierly of NAs, indicating that no population coalescence 
+# can occur at this time.
+# 
+# Finally, one can specify a new set of n0multiplier, growth, and/or migration parameter
+# indexes to be invoked at the new specified time period using n0muliplierVec, growthVec, or
+# migrationMat, respectively. When the default value for these is used (which is NULL), 
+# n0multiplier, growth, and migration matrices within each model are automatically expanded 
+# by simply copying over parameter indexes from the adjacent time period to the new time
+# period (i.e., no change is invoked). For n0multiplier and growth, a new column is added; 
+# for migration, a new matrix is added. 
+# 
+# However, one can also specify the parameter indexes to be used at this new time, allowing
+# a shift in that parameter, without a correponding coalescence event. These can either be
+# specified as a single value, which will be applied to all populations, or as vectors
+# (for n0multiplier, growth, or migration) or matrices (for migration only) containing the
+# relevant parameter indexes for each population (NAs can be included or excluded). 
 AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL,growthVec=NULL,migrationMat=NULL){
 	if(class(migrationArray) == "migrationindividual"){
 		migrationArray<-list(migrationArray)
