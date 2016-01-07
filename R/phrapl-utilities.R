@@ -164,7 +164,8 @@ Migrationindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap,grow
 	return(tI)
 }
 
-CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,nTrees=1,createSeed=TRUE) {
+CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,addedEventTime=NULL,
+	addedEventTimeAsScalar=TRUE,nTrees=1,createSeed=TRUE){
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
 	n0multiplierMap<-migrationIndividual$n0multiplierMap
@@ -176,13 +177,15 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 	growthParameters<-parameterVector[grep("growth",names(parameterVector))]
 	migrationParameters<-parameterVector[grep("migration",names(parameterVector))]
 	collapseParameters<-parameterVector[grep("collapse",names(parameterVector))]
+	collapseCount<-1
 	
 	if(1>2 ){
-# stop(paste("Incorrect parameterVector: you passed ",length(parameterVector),"entries but it needs",length(parameterList),"entries:",paste(parameterList,sep=" ",collapse="")))
+	# stop(paste("Incorrect parameterVector: you passed ",length(parameterVector),"entries but it needs",
+	#	length(parameterList),"entries:",paste(parameterList,sep=" ",collapse="")))
 	}else{
 		msString<-paste("-T -I",nPop,paste(popVector,sep=" ", collapse=" "),sep=" ")
 		
-#do values at present
+		#do values at present
 		initialN0multipler<-""
 		initialGrowth<-""
 		for (i in 1:nPop) {
@@ -212,20 +215,43 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 		}
 		msString<-paste(msString,initialN0multipler,initialGrowth,initialMigration,sep=" ")
 		
-#is there a collapse in the first gen?
-		if (max(collapseMatrix[,1],na.rm=TRUE)>0) { #remember that everything goes to the lowest index population with state ==1
-			initialCollapse<-""
-			popsToCollapse<-which(collapseMatrix[,1]==1)
-			for (i in 2:length(popsToCollapse)) {
-				initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[1]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+		#is there a collapse in the first gen?
+		if(sum(!is.na(collapseMatrix[,1])) > 0){ #If this is not an added non-coalescence event
+			if(max(collapseMatrix[,1],na.rm=TRUE) > 0) { #If there is a collapse
+				initialCollapse<-""
+				popsToCollapse<-which(collapseMatrix[,1]==1)
+				for (i in 2:length(popsToCollapse)) {
+					initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[1]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+				}
+				msString<-paste(msString,initialCollapse,sep=" ")
 			}
-			msString<-paste(msString,initialCollapse,sep=" ")
 		}
-		
-#now go back in time
-		if (numSteps>1) {
+
+		#now go back in time
+		if (numSteps>1){
+			eventCount<-1
 			for (generation in 2:numSteps) {
-				collapseTime<-collapseParameters[generation-1]
+			
+				#If the previous generation was an added non-coalescence event with a hard-coded time period
+				if(sum(!is.na(collapseMatrix[,generation - 1])) == 0){
+					if(is.null(addedEventTime)){
+						return(warning("Error: Need to specify an addedEventTime"))
+					}
+					if(addedEventTimeAsScalar == TRUE){
+						if(sum(!is.na(collapseMatrix[,1:(generation - 1)])) > 0){ #If all the previous generations were NOT made up of added non-coalescence events
+							collapseTime<-collapseParameters[collapseCount + 1] * addedEventTime[eventCount]
+						}else{
+							collapseTime<-collapseParameters[collapseCount] * addedEventTime[eventCount]
+						}
+					}else{
+						collapseTime<-addedEventTime[eventCount]
+					}
+					eventCount<-eventCount + 1
+				
+				#Else use the values within the collapseParameter vector	
+				}else{ 
+					collapseTime<-collapseParameters[collapseCount]
+				}
 				n0multiplierPositions<-which(!is.na(n0multiplierMap[,generation]))
 				growthPositions<-which(!is.na(growthMap[,generation]))
 				for (n0multiplierPosIndex in 1:length(n0multiplierPositions)) {
@@ -255,15 +281,19 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,n
 					}
 				}
 				
-				
-#is there a collapse in this gen?
-				if (max(collapseMatrix[,generation],na.rm=TRUE)>0) { #remember that everything goes to the lowest index population with state ==1
-					initialCollapse<-""
-					popsToCollapse<-which(collapseMatrix[,generation]>=1)
-					for (i in 2:length(popsToCollapse)) {
-						initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[generation]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+				#is there a collapse in this gen?
+				if(sum(!is.na(collapseMatrix[,generation])) > 0){ #If the current generation is NOT an added non-coalescence event
+					if(max(collapseMatrix[,generation],na.rm=TRUE) > 0){ #If the current generation contains a collapse event
+						if(sum(!is.na(collapseMatrix[,1:(generation - 1)])) > 0){ #If all the previous generations were NOT made up of added non-coalescence events
+				 			collapseCount<-collapseCount + 1 #then go to the next collapse parameter
+						}
+						initialCollapse<-""
+						popsToCollapse<-which(collapseMatrix[,generation]>=1)
+						for (i in 2:length(popsToCollapse)) {
+							initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[collapseCount]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+						}
+						msString<-paste(msString,initialCollapse,sep=" ")
 					}
-					msString<-paste(msString,initialCollapse,sep=" ")
 				}
 				
 			}

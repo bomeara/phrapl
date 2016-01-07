@@ -10,7 +10,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL, ...) {
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE, ...) {
   if(!is.null(migrationArrayMap)){
   	modelID<-ReturnModel(p,migrationArrayMap)
   }else{
@@ -170,7 +170,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
    		 	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
    		 	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
    		 	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,
-   		 	popScaling=popScaling)
+   		 	popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
    		 	
    		 	initial.AIC<-append(initial.AIC,currentAIC)
 			if(!is.null(checkpointFile)){
@@ -218,7 +218,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
  	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
  	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling)
+ 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
+ 	   		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
 
 		#If setCollapseZero is being used, convert optimized parameters to log(0)
 		if(!is.null(setCollapseZero)){
@@ -247,7 +248,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.1,0.22,0.46,1,2.15),
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
 		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
-		parameter.ambiguous=FALSE, ...){
+		parameter.ambiguous=FALSE,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,...){
 		
 	#If multiple n0multiplier values exists in the migrationArray, then make rm.n0 FALSE, else, leave it as specified
 	n0Values<-unlist(migrationArray)
@@ -316,7 +317,8 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
   		migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
   		subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
-  		setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile, ...))
+  		setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
+  		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, ...))
   		
   		if(rm.n0){
   			result.indiv[[2]]<-result.indiv[[2]][,-(grep("n0multiplier",colnames(result.indiv[[2]])))]
@@ -337,7 +339,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
   		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
   		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
-  		checkpointFile=checkpointFile, ...))
+  		checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,...))
   	}
 
 #  	 	print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))

@@ -45,8 +45,22 @@ KPopInterval<-function(popInterval) {
 }
 
 KCollapseMatrix<-function(collapseMatrix) {
-#returns the number of free parameters needed for that interval object. For example, having everything collapse in one step requires one param (the tMRCA). Having one collapse then a second requires two. Having no collapse requires 0
-	maxVector<-ColMax(collapseMatrix)
+#returns the number of free parameters needed for that interval object. 
+#For example, having everything collapse in one step requires one param (the tMRCA). 
+#Having one collapse then a second requires two. Having no collapse requires 0
+	firstTime<-TRUE
+	#Need to toss columns of added events (all NAs), if present
+	for(i in 1:dim(collapseMatrix)[2]){
+		if(sum(!is.na(collapseMatrix[,i])) > 0){
+			if(firstTime==TRUE){
+				collapseMatrixTemp<-matrix(collapseMatrix[,i],ncol=1,nrow=nrow(collapseMatrix))
+				firstTime=FALSE
+			}else{
+				collapseMatrixTemp<-cbind(collapseMatrixTemp,collapseMatrix[,i])
+			}
+		}
+	}
+	maxVector<-ColMax(collapseMatrixTemp)
 	return(length(which(maxVector>0)))
 }
 
@@ -242,7 +256,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
 		subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-		setCollapseZero=NULL,rm.n0=TRUE,popScaling){
+		setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE){
 	parameterVector<-exp(par)
 	
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -293,7 +307,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest,
-		doSNPs=doSNPs,popScaling=popScaling)
+		doSNPs=doSNPs,popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
 
  	 	#Apply weights to matches
 		if(!is.null(subsampleWeights.df)) {
@@ -574,15 +588,17 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 ##Match simulated trees to observed trees and export vector of matches
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
-		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE, popScaling=popScaling){
+		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE, popScaling=popScaling,addedEventTime=NULL,
+		addedEventTimeAsScalar=TRUE){
 	stored.wd<-getwd()
 	setwd(tempdir())
 	final.outputVector<-c()
 	for (scaling.index in sequence(length(unique(popScaling)))) {
 		observed<-paste(tempdir(),"/observed",currentPopAssign,".scaling.",unique(popScaling)[scaling.index],".tre",sep="")
 		assign<-paste(tempdir(),"/assign",currentPopAssign,".txt",sep="")
-		msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual,
-			ScaleParameterVectorByNe(parameterVector,unique(popScaling)[scaling.index]),ceiling(nTrees/ncores))
+		msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual=migrationIndividual,
+			parameterVector=ScaleParameterVectorByNe(parameterVector,unique(popScaling)[scaling.index]),
+			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,nTrees=ceiling(nTrees/ncores))
 	
 		systemMS<-function(stringname){
 	#		outputVectorMS<-suppressWarnings(system(command="(stringname) & sleep 2 ; kill $!",intern=TRUE))
