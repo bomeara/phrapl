@@ -28,7 +28,7 @@ migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15),
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
 dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
-parameter.ambiguous = FALSE, ...)
+parameter.ambiguous = FALSE, addedEventTime = NULL, addedEventTimeAsScalar = TRUE...)
 }
 \arguments{
    \item{modelRange}{
@@ -196,6 +196,32 @@ that can't be broken up any further.
   \item{parameter.ambiguous}{
 If true, calculates parameters with the ambiguous name format that was used prior to
 December 2015, rather than using the unambiguous parameter names format.
+}
+  \item{addedEventTime}{
+This takes either a single value or vector of values giving absolute or relative times at which
+non-coalescence events that have been added to a migrationArray occur (such events are added using 
+the function \code{\link{AddEventToMigrationArray}}). There should be as many values listed as 
+there are added events in the collapseMatrix (sorted from most recent to most ancient).
+Time values can be specifed as either an absolute time period (in units of 4Ne) or as a relative time
+period. When the latter is desired, the \code{addedEventTimeAsScalar} argument (see below) 
+must be set to \code{TRUE}, which will cause the values specified by \code{addedEventTime} to be 
+treated as scalars, rather than as absolute. Scalar values must be between 0 and 1, and will be multiplied 
+by whatever the next collapse time estimate happens to be (which will typically vary across models and
+across a search grid). Note that the specified timing of these events must fit the modeled chronology of 
+coalescent and non-coalescence events in the collapseMatrix. That is, the timing for an added non-coalescence 
+event given by \code{addedEventTime} must be later than the collapse event directly preceding the added event
+and must be earlier than the collapse event directly following it. For this reason, it is recommended 
+that \code{addedEventTimes} be entered as scalars, as this guarantees that the time will always be
+earlier than the collapse event that follows (but not that the time will occur after the previous collapse
+event). Absolute values can also be used, but remember that in a grid search, different values
+are explored, so many parameter combinations in the grid may not fit the specified event times. However, 
+PHRAPL filters out all parameter combinations in the parameter grid that do not adhere to the specified
+chronology of events in the model. Thus, setting absolute dates may reduce the parameter space explored 
+for a model, but this parameter space will always fit the model.  
+}
+  \item{addedEventTimeAsScalar}{
+Dictates whether added event times set by addedEventTime are treated as scalars (when \code{TRUE}) or as
+absolute values (whien \code{FALSE}).
 }
   \item{\dots}{
 Other items to pass to heuristic search functions.

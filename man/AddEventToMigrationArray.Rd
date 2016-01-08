@@ -244,15 +244,15 @@ add multiple non-coalescence time periods by repetedly running the function on t
 }
 \note{
 When analyzing a migrationArray using \code{\link{GridSearch}} that includes new time periods
-produced by \code{AddEventToMigrationArray}, a time value must be specified using the \code{AddedEventTime} 
-argument. \code{AddedEventTime} takes either a single value or vector of values, such that there are as 
+produced by \code{AddEventToMigrationArray}, a time value must be specified using the \code{addedEventTime} 
+argument. \code{addedEventTime} takes either a single value or vector of values, such that there are as 
 many values as added events in the collapseMatrix (sorted from most recent to most ancient).
 Time values can be specifed as either a specific time period (in units of 4Ne) or as a relative time
-period. When the latter is desired, the \code{AddedEventTimeAsScalar} argument in \code{\link{GridSearch}} 
-must be set to \code{TRUE} (this defaults to \code{FALSE}), which will cause the values specified by 
-\code{AddedEventTime} to be treated as scalars, rather than as absolute. Scalar values must be between 0 and 1, 
+period. When the latter is desired, the \code{addedEventTimeAsScalar} argument in \code{\link{GridSearch}} 
+must be set to \code{TRUE} (this is the default), which will cause the values specified by 
+\code{addedEventTime} to be treated as scalars, rather than as absolute. Scalar values must be between 0 and 1, 
 and will be multiplied by whatever the next collapse time estimate happens to be (which will typically vary across 
-models). For example, setting \code{AddedEventTimeAsScalar = TRUE} and \code{AddedEventTime = 0.1} for the 
+models). For example, setting \code{addedEventTimeAsScalar = TRUE} and \code{addedEventTime = 0.1} for the 
 following model:
 
 \code{$collapseMatrix\cr
@@ -270,6 +270,18 @@ $growthMap\cr
 
 will cause (looking backwards in time) population growth to commence in population 1 after 10\% of the 
 branch length leading to coalescence of populations 1 and 2 has been reached.
+
+One final thing to highlight is that the specified timing of these events must fit the modeled chronology of 
+coalescent and non-coalescence events in the collapseMatrix. That is, the timing for an added non-coalescence 
+event given by \code{addedEventTime} must be later than the collapse event directly preceding the added event
+and must be earlier than the collapse event directly following it. For this reason, it is recommended 
+that \code{addedEventTimes} be entered as scalars, as this guarantees that the time will always be
+earlier than the collapse event that follows (but not that the time will occur after the previous collapse
+event). Absolute values can also be used, but remember that in a grid search, different values
+are explored, so many parameter combinations in the grid may not fit the specified event times. However, 
+PHRAPL filters out all parameter combinations in the parameter grid that do not adhere to the specified
+chronology of events in the model. Thus, setting absolute dates may reduce the parameter space explored 
+for a model, but this parameter space will always fit the model. 
 }
 \author{
   Nathan Jackson
