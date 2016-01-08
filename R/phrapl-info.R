@@ -462,14 +462,22 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 #collapse times can also be filtered out. For this, need to input the migrationIndividual, the event times (via addedEventTime),
 #and a statement concerning whether these are scalar values (via addedEventTimeAsScalar).
 #This grid is outputted in the form of a list which can be used to obtain AIC values using SearchContinuousModelSpaceNLoptr. 
-CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE){
-	startGrid<-list()
-	startGrid[[1]]<-expand.grid(fineGrid)
-	#Toss nonsensical collapse combinations (e.g., when collapse 2 is smaller than collapse 1)
-	howManyCollapses<-length(grep("collapse",names(startGrid[[1]])))
-	if(howManyCollapses > 1){
-		for(rep in 1:(howManyCollapses - 1)){
-			startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,rep] < startGrid[[1]][,(rep+1)]),]
+CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,startGridWithSetCollapseZero=FALSE){
+	#If the purpose is to re-filter a grid based on added events after adding zero-filled collapse columns...
+	if(startGridWithSetCollapseZero == TRUE){
+		startGrid<-exp(fineGrid)
+		startGrid<-list(startGrid)
+	
+	#Otherwise, run as normal
+	}else{
+		startGrid<-list()
+		startGrid[[1]]<-expand.grid(fineGrid)
+		#Toss nonsensical collapse combinations (e.g., when collapse 2 is smaller than collapse 1)
+		howManyCollapses<-length(grep("collapse",names(startGrid[[1]])))
+		if(howManyCollapses > 1){
+			for(rep in 1:(howManyCollapses - 1)){
+				startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,rep] < startGrid[[1]][,(rep+1)]),]
+			}
 		}
 	}
 	

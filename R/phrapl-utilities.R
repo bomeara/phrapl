@@ -3249,8 +3249,12 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
         for (col.index in sequence(dim(growthMap)[2])) {
             focal.growth <- growthMap[row.index, col.index]
             if (!is.na(focal.growth)) {
-                parameterList <- append(parameterList, paste("growth_", 
-                  focal.growth, sep = ""))
+            	if (focal.growth == 0){
+            		parameterList <- append(parameterList, 0)
+            	}else{
+                	parameterList <- append(parameterList, paste("growth_", 
+                  		focal.growth, sep = ""))
+                }
             	if(longNames == TRUE){
 					unambiguousParameterList <- append(unambiguousParameterList, 
 					paste("growth_pop_", populationNameMatrix[row.index, 

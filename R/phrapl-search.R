@@ -39,8 +39,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     		numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
     	}
     	if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
-    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(grep("collapse",paramNames)!=
-    			setCollapseZero)]
+    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(!grep("collapse",paramNames) %in% setCollapseZero)]
     	}else{
     		collapses2estimate<-grep("collapse",paramNames,value=TRUE)
     	}
@@ -85,10 +84,20 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     			nameCount<-nameCount + 1
     		} 
     	}
-    	startGrid<-CreateStartGrid(startingVectorList,migrationIndividual=migrationArray[[modelID]],
-    		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-    	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
-   
+    	
+    	#If some collapses are set to zero, there are collapses in the model, and also added events,
+    	#wait to filter the grid for added events until after zero-fixed collapses are stitched in below
+		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0 && !is.null(addedEventTime)){
+    		startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]])
+    		startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+    	
+    	#Otherwise, filter for any added events now
+    	}else{
+       		startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]],
+    			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+    		startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+    	}
+    	
     	#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid
 		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0){
 			
@@ -116,8 +125,17 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
   					names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
   				}
   			}
+  			
+  			#If there are added events in addition to zero-fixed collapses, need to re-filter the grid to make sure
+  			#that added event times make sense in the context of the specified history
+  			if(!is.null(addedEventTime)){
+  				startGrid<-CreateStartGrid(startGrid,migrationIndividual=migrationArray[[modelID]],
+    				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
+    				startGridWithSetCollapseZero=TRUE)
+    			startGrid<-startGrid[[1]]
+    		}
 		}
-		
+
 		#Stitch in a 1 to replace the first n0 (which is never free)	
 		positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
 		startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
