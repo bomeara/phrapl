@@ -250,10 +250,10 @@ many values as added events in the collapseMatrix (sorted from most recent to mo
 Time values can be specifed as either a specific time period (in units of 4Ne) or as a relative time
 period. When the latter is desired, the \code{addedEventTimeAsScalar} argument in \code{\link{GridSearch}} 
 must be set to \code{TRUE} (this is the default), which will cause the values specified by 
-\code{addedEventTime} to be treated as scalars, rather than as absolute. Scalar values must be between 0 and 1, 
-and will be multiplied by whatever the next collapse time estimate happens to be (which will typically vary across 
-models). For example, setting \code{addedEventTimeAsScalar = TRUE} and \code{addedEventTime = 0.1} for the 
-following model:
+\code{addedEventTime} to be treated as scalars, rather than as absolute. Scalar values must be greater than zero 
+and less than one, and will be multiplied by whatever the next collapse time estimate happens to be (which will 
+typically vary across models). For example, setting \code{addedEventTimeAsScalar = TRUE} and
+\code{addedEventTime = 0.1} for the following model:
 
 \code{$collapseMatrix\cr
       [,1] [,2] [,3]\cr
@@ -272,7 +272,7 @@ will cause (looking backwards in time) population growth to commence in populati
 branch length leading to coalescence of populations 1 and 2 has been reached.
 
 One final thing to highlight is that the specified timing of these events must fit the modeled chronology of 
-coalescent and non-coalescence events in the collapseMatrix. That is, the timing for an added non-coalescence 
+coalescence and non-coalescence events in the collapseMatrix. That is, the timing for an added non-coalescence 
 event given by \code{addedEventTime} must be later than the collapse event directly preceding the added event
 and must be earlier than the collapse event directly following it. For this reason, it is recommended 
 that \code{addedEventTimes} be entered as scalars, as this guarantees that the time will always be
