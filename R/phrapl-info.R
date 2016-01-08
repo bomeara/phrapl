@@ -511,10 +511,10 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 				#Only keep if the collapse time is larger than the preceding event time
 				if(addedEventTimeAsScalar == TRUE){
 					#This should not filter anything unless the scalar is greater than 1
-					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] >= 
+					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] > 
 						startGrid[[1]][,collapseColToCompare] * addedEventTime[eventCount]),]
 				}else{
-					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] >= addedEventTime[eventCount]),]
+					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] > addedEventTime[eventCount]),]
 				}
 				if(nrow(startGrid[[1]]) == 0){
 					warning("Error: eventTimes need to be reduced such that they precede the next collapse event")
@@ -523,10 +523,10 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 				#Only keep if the collapse time is smaller than the following event time
 				if(doPreceding == TRUE){
 					if(addedEventTimeAsScalar == TRUE){
-						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] <= 
+						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] < 
 							startGrid[[1]][,collapseColToCompare] * addedEventTime[eventCount]),]
 					}else{
-						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] <= addedEventTime[eventCount]),]
+						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] < addedEventTime[eventCount]),]
 					}
 				}
 				if(nrow(startGrid[[1]]) == 0){
