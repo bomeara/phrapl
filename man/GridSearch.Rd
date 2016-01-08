@@ -24,6 +24,7 @@ ncores = 1, results.file = NULL, maxtime = 0, maxeval = 0, return.all = TRUE,
 numReps = 0, startGrid = NULL, 
 collapseStarts = c(0.3, 0.58, 1.11, 2.12, 4.07, 7.81, 15), 
 n0Starts = c(0.1, 0.5, 1, 2, 4), 
+growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),
 migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15), 
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
@@ -127,6 +128,9 @@ Vector of starting values for collapse parameters.
 }
   \item{n0Starts}{
 Vector of starting values for n0.
+}
+  \item{growthStarts}{
+Vector of starting values for growth parameters.
 }
   \item{migrationStarts}{
 Vector of starting values for migration rates.
