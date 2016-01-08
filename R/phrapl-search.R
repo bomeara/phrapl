@@ -85,7 +85,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     			nameCount<-nameCount + 1
     		} 
     	}
-    	startGrid<-CreateStartGrid(startingVectorList)
+    	startGrid<-CreateStartGrid(startingVectorList,migrationIndividual=migrationArray[[modelID]],
+    		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
     	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
    
     	#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid

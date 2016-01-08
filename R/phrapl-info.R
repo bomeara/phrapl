@@ -458,8 +458,11 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 #This takes vectors of parameter values and constructs a grid containing all possible combinations of parameter values, except
 #non-sensical collapse time combinations (e.g., tau's at time 1 which are larger than tau's at time 2), and identical migration 
 #rates and n0mulipliers are filtered out.
+#Also, if non-coalescence events have been added to the collapseMatrix, nonsensical combinations of fixed event times and
+#collapse times can also be filtered out. For this, need to input the migrationIndividual, the event times (via addedEventTime),
+#and a statement concerning whether these are scalar values (via addedEventTimeAsScalar).
 #This grid is outputted in the form of a list which can be used to obtain AIC values using SearchContinuousModelSpaceNLoptr. 
-CreateStartGrid<-function(fineGrid){
+CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE){
 	startGrid<-list()
 	startGrid[[1]]<-expand.grid(fineGrid)
 	#Toss nonsensical collapse combinations (e.g., when collapse 2 is smaller than collapse 1)
@@ -469,6 +472,70 @@ CreateStartGrid<-function(fineGrid){
 			startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,rep] < startGrid[[1]][,(rep+1)]),]
 		}
 	}
+	
+	#If there are added non-coalescence events, toss nonsensical combinations of collapse sequences and fixed (or scaled) event times
+	if(!is.null(addedEventTime)){
+		
+		#First, get the relative position of each event
+		collapseMatrix<-migrationIndividual$collapseMatrix
+		positionNames<-c(1:dim(collapseMatrix)[2])
+		numCollapses<-0
+		eventCount<-1
+		for(i in 1:dim(collapseMatrix)[2]){
+			if(sum(!is.na(collapseMatrix[,i])) == 0){
+				names(positionNames)[i]<-"event"
+			}else{
+				if(max(collapseMatrix[,i],na.rm=TRUE) > 0){
+					names(positionNames)[i]<-"collapse"
+					numCollapses<-numCollapses + 1
+				}
+			}
+		}	
+		#For each event
+		for(numGens in 1:length(positionNames)){
+			#Get the correct event and collapse columns to compare
+			if(names(positionNames)[numGens] == "event"){
+			
+				#If there is a collapse directly preceding the non-coalescence event...
+				doPreceding<-FALSE
+				if(numGens > 1){ 
+					if(length(grep("collapse",names(positionNames[numGens - 1]))) > 0){
+						doPreceding<-TRUE #Then must not only worry about the collapse following the event, but also the one preceding it
+					}
+				}
+						
+				positionsRemaining<-positionNames[numGens]:length(positionNames)
+				collapseColToCompare<-numCollapses - (length(positionsRemaining[grep("collapse",
+					names(positionNames)[positionsRemaining])]) - 1)
+				
+				#Only keep if the collapse time is larger than the preceding event time
+				if(addedEventTimeAsScalar == TRUE){
+					#This should not filter anything unless the scalar is greater than 1
+					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] >= 
+						startGrid[[1]][,collapseColToCompare] * addedEventTime[eventCount]),]
+				}else{
+					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] >= addedEventTime[eventCount]),]
+				}
+				if(nrow(startGrid[[1]]) == 0){
+					warning("Error: eventTimes need to be reduced such that they precede the next collapse event")
+				}
+				
+				#Only keep if the collapse time is smaller than the following event time
+				if(doPreceding == TRUE){
+					if(addedEventTimeAsScalar == TRUE){
+						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] <= 
+							startGrid[[1]][,collapseColToCompare] * addedEventTime[eventCount]),]
+					}else{
+						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] <= addedEventTime[eventCount]),]
+					}
+				}
+				if(nrow(startGrid[[1]]) == 0){
+					warning("Error: eventTimes need to be increased such that they are larger than the preceding collapse event")
+				}
+				eventCount<-eventCount + 1
+			}
+		}
+	}			
 	
 	#Toss migration parameters that are equal
 	howManyMigrations<-length(grep("migration",names(startGrid[[1]])))
