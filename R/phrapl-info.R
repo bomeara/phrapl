@@ -62,8 +62,12 @@ KCollapseMatrix<-function(collapseMatrix) {
 			}
 		}
 	}
-	maxVector<-ColMax(collapseMatrixTemp)
-	return(length(which(maxVector > 0)))
+	if(firstTime == TRUE){
+		return(0)
+	}else{
+		maxVector<-ColMax(collapseMatrixTemp)
+		return(length(which(maxVector > 0)))
+	}
 }
 
 KN0multiplierMap<-function(n0multiplierMap) {
@@ -242,6 +246,79 @@ PassBounds <- function(parameterVector, parameterBounds) {
 	return(TRUE)
 }
 
+#This function checks whether time values for events (inserted into a collapseMatrix using AddEventToMigrationArray
+#are not more recent than preceding collapse times or later than subsequent collapse times
+#If the desired history specified by collapseMatrix fits the addedEventTimes, this function returns TRUE
+PassBounds.addedEvents<-function(parameterVector,migrationIndividual,addedEventTime,addedEventTimeAsScalar){
+
+	#If there are added non-coalescence events, toss nonsensical combinations of collapse sequences and fixed (or scaled) event times
+	if(!is.null(addedEventTime)){
+		
+		#First, get the relative position of each event
+		collapseMatrix<-migrationIndividual$collapseMatrix
+		positionNames<-c(1:dim(collapseMatrix)[2])
+		numCollapses<-0
+		eventCount<-1
+		for(i in 1:dim(collapseMatrix)[2]){
+			if(sum(!is.na(collapseMatrix[,i])) == 0){
+				names(positionNames)[i]<-"event"
+			}else{
+				if(max(collapseMatrix[,i],na.rm=TRUE) > 0){
+					names(positionNames)[i]<-"collapse"
+					numCollapses<-numCollapses + 1
+				}
+			}
+		}	
+		#For each event
+		for(numGens in 1:length(positionNames)){
+			#Get the correct event and collapse columns to compare
+			if(names(positionNames)[numGens] == "event"){
+			
+				#If there is a collapse directly preceding the non-coalescence event...
+				doPreceding<-FALSE
+				if(numGens > 1){ 
+					if(length(grep("collapse",names(positionNames[numGens - 1]))) > 0){
+						doPreceding<-TRUE #Then must not only worry about the collapse following the event, but also the one preceding it
+					}
+				}
+						
+				positionsRemaining<-positionNames[numGens]:length(positionNames)
+				collapseColToCompare<-numCollapses - (length(positionsRemaining[grep("collapse",
+					names(positionNames)[positionsRemaining])]) - 1)
+				
+				#Only keep if the collapse time is larger than the preceding event time
+				if(addedEventTimeAsScalar == TRUE){
+					#This should not filter anything unless the scalar is greater than 1
+					if(parameterVector[collapseColToCompare] <= parameterVector[collapseColToCompare] * 
+						addedEventTime[eventCount]){
+						return(FALSE)
+					}
+				}else{
+					if(parameterVector[collapseColToCompare] <= addedEventTime[eventCount]){
+						return(FALSE)
+					}
+				}
+				
+				#Only keep if the collapse time is smaller than the following event time
+				if(doPreceding == TRUE){
+					if(addedEventTimeAsScalar == TRUE){
+						if(parameterVector[collapseColToCompare - 1] >= parameterVector[collapseColToCompare] *
+							addedEventTime[eventCount]){
+							return(FALSE)
+						}
+					}else{
+						if(parameterVector[collapseColToCompare - 1] >= addedEventTime[eventCount]){
+							return(FALSE)
+						}
+					}
+				}
+				eventCount<-eventCount + 1
+			}
+		}
+	}
+	return(TRUE)
+}	
+
 ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mitochondrial, do 1/4
 #doing each class of parameters separately in case some aren't affected by the scaling
 	parameterVector[which(grepl("collapse", names(parameterVector)))] <- parameterVector[which(grepl("collapse", names(parameterVector)))]/NeScaling
@@ -291,6 +368,10 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
  		}
 		if(max(parameterVector) > maxParameterValue) {
 			return(badAIC)
+		}
+		if(!is.null(addedEventTime)){
+			if(!PassBounds.addedEvents(parameterVector,migrationIndividual,addedEventTime,addedEventTimeAsScalar))
+				return(badAIC)
 		}
 	}
 	

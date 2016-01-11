@@ -1285,9 +1285,10 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 		migrationArray<-array(migrationVec,dim=c(nrow(migrationList[[1]]),ncol(migrationList[[1]]),
 			length(migrationList)))
 	}
-
-	return(MigrationIndividual<-Migrationindividual(collapseMatrix=collapseMatrix,complete=TRUE,
-		n0multiplierMap=n0multiplierMap,growthMap=growthMap,migrationArray=migrationArray))
+	
+	migrationIndividual<-Migrationindividual(collapseMatrix=collapseMatrix,complete=TRUE,
+		n0multiplierMap=n0multiplierMap,growthMap=growthMap,migrationArray=migrationArray)
+	return(migrationIndividual)
 }
 
 LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms") {
@@ -3213,12 +3214,12 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
             if(longNames == TRUE){
             	unambiguousParameterList <- append(unambiguousParameterList, 
              	   paste("collapse_pop_", paste(populationNameMatrix[which(collapseMatrix[, 
-                	  i] == 1), i], collapse = "_with_"), "_at_time_interval_", 
+                	  i] >= 1), i], collapse = "_with_"), "_at_time_interval_", 
                 	  i, sep = ""))
             }else{
 	           	unambiguousParameterList <- append(unambiguousParameterList, 
              	   paste("t", i, "_", paste(populationNameMatrix[which(collapseMatrix[, 
-                	  i] == 1), i], collapse = "."), sep = ""))
+                	  i] >= 1), i], collapse = "."), sep = ""))
             }
         }
     }
