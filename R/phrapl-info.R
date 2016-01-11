@@ -52,16 +52,18 @@ KCollapseMatrix<-function(collapseMatrix) {
 	#Need to toss columns of added events (all NAs), if present
 	for(i in 1:dim(collapseMatrix)[2]){
 		if(sum(!is.na(collapseMatrix[,i])) > 0){
-			if(firstTime==TRUE){
-				collapseMatrixTemp<-matrix(collapseMatrix[,i],ncol=1,nrow=nrow(collapseMatrix))
-				firstTime=FALSE
-			}else{
-				collapseMatrixTemp<-cbind(collapseMatrixTemp,collapseMatrix[,i])
+			if(max(collapseMatrix[,i],na.rm=TRUE) > 0){
+				if(firstTime==TRUE){
+					collapseMatrixTemp<-matrix(collapseMatrix[,i],ncol=1,nrow=nrow(collapseMatrix))
+					firstTime=FALSE
+				}else{
+					collapseMatrixTemp<-cbind(collapseMatrixTemp,collapseMatrix[,i])
+				}
 			}
 		}
 	}
 	maxVector<-ColMax(collapseMatrixTemp)
-	return(length(which(maxVector>0)))
+	return(length(which(maxVector > 0)))
 }
 
 KN0multiplierMap<-function(n0multiplierMap) {
