@@ -3208,9 +3208,8 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
     
     #Now with these new names, name collapse parameters
     if (max(collapseMatrix, na.rm = TRUE) > 0) {
-        for (i in sequence(KCollapseMatrix(collapseMatrix))) {
-            parameterList <- append(parameterList, paste("collapse_", 
-                i, sep = ""))
+        for (i in GetCollapseGenerationNamesWhenAddedEventsExist(collapseMatrix)) {
+            parameterList <- paste("collapse_",GetCollapseGenerationNamesWhenAddedEventsExist(collapseMatrix),sep="")
             if(longNames == TRUE){
             	unambiguousParameterList <- append(unambiguousParameterList, 
              	   paste("collapse_pop_", paste(populationNameMatrix[which(collapseMatrix[, 
