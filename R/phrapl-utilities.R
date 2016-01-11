@@ -3331,6 +3331,23 @@ RenumberWithoutGaps<-function(x){
     return(as.numeric(as.factor(x)))
 }
 
+#This gets the generation times at which the collapses occur such that they match the 
+#generation times of other parameters, even when added events have been inserted into
+#the collapseMatrix
+GetCollapseGenerationNamesWhenAddedEventsExist<-function(collapseMatrix){
+	#First, get the relative position of each event
+	positionNames<-c(1:dim(collapseMatrix)[2])
+	collapseGenerationNames<-c()
+	for(i in 1:dim(collapseMatrix)[2]){
+		if(sum(!is.na(collapseMatrix[,i])) > 0){
+			if(max(collapseMatrix[,i],na.rm=TRUE) > 0){
+				collapseGenerationNames<-append(collapseGenerationNames,i)
+			}
+		}
+	}	
+	return(collapseGenerationNames)
+}
+
 #Function for getting model averaged parameter estimate for a particular model (across a grid)
 #Use in conjunction with ExtractUnambiguousGridParameters
 ModelAverageEachModel<-function(totalData,parmStartCol){
