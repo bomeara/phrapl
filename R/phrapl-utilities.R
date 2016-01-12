@@ -2954,9 +2954,9 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 		#Add current.results to totalData
     	#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
     	#unique such that they can be merged. The row is tossed eventually.
-		row.column<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
-    	colnames(row.column)<-"row.column"
-    	current.results<-cbind(row.column,current.results)
+		row.col<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
+    	colnames(row.col)<-"row.col"
+    	current.results<-cbind(row.col,current.results)
     	
     	if(rep == 1){
 			totalData<-rbind(totalData,current.results)
@@ -2971,7 +2971,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 		if(longNames==TRUE){
     		totalData<-totalData[,!grepl("n0multiplier", colnames(totalData))]
     	}else{
-    		totalData<-totalData[,!grepl("n", colnames(totalData))]
+    		totalData<-totalData[,!grepl("n[0123456789]", colnames(totalData))]
     	}
 	}
 	
@@ -3038,9 +3038,9 @@ ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFi
 		#Add current.results to totalData
     	#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
     	#unique such that they can be merged. The row is tossed eventually.
-		row.column<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
-    	colnames(row.column)<-"row.column"
-    	current.results<-cbind(row.column,current.results)
+		row.col<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
+    	colnames(row.col)<-"row.col"
+    	current.results<-cbind(row.col,current.results)
 
     	if(rep == 1){
 			totalData<-rbind(totalData,current.results)
