@@ -3135,7 +3135,6 @@ ConcatenateResults_ambiguousParameters<-function(rdaFilesPath="./",rdaFiles=NULL
 #Function for sorting parameter table
 #Use in conjunction with ExtractUnambiguousGridParameters and ConcatenateResults
 sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
-	save(list=c("overall.results","parmStartCol","longNames"),file="overall.results.rda")
     parmsOnly<-data.frame(matrix(as.matrix(overall.results[,parmStartCol:ncol(overall.results)]),nrow=nrow(overall.results),
     	ncol=length(overall.results[,parmStartCol:ncol(overall.results)])))
     colnames(parmsOnly)<-colnames(overall.results)[parmStartCol:ncol(overall.results)]
