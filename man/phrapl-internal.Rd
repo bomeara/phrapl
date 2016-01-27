@@ -43,6 +43,7 @@
 \alias{RowMin}
 \alias{SaveMS}
 \alias{SearchContinuousModelSpaceNLoptr}
+\alias{SearchContinuousModelSpaceRGenoud}
 \alias{SetMaxK}
 \alias{TaxaToDrop}
 \alias{TaxaToRetain}
