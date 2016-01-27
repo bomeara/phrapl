@@ -2776,7 +2776,6 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 		MsIndividualParametersConversionToUnambiguous,unambiguous.only = TRUE)))
 	results.temp <- c()
 	row.count = 0
-
 	#Get models    
 	whichGrid<-1
 	for (models in overall.results$models){ #Get current models
@@ -2787,7 +2786,6 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 			all.parameters = all.parameters, models = models)))
 	   whichGrid<-whichGrid + 1
 	}
-
 	#Convert all zero values to NA
 	#Note that if tau = NA, this means tau was set to zero in the analysis and thus should stay
 	#that way for model averaging
@@ -2807,7 +2805,7 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
     		results.temp<-results.temp[,!grepl("n", colnames(results.temp))]
     	}
 	}
-			
+
 	#Model average parameters
 	modelAveragedResults<-ModelAverageEachModel(totalData=results.temp,parmStartCol=(nonparmCols + 1))
 
@@ -2815,7 +2813,6 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 	if(sortParameters == TRUE){
 		modelAveragedResults<-sortParameterTable(modelAveragedResults,(nonparmCols + 1),longNames=longNames)
 	}
-	
     #Sort models
     if(sortModelsAIC == TRUE){
     	modelAveragedResults<-modelAveragedResults[order(modelAveragedResults$AIC),]
@@ -3138,7 +3135,9 @@ ConcatenateResults_ambiguousParameters<-function(rdaFilesPath="./",rdaFiles=NULL
 #Function for sorting parameter table
 #Use in conjunction with ExtractUnambiguousGridParameters and ConcatenateResults
 sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
-    parmsOnly<-overall.results[,parmStartCol:ncol(overall.results)]
+    parmsOnly<-data.frame(matrix(as.matrix(overall.results[,parmStartCol:ncol(overall.results)]),nrow=nrow(overall.results),
+    	ncol=length(overall.results[,parmStartCol:ncol(overall.results)])))
+    colnames(parmsOnly)<-colnames(overall.results)[parmStartCol:ncol(overall.results)]
     if(longNames==TRUE){
 	    overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
     		parmsOnly[, grep("collapse",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
@@ -3150,12 +3149,35 @@ sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
     		parmsOnly[, grep("migration",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
     			grep("migration",colnames(parmsOnly))]))])
     }else{
-    	overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
-    		parmsOnly[, grep("t",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("t",colnames(parmsOnly))]))],
-    		parmsOnly[, grep("n",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("n",colnames(parmsOnly))]))],
-    		parmsOnly[, grep("g",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("g",colnames(parmsOnly))]))],
-    		parmsOnly[, grep("m",colnames(parmsOnly))][, order(colnames(parmsOnly[, grep("m",colnames(parmsOnly))]))])
+    	#If there is only a single parameter, need to coerce back into a data.frame
+    	if(length(parmsOnly[, grep("t",colnames(parmsOnly))]) == 1){
+    		parms.t<-data.frame(matrix(parmsOnly[, grep("t",colnames(parmsOnly))]))
+    		colnames(parms.t)<-colnames(parmsOnly)[grep("t",colnames(parmsOnly))]
+    	}else{
+    		parms.t<-parmsOnly[, grep("t",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("t",colnames(parmsOnly))])]
     	}
+    	if(length(parmsOnly[, grep("n",colnames(parmsOnly))]) == 1){
+    		parms.n<-data.frame(matrix(parmsOnly[, grep("n",colnames(parmsOnly))]))
+    		colnames(parms.t)<-colnames(parmsOnly)[grep("n",colnames(parmsOnly))]
+    	}else{
+    		parms.n<-parmsOnly[, grep("n",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("n",colnames(parmsOnly))])]
+    	}
+    	if(length(parmsOnly[, grep("g",colnames(parmsOnly))]) == 1){
+    		parms.g<-data.frame(matrix(parmsOnly[, grep("g",colnames(parmsOnly))]))
+    		colnames(parms.t)<-colnames(parmsOnly)[grep("g",colnames(parmsOnly))]
+    	}else{
+    		parms.g<-parmsOnly[, grep("g",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("g",colnames(parmsOnly))])]
+    	}
+    	if(length(parmsOnly[, grep("m",colnames(parmsOnly))]) == 1){
+    		parms.m<-data.frame(matrix(parmsOnly[, grep("m",colnames(parmsOnly))]))
+    		colnames(parms.t)<-colnames(parmsOnly)[grep("m",colnames(parmsOnly))]
+    	}else{
+    		parms.m<-parmsOnly[, grep("m",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("m",colnames(parmsOnly))])]
+    	}
+    	
+    	overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
+			parms.t,parms.n,parms.g,parms.m)
+    }
     return(overall.results)
 }
 

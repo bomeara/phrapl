@@ -686,6 +686,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 	}
 	overall.results$models <- modelRange #so if we've done subsampling, use right model numbers
 
+
 	
 	####Get parameters using the old ambiguous method (ExtractGridParameters)
 	if(parameter.ambiguous==TRUE){	
@@ -713,19 +714,23 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 			##Get unambiguous parameters (grid)
 			parameters<-ExtractUnambiguousGridParameters(overall.results=overall.results,gridList=gridList,
 				migrationArray=migrationArray,sortParameters=TRUE,sortModelsAIC=TRUE)
+			parametersOnly<-data.frame(matrix(as.matrix(parameters[,-c(1:2)]),nrow=nrow(parameters)))
+			colnames(parametersOnly)<-colnames(parameters)[-c(1:2)]
 			
 			##Concatenate overall.results and parameters
 			results.final<-list("AIC.Grid"=gridList,"overall.results"=cbind(overall.results,
-				parameters[,-c(1:2)]))
+				parametersOnly))
 		}else{
 			##Get unambiguous parameters (grid)
 			parameters<-ExtractUnambiguousNLoptrParameters(overall.results=overall.results,
 				nLoptrResultsList=results.list,migrationArray=migrationArray,sortParameters=TRUE,
 				sortModelsAIC=TRUE)
+			parametersOnly<-data.frame(matrix(as.matrix(parameters[,-c(1:2)]),nrow=nrow(parameters)))
+			colnames(parametersOnly)<-colnames(parameters)[-c(1:2)]
 			
 			##Concatenate overall.results and parameters
 			results.final<-list("search.results"=results.list,"AIC.Grid"=gridList,
-				"overall.results"=cbind(overall.results,parameters[,-c(1:2)]))
+				"overall.results"=cbind(overall.results,parametersOnly))
 		}
 	}
 
