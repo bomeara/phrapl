@@ -152,10 +152,10 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     }
         
     genoudBounds <- t(apply(startGrid, 2, range, na.rm=TRUE)) 
-    stop("debug genoudBounds")
+#    stop("debug genoudBounds")
         
         
-    results <- genoud(fn= ReturnAIC, nvars=dim(genoudBounds)[1], pop.size=genoudPopSize, starting.values = StartGrid, MemoryMatrix=TRUE, boundary.enforcement=2, Domains=genoudBounds, gradient.check=FALSE)
+#    results <- genoud(fn= ReturnAIC, nvars=dim(genoudBounds)[1], pop.size=genoudPopSize, starting.values = StartGrid, MemoryMatrix=TRUE, boundary.enforcement=2, Domains=genoudBounds, gradient.check=FALSE)
      
         
         

@@ -988,10 +988,6 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 	return(lnL)
 }
 
-
-
-
-
 #GetAndBindLabel and GetClades together get a list of all clades in the tree. For the taxa descended from each clade, 
 #sorts alphabetically and then makes them a string. These are slow, and have since been replaced by GetCladesQuickly
 GetClades <- function(phy) {
