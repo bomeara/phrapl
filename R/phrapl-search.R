@@ -311,7 +311,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 
 
 SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migrationArray, popAssignments, badAIC=100000000000000, 
-	maxParameterValue=20, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
+	maxParameterValue=20, nTrees=2e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 	subsampleWeights.df=NULL,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=TRUE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1,
@@ -319,7 +319,7 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE, ...) {
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE, genoudPopSize=100,  solutionTolerance=0.05, ...) {
   if(!is.null(migrationArrayMap)){
   	modelID<-ReturnModel(p,migrationArrayMap)
   }else{
@@ -455,9 +455,7 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 		names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
     }
         
-    if(is.null(nTreesGrid)){
-    	nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
-    }
+
   	
   	#Get and store AIC for each set of grid values (if checkpointing enabled, import and output AICs as necessary)
   	if(!is.null(checkpointFile)){
@@ -488,7 +486,7 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
   	if(startingPosition <= nrow(startGrid)){
   		for(t in startingPosition:nrow(startGrid)){
 	    	currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
-   		 	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
+   		 	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,
 	   	 	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
    		 	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
    		 	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
@@ -522,20 +520,9 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
     	save(thisGrid, file=gridSave)
     }
     
-    #Finish off with nloptr optimization 
-    for(rep in sequence(min(numReps, dim(startGrid)[1]))) {
- 	   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
- 	   startingVals <- unlist(startGrid[order(initial.AIC)[rep],]) #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
-
- 	   #Always toss the first n0multiplier as it is never free
- 	   startingVals<-startingVals[-grep("n0multiplier_1",names(startingVals))]
- 	   
- 	   if(debug) {
- 	     print(startingVals) 
-    	}
-		
- 	   	searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1,
- 	   		maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], 
+    prunedStartGrid <- startGrid[,-1] #remove first col, which doesn't vary, from startGrid
+    nvars <- dim(prunedStartGrid)[1]
+ 	searchResults<-genoud(fn=ReturnAIC, nvars= nvars, pop.size=genoudPopSize, starting.values= prunedStartGrid, Domains=matrix(c(rep(0, nvars), rep(maxParameterValue, nvars)), ncol=2, byrow=FALSE), boundary.enforcement=1, gradient.check=FALSE, hessian=FALSE, solution.tolerance= solutionTolerance,  migrationIndividual=migrationArray[[modelID]], 
  	   		badAIC=badAIC, maxParameterValue=maxParameterValue,
  	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
@@ -550,13 +537,9 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 		}
 		
 		#Keep best values
- 	   	if(searchResults$objective <= best.result.objective) {
- 	   		best.result<-searchResults
- 	   		best.result.objective<-searchResults$objective	
- 	   }
-    }
-	best.resultGrid<-list(best.result,thisGrid)
-    ifelse(return.all, return(best.resultGrid), return(best.result.objective))     
+ 	   	
+    
+    return(searchResults)    
   }
 }
 
