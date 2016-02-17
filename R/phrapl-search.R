@@ -270,9 +270,9 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
     
     
     
-    
     #Finish off with nloptr optimization 
     for(rep in sequence(min(numReps, dim(startGrid)[1]))) {
+    
  	   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
  	   startingVals <- unlist(startGrid[order(initial.AIC)[rep],]) #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
 
@@ -282,9 +282,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
  	   if(debug) {
  	     print(startingVals) 
     	}
-		
  	   	searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1,
- 	   		maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]], 
+ 	   		maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]],
  	   		badAIC=badAIC, maxParameterValue=maxParameterValue,
  	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
  	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
@@ -554,8 +553,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.1,0.22,0.46,1,2.15),
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
 		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
-		parameter.ambiguous=FALSE,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,...){
-		
+		parameter.ambiguous=FALSE,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,...){		
 	#If multiple n0multiplier values exists in the migrationArray, then make rm.n0 FALSE, else, leave it as specified
 	n0Values<-unlist(migrationArray)
 	if(length(unique(n0Values[grep("n0multiplier",names(n0Values))][!is.na(n0Values[grep("n0multiplier",names(n0Values))])])) > 1){
@@ -669,6 +667,26 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 	}
 	overall.results$models <- modelRange #so if we've done subsampling, use right model numbers
 
+	#If the grid list is filled with NAs (i.e., AIC couldn't be estimated given that all parameter
+	#combinations resulted in too many trees with zero matches), for all models, give an error
+	if(length(which(!is.na(overall.results$AIC))) == 0){
+		warning("Error: There are not enough trees being simulated to estimate a log-likelihood for any of the models. Increase nTrees or reduce the number of tips in the subsampled trees\n")
+		return()
+	}
+	
+	#If the grid list for only one of several analyzed models is filled with NAs, just toss results for those models.
+	if(length(which(is.na(overall.results$AIC))) > 0){
+		whichModelsToKeep<-which(!is.na(overall.results$AIC))
+		modelIDTossed<-overall.results[-whichModelsToKeep,]$models
+		if(length(modelIDTossed) > 1){
+			modelIDTossed<-paste(modelIDTossed,collapse=", ")
+		}
+		overall.results<-overall.results[whichModelsToKeep,]
+		gridList<-gridList[whichModelsToKeep]
+		
+		warning(paste("There are not enough trees being simulated to estimate a log-likelihood for model(s) ",
+			modelIDTossed,". Increase nTrees or reduce the number of tips in the subsampled trees\n"))
+	}
 
 	
 	####Get parameters using the old ambiguous method (ExtractGridParameters)
@@ -704,7 +722,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 			results.final<-list("AIC.Grid"=gridList,"overall.results"=cbind(overall.results,
 				parametersOnly))
 		}else{
-			##Get unambiguous parameters (grid)
+			##Get unambiguous parameters (nloptr)
 			parameters<-ExtractUnambiguousNLoptrParameters(overall.results=overall.results,
 				nLoptrResultsList=results.list,migrationArray=migrationArray,sortParameters=TRUE,
 				sortModelsAIC=TRUE)

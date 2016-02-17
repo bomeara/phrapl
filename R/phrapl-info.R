@@ -95,7 +95,6 @@ NumberPopulationsAtRoot <- function(migrationIndividual) {
 	return(number.unmerged)
 }
 
-
 CreateAssignment<-function(popVector,file="assign.txt") {
 	alphabet<-strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ","")[[1]]
 	assignFrame<-data.frame()
@@ -961,28 +960,55 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
 #although effective subsample sizes can be considered by using SumDivScaledNreps
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
-		totalPopVector,summaryFn="mean", nEq=100) {
+		totalPopVector,summaryFn="mean", nEq=100, propZeroMatchedThreshold=0.1, exponent=1, constant=4,
+		assignBadAIC=FALSE){
+	
+	#First, get mean number of matches across each set of subsamples. We do this so that if there
+	#are a mix of zero and non-zero matching subsamples, this information can be brought to bear on 
+	#the log-likelihood estimate for that locus. If we wait to take the mean in log space, then any
+	#matchless trees will produce a mean value of infinity. In addition, zero-matching values will
+	#only be produced when ALL of the subsamples return zero matches, in which case we assign these loci
+	#the min matching value (plus a penalty) observed across loci.
+
+	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
-	outputVector<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
-	outputVector<-log(outputVector)
-	lnL<-0
+#	outputVector<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
+	summaryVector<-c()
 	localVector<-rep(NA, subsamplesPerGene)
 	baseIndex<-1
 	locusIndex<-1
 	for (i in sequence(length(outputVector))) {
 		localVector[baseIndex]<-outputVector[i]
-#		print(localVector)
 		baseIndex <- baseIndex+1
 		if(i%%subsamplesPerGene == 0) {
 			if(summaryFn=="SumDivScaledNreps"){
-				lnL<-lnL+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector[locusIndex],
-					subsamplesPerGene=subsamplesPerGene)
+				summaryVector<-summaryVector+get(summaryFn)(localVector=localVector,popAssignments,
+					totalPopVector=totalPopVector[locusIndex],subsamplesPerGene=subsamplesPerGene)
 			}else{
-				lnL<-lnL+get(summaryFn)(localVector)
+				summaryVector<-append(summaryVector,get(summaryFn)(localVector))
 			}
 			localVector<-rep(NA, subsamplesPerGene)
 			baseIndex<-1
 			locusIndex<-locusIndex + 1
+		}
+	}
+
+	#Calculate log-likelihoods for each locus
+	summaryVector<-summaryVector/nTrees #get likelihood
+	summaryVector<-log(summaryVector)
+	
+	#Assign likelihood to matchless loci and then sum across loci
+ 	numZeroMatched<-length(summaryVector[which(summaryVector == -Inf)]) #number of loci with matches
+ 	propZeroMatched<-(length(summaryVector) - numZeroMatched) / length(summaryVector) #proportion of loci with matches
+ 	if(propZeroMatched >= propZeroMatchedThreshold){ #If there are enough matching loci, assign lnL to zero-matching loci
+ 		minVal<-min(summaryVector[which(summaryVector != -Inf)]) - (propZeroMatched^exponent * constant) #value assigned to zero matches
+		summaryVector[which(summaryVector == -Inf)]<-minVal
+		lnL<-sum(summaryVector)
+	}else{
+		if(assignBadAIC){
+			lnL<- -1000000
+		}else{
+			lnL<-NA
 		}
 	}
 	return(lnL)

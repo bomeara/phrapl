@@ -1,5 +1,6 @@
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("ncores", "popVector", "maxK","migrationArray", "migrationArrayMap"))
 
+
 TruncateToCells<-function(x, numCells, minVal, maxVal) {
 		if(x<=numCells && min(maxVal, minVal+x)>=minVal) {
 			return(seq(from=minVal, to=min(maxVal, minVal+x), by=1))
@@ -3376,6 +3377,7 @@ ModelAverageEachModel<-function(totalData,parmStartCol){
 	first<-TRUE
 	for(i in sort(unique(totalData$models))){
 		totalData_m<-totalData[which(totalData$models == i),]
+		totalData_m<-totalData_m[which(!is.na(totalData_m$AIC)),]
 		totalData_m<-cbind(totalData_m[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
 			GetAICweights(totalData_m),totalData_m[parmStartCol:ncol(totalData_m)])
 		modelAverages_m<-CalculateModelAverages(totalData_m,parmStartCol=(parmStartCol + 3))
@@ -3416,8 +3418,14 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
     #Remove parameter columns that contain only NAs
     totalData <- RemoveParameterNAs(totalData)
    
-   #If model averaging across all models...
-   if(averageAcrossAllModels == TRUE){
+   	#If there is only a single model in the input, just return the values
+   	if(nrow(totalData) == 1){
+   		modelAverages<-totalData[,(parmStartCol:ncol(totalData))]
+   		return(modelAverages)
+   	}
+   
+   	#If model averaging across all models...
+   	if(averageAcrossAllModels == TRUE){
      
 	   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)	
 		modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
@@ -3445,8 +3453,7 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 		}
 		modelAverages<-data.frame(matrix(modelAveragesVec,nrow=1,ncol=length(modelAveragesVec)))
 		colnames(modelAverages)<-colnames(totalData)[parmStartCol:ncol(totalData)]
-  	}
-  		
+  	}		
     return(modelAverages)
 }
 
