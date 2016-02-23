@@ -10,302 +10,264 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE, genoudPopSize=100, ...) {
-  if(!is.null(migrationArrayMap)){
-  	modelID<-ReturnModel(p,migrationArrayMap)
-  }else{
-  	modelID<-p
-  }
-  best.result <- c()
-  best.result.objective <- badAIC
-  if(print.results) {
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,genoudPopSize=100,...) {
+	if(!is.null(migrationArrayMap)){
+		modelID<-ReturnModel(p,migrationArrayMap)
+  	}else{
+  		modelID<-p
+	}
+	best.result <- c()
+	best.result.objective <- badAIC
+	if(print.results) {
 #    resultVector<-c(modelID,p)
 #    names(resultVector)<-c("migrationArryIndividualID","collapseMatrix.number", "n0multiplierMap.number","migrationArray.number")
 #    print(resultVector)
-  }
-  if(is.na(modelID)) {
-    return(badAIC)
-  }
-  else {
-    paramNames<-MsIndividualParameters(migrationArray[[modelID]])
-    if(is.null(startGrid)) { #need to make our own grid
-    	startingVectorList<-list()
-    	nameCount<-1
+	}
+	if(is.na(modelID)) {
+    	return(badAIC)
+	}else{
+    	paramNames<-MsIndividualParameters(migrationArray[[modelID]])
+    	if(is.null(startGrid)) { #need to make our own grid
+    		startingVectorList<-list()
+    		nameCount<-1
     	
-    	#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
-    	numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
-    	if(numCollapse < 0){ #If for some reason there are more fixed parameters than possible, reduce them
-    		setCollapseZero<-sequence(sum(grepl("collapse",paramNames)))
-    		numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
-    	}
-    	if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
-    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(!grep("collapse",paramNames) %in% setCollapseZero)]
-    	}else{
-    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)
-    	}
-    	if(numCollapse > 0) {
-    		for (i in sequence(numCollapse)) {
-    			startingVectorList<-append(startingVectorList, list(collapseStarts))
-    			names(startingVectorList)[nameCount]<-collapses2estimate[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}
+			#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
+			numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+			if(numCollapse < 0){ #If for some reason there are more fixed parameters than possible, reduce them
+				setCollapseZero<-sequence(sum(grepl("collapse",paramNames)))
+				numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+			}
+			if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
+				collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(!grep("collapse",paramNames) %in% setCollapseZero)]
+			}else{
+				collapses2estimate<-grep("collapse",paramNames,value=TRUE)
+			}
+			if(numCollapse > 0) {
+				for (i in sequence(numCollapse)) {
+					startingVectorList<-append(startingVectorList, list(collapseStarts))
+					names(startingVectorList)[nameCount]<-collapses2estimate[i]
+					nameCount<-nameCount + 1
+				} 
+			}
     	
-    	#Calculate number of n0 parameters (if just one, subtract it off)
-    	if(sum(grepl("n0multiplier",paramNames)) == 1){
- 	       numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
- 	    }else{
- 	   	   numn0 <- sum(grepl("n0multiplier",paramNames))
- 	   	}
-    	if (numn0 > 0) {
-    		for (i in sequence(numn0)) {
-    			startingVectorList<-append(startingVectorList, list(n0Starts))
-    			names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}	
+			#Calculate number of n0 parameters (if just one, subtract it off)
+			if(sum(grepl("n0multiplier",paramNames)) == 1){
+			   numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
+			}else{
+			   numn0 <- sum(grepl("n0multiplier",paramNames))
+			}
+			if (numn0 > 0) {
+				for (i in sequence(numn0)) {
+					startingVectorList<-append(startingVectorList, list(n0Starts))
+					names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
+					nameCount<-nameCount + 1
+				} 
+			}	
     	
-    	#Calculate number of growth parameters
-    	numGrowth <- sum(grepl("growth",paramNames))
-    	if (numGrowth > 0) {
-    		for (i in sequence(numGrowth)) {
-    			startingVectorList<-append(startingVectorList, list(growthStarts))
-    			names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}
+			#Calculate number of growth parameters
+			numGrowth <- sum(grepl("growth",paramNames))
+			if (numGrowth > 0) {
+				for (i in sequence(numGrowth)) {
+					startingVectorList<-append(startingVectorList, list(growthStarts))
+					names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
+					nameCount<-nameCount + 1
+				} 
+			}
     	
-    	#Calculate number of migration parameters
-    	numMigration <- sum(grepl("migration",paramNames))
-    	if (numMigration > 0) {
-    		for (i in sequence(numMigration)) {
-    			startingVectorList<-append(startingVectorList, list(migrationStarts))
-    			names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}
+			#Calculate number of migration parameters
+			numMigration <- sum(grepl("migration",paramNames))
+			if (numMigration > 0) {
+				for (i in sequence(numMigration)) {
+					startingVectorList<-append(startingVectorList, list(migrationStarts))
+					names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
+					nameCount<-nameCount + 1
+				} 
+			}
     	
-    	#If some collapses are set to zero, there are collapses in the model, and also added events,
-    	#wait to filter the grid for added events until after zero-fixed collapses are stitched in below
-		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0 && !is.null(addedEventTime)){
-    		startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]])
-    		startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+			#If some collapses are set to zero, there are collapses in the model, and also added events,
+			#wait to filter the grid for added events until after zero-fixed collapses are stitched in below
+			if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0 && !is.null(addedEventTime)){
+				startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]])
+				startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+		
+			#Otherwise, filter for any added events now
+			}else{
+				startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]],
+					addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+				startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+			}
     	
-    	#Otherwise, filter for any added events now
-    	}else{
-       		startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]],
-    			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-    		startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
-    	}
-    	
-    	#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid
-		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0){
+			#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid
+			if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0){
 			
-			#If there are only fixed parameters...
-			if(length(startGrid) == 0){
-				startGrid<-data.frame(matrix(rep(log(0),length(setCollapseZero)),nrow=1,ncol=length(setCollapseZero)))
-				for(g in 1:length(setCollapseZero)){
-					names(startGrid)[g]<-paste("collapse_",setCollapseZero[g],sep="")
+				#If there are only fixed parameters...
+				if(length(startGrid) == 0){
+					startGrid<-data.frame(matrix(rep(log(0),length(setCollapseZero)),nrow=1,ncol=length(setCollapseZero)))
+					for(g in 1:length(setCollapseZero)){
+						names(startGrid)[g]<-paste("collapse_",setCollapseZero[g],sep="")
+					}
+				}else{
+			
+					#Otherwise, if there are free parameters
+					for(z in 1:length(setCollapseZero)){
+						positionOfFirstCol<-setCollapseZero[z]
+						startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
+						names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
+						if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
+							startGridSecondPart<-c()
+							startGrid<-cbind(startGridFirstPart,log(0))
+						}else{
+							startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
+							startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
+						}
+				
+						names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
+					}
+				}
+  			
+				#If there are added events in addition to zero-fixed collapses, need to re-filter the grid to make sure
+				#that added event times make sense in the context of the specified history
+				if(!is.null(addedEventTime)){
+					startGrid<-CreateStartGrid(startGrid,migrationIndividual=migrationArray[[modelID]],
+						addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
+						startGridWithSetCollapseZero=TRUE)
+					startGrid<-startGrid[[1]]
+				}
+			}
+
+			#Stitch in a 1 to replace the first n0 (which is never free)	
+			positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
+			startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
+			names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstN0 - 1)]
+			if((1 + length(sequence(positionOfFirstN0 - 1))) > length(names(startGrid))){
+				startGridSecondPart<-c()
+				startGrid<-cbind(startGridFirstPart,log(1))
+			}else{
+				startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
+			}
+  		
+			names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
+		}
+        
+# 	    genoudBounds <- t(apply(startGrid, 2, range, na.rm=TRUE)) 
+# 	    stop("debug genoudBounds")
+# 	    results <- genoud(fn= ReturnAIC, nvars=dim(genoudBounds)[1], pop.size=genoudPopSize, starting.values = StartGrid, MemoryMatrix=TRUE, boundary.enforcement=2, Domains=genoudBounds, gradient.check=FALSE)
+            
+        
+		if(is.null(nTreesGrid)){
+			nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
+		}
+  	
+		#Get and store AIC for each set of grid values (if checkpointing enabled, import and output AICs as necessary)
+		if(!is.null(checkpointFile)){
+			if(file.exists(checkpointFile)){
+				if(as.numeric(strsplit(system(paste("ls -s ",checkpointFile,sep=""),intern=TRUE)," ")[[1]][1]) != 0){
+					initial.AIC<-as.array(read.table(checkpointFile,stringsAsFactors=FALSE)[,1])
+					startingPosition<-length(initial.AIC) + 1
+				}else{
+					initial.AIC<-c()
+					startingPosition<-1
 				}
 			}else{
-			
-				#Otherwise, if there are free parameters
-				for(z in 1:length(setCollapseZero)){
-					positionOfFirstCol<-setCollapseZero[z]
-					startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
-					names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
-					if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
-						startGridSecondPart<-c()
-						startGrid<-cbind(startGridFirstPart,log(0))
-					}else{
-						startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
-						startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
-					}
-  				
-  					names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
-  				}
-  			}
-  			
-  			#If there are added events in addition to zero-fixed collapses, need to re-filter the grid to make sure
-  			#that added event times make sense in the context of the specified history
-  			if(!is.null(addedEventTime)){
-  				startGrid<-CreateStartGrid(startGrid,migrationIndividual=migrationArray[[modelID]],
-    				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
-    				startGridWithSetCollapseZero=TRUE)
-    			startGrid<-startGrid[[1]]
-    		}
-		}
-
-		#Stitch in a 1 to replace the first n0 (which is never free)	
-		positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
-		startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
-		names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstN0 - 1)]
-		if((1 + length(sequence(positionOfFirstN0 - 1))) > length(names(startGrid))){
-			startGridSecondPart<-c()
-			startGrid<-cbind(startGridFirstPart,log(1))
+				initial.AIC<-c()
+				startingPosition<-1
+			}
+			if(file.exists(checkpointFile)){
+				unlink(checkpointFile)
+			}
 		}else{
-			startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
-			startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
-  		}
-  		
-		names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
-    }
-        
-    genoudBounds <- t(apply(startGrid, 2, range, na.rm=TRUE)) 
-#    stop("debug genoudBounds")
-        
-        
-#    results <- genoud(fn= ReturnAIC, nvars=dim(genoudBounds)[1], pop.size=genoudPopSize, starting.values = StartGrid, MemoryMatrix=TRUE, boundary.enforcement=2, Domains=genoudBounds, gradient.check=FALSE)
-     
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    if(is.null(nTreesGrid)){
-    	nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
-    }
-  	
-  	#Get and store AIC for each set of grid values (if checkpointing enabled, import and output AICs as necessary)
-  	if(!is.null(checkpointFile)){
-  		if(file.exists(checkpointFile)){
- 	 		if(as.numeric(strsplit(system(paste("ls -s ",checkpointFile,sep=""),intern=TRUE)," ")[[1]][1]) != 0){
-  				initial.AIC<-as.array(read.table(checkpointFile,stringsAsFactors=FALSE)[,1])
-  				startingPosition<-length(initial.AIC) + 1
-  			}else{
-  				initial.AIC<-c()
-  				startingPosition<-1
-  			}
-  		}else{
-  			initial.AIC<-c()
-  			startingPosition<-1
-  		}
-  		if(file.exists(checkpointFile)){
-  			unlink(checkpointFile)
-  		}
-  	}else{
-  		initial.AIC<-c()
-  		startingPosition<-1
-  	}
-
-  	if(!is.null(checkpointFile)){
-  		write.table(initial.AIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE)
-  	}
-  	
-  	if(startingPosition <= nrow(startGrid)){
-  		for(t in startingPosition:nrow(startGrid)){
-	    	currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
-   		 	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
-	   	 	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
-   		 	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
-   		 	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
-   		 	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,
-   		 	popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-   		 	
-   		 	initial.AIC<-append(initial.AIC,currentAIC)
-			if(!is.null(checkpointFile)){
-				write.table(currentAIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE,append=TRUE)
-    		}
-    	}
- 	}
-    if(debug){
-    	if(rm.n0){
-    		print(cbind(AIC=initial.AIC,exp(startGrid[,-(grep("n0multiplier",colnames(startGrid)))])))
-    	}else{
-    		print(cbind(AIC=initial.AIC,exp(startGrid)))
-    	}
-    }
-
-	#Save the grid as object
-    positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
-    if(length(popAssignments) > 1){
-   	 	thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
-   	}else{
-   	 	thisGrid<-cbind(AIC=initial.AIC,exp(startGrid))
-   	}
-    thisGrid<-thisGrid[order(thisGrid$AIC),]
-    #Save grid to file
-    if(!is.null(gridSave)) {
-    	save(thisGrid, file=gridSave)
-    }
-    
-    
-    
-    
-    #Finish off with nloptr optimization 
-    for(rep in sequence(min(numReps, dim(startGrid)[1]))) {
-    
- 	   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
- 	   startingVals <- unlist(startGrid[order(initial.AIC)[rep],]) #order(initial.AIC) gives indices of best values, min to max, so if we want the second best it's the second one here. NA are stuck last, if present
-
- 	   #Always toss the first n0multiplier as it is never free
- 	   startingVals<-startingVals[-grep("n0multiplier_1",names(startingVals))]
- 	   
- 	   if(debug) {
- 	     print(startingVals) 
-    	}
- 	   	searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1,
- 	   		maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]],
- 	   		badAIC=badAIC, maxParameterValue=maxParameterValue,
- 	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
- 	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
- 	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
- 	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
- 	   		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-
-		#If setCollapseZero is being used, convert optimized parameters to log(0)
-		if(!is.null(setCollapseZero)){
-			searchResults$solution[setCollapseZero]<-log(0)
+			initial.AIC<-c()
+			startingPosition<-1
 		}
+
+		if(!is.null(checkpointFile)){
+			write.table(initial.AIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE)
+		}
+	
+		if(startingPosition <= nrow(startGrid)){
+			for(t in startingPosition:nrow(startGrid)){
+				currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
+				badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTreesGrid,msPath=msPath,comparePath=comparePath,
+				unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
+				ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
+				totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
+				summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,
+				popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+			
+				initial.AIC<-append(initial.AIC,currentAIC)
+				if(!is.null(checkpointFile)){
+					write.table(currentAIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE,append=TRUE)
+				}
+			}
+		}
+		if(debug){
+			if(rm.n0){
+				print(cbind(AIC=initial.AIC,exp(startGrid[,-(grep("n0multiplier",colnames(startGrid)))])))
+			}else{
+				print(cbind(AIC=initial.AIC,exp(startGrid)))
+			}
+		}
+
+		#Save the grid as object
+		positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
+		if(length(popAssignments) > 1){
+			thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
+		}else{
+			thisGrid<-cbind(AIC=initial.AIC,exp(startGrid))
+		}
+		thisGrid<-thisGrid[order(thisGrid$AIC),]
+		#Save grid to file
+		if(!is.null(gridSave)) {
+			save(thisGrid, file=gridSave)
+		}
+    
+save(list=ls(),file="SAVED.rda")
+    
+		#Finish off with nloptr optimization   
+		#Get starting parameters
+		prunedStartGrid1 <- as.matrix(startGrid[-grep("n0multiplier_1",names(startGrid))]) #Always toss the first n0multiplier as it is never free
+		prunedStartGrid2 <- matrix(prunedStartGrid1[which(!is.na(thisGrid$AIC)),],ncol=ncol(prunedStartGrid1))
+		colnames(prunedStartGrid2)<-colnames(prunedStartGrid1)
+
+		for(rep in sequence(min(numReps, dim(startGrid)[1]))) {
+
+			if(rep > nrow(prunedStartGrid2)){ #If no parameter estimates available from a gridSearch, take a random grid combination
+				prunedStartGrid3<-unlist(prunedStartGrid1[order(initial.AIC)[sample(1:nrow(prunedStartGrid1),1)],])
+			}else{ #else, pick the best parameter combination that hasn't already been used
+				prunedStartGrid3<-unlist(prunedStartGrid2[rep,])
+			}
+	
+		   #startingVals<-log(c(rlnorm(sum(grepl("collapse",paramNames)),1,1), rlnorm(-1+sum(grepl("n0multiplier",paramNames)),1,1), rbeta(sum(grepl("migration",paramNames)),shape1=1,shape2=3) )) #going to optimize in log space. Remove the first n0 parameter from optimization vector
+		   startingVals <- prunedStartGrid3
+	   
+		   if(debug) {
+			 print(startingVals) 
+			}
+			searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1,
+				maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]],
+				badAIC=badAIC, maxParameterValue=maxParameterValue,
+				nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
+				print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
+				debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
+				totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
+				saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
+				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+save(list=ls(),file="SAVED2.rda")
+			#If setCollapseZero is being used, convert optimized parameters to log(0)
+			if(!is.null(setCollapseZero)){
+				searchResults$solution[setCollapseZero]<-log(0)
+			}
 		
-		#Keep best values
- 	   	if(searchResults$objective <= best.result.objective) {
- 	   		best.result<-searchResults
- 	   		best.result.objective<-searchResults$objective	
- 	   }
-    }
-	best.resultGrid<-list(best.result,thisGrid)
-    ifelse(return.all, return(best.resultGrid), return(best.result.objective))     
-  }
+			#Keep best values
+			if(searchResults$objective <= best.result.objective) {
+				best.result<-searchResults
+				best.result.objective<-searchResults$objective	
+		   }
+		}
+		best.resultGrid<-list(best.result,thisGrid)
+		ifelse(return.all, return(best.resultGrid), return(best.result.objective))   
+	}  
 }
 
 
@@ -318,228 +280,243 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE, genoudPopSize=100,  solutionTolerance=0.05, ...) {
-  if(!is.null(migrationArrayMap)){
-  	modelID<-ReturnModel(p,migrationArrayMap)
-  }else{
-  	modelID<-p
-  }
-  best.result <- c()
-  best.result.objective <- badAIC
-  if(is.na(modelID)) {
-    return(badAIC)
-  }
-  else {
-    paramNames<-MsIndividualParameters(migrationArray[[modelID]])
-    if(is.null(startGrid)) { #need to make our own grid
-    	startingVectorList<-list()
-    	nameCount<-1
-    	
-    	#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
-    	numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
-    	if(numCollapse < 0){ #If for some reason there are more fixed parameters than possible, reduce them
-    		setCollapseZero<-sequence(sum(grepl("collapse",paramNames)))
-    		numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
-    	}
-    	if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
-    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(!grep("collapse",paramNames) %in% setCollapseZero)]
-    	}else{
-    		collapses2estimate<-grep("collapse",paramNames,value=TRUE)
-    	}
-    	if(numCollapse > 0) {
-    		for (i in sequence(numCollapse)) {
-    			startingVectorList<-append(startingVectorList, list(collapseStarts))
-    			names(startingVectorList)[nameCount]<-collapses2estimate[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}
-    	
-    	#Calculate number of n0 parameters (if just one, subtract it off)
-    	if(sum(grepl("n0multiplier",paramNames)) == 1){
- 	       numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
- 	    }else{
- 	   	   numn0 <- sum(grepl("n0multiplier",paramNames))
- 	   	}
-    	if (numn0 > 0) {
-    		for (i in sequence(numn0)) {
-    			startingVectorList<-append(startingVectorList, list(n0Starts))
-    			names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}	
-    	
-    	#Calculate number of growth parameters
-    	numGrowth <- sum(grepl("growth",paramNames))
-    	if (numGrowth > 0) {
-    		for (i in sequence(numGrowth)) {
-    			startingVectorList<-append(startingVectorList, list(growthStarts))
-    			names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}
-    	
-    	#Calculate number of migration parameters
-    	numMigration <- sum(grepl("migration",paramNames))
-    	if (numMigration > 0) {
-    		for (i in sequence(numMigration)) {
-    			startingVectorList<-append(startingVectorList, list(migrationStarts))
-    			names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
-    			nameCount<-nameCount + 1
-    		} 
-    	}
-    	
-    	#If some collapses are set to zero, there are collapses in the model, and also added events,
-    	#wait to filter the grid for added events until after zero-fixed collapses are stitched in below
-		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0 && !is.null(addedEventTime)){
-    		startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]])
-    		startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
-    	
-    	#Otherwise, filter for any added events now
-    	}else{
-       		startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]],
-    			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-    		startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
-    	}
-    	
-    	#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid
-		if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0){
-			
-			#If there are only fixed parameters...
-			if(length(startGrid) == 0){
-				startGrid<-data.frame(matrix(rep(log(0),length(setCollapseZero)),nrow=1,ncol=length(setCollapseZero)))
-				for(g in 1:length(setCollapseZero)){
-					names(startGrid)[g]<-paste("collapse_",setCollapseZero[g],sep="")
-				}
-			}else{
-			
-				#Otherwise, if there are free parameters
-				for(z in 1:length(setCollapseZero)){
-					positionOfFirstCol<-setCollapseZero[z]
-					startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
-					names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
-					if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
-						startGridSecondPart<-c()
-						startGrid<-cbind(startGridFirstPart,log(0))
-					}else{
-						startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
-						startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
-					}
-  				
-  					names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
-  				}
-  			}
-  			
-  			#If there are added events in addition to zero-fixed collapses, need to re-filter the grid to make sure
-  			#that added event times make sense in the context of the specified history
-  			if(!is.null(addedEventTime)){
-  				startGrid<-CreateStartGrid(startGrid,migrationIndividual=migrationArray[[modelID]],
-    				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
-    				startGridWithSetCollapseZero=TRUE)
-    			startGrid<-startGrid[[1]]
-    		}
-		}
-
-		#Stitch in a 1 to replace the first n0 (which is never free)	
-		positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
-		startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
-		names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstN0 - 1)]
-		if((1 + length(sequence(positionOfFirstN0 - 1))) > length(names(startGrid))){
-			startGridSecondPart<-c()
-			startGrid<-cbind(startGridFirstPart,log(1))
-		}else{
-			startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
-			startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
-  		}
-  		
-		names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
-    }
-        
-
-  	
-  	#Get and store AIC for each set of grid values (if checkpointing enabled, import and output AICs as necessary)
-  	if(!is.null(checkpointFile)){
-  		if(file.exists(checkpointFile)){
- 	 		if(as.numeric(strsplit(system(paste("ls -s ",checkpointFile,sep=""),intern=TRUE)," ")[[1]][1]) != 0){
-  				initial.AIC<-as.array(read.table(checkpointFile,stringsAsFactors=FALSE)[,1])
-  				startingPosition<-length(initial.AIC) + 1
-  			}else{
-  				initial.AIC<-c()
-  				startingPosition<-1
-  			}
-  		}else{
-  			initial.AIC<-c()
-  			startingPosition<-1
-  		}
-  		if(file.exists(checkpointFile)){
-  			unlink(checkpointFile)
-  		}
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,
+	genoudPopSize=100,solutionTolerance=0.05, ...) {
+	if(!is.null(migrationArrayMap)){
+  		modelID<-ReturnModel(p,migrationArrayMap)
   	}else{
-  		initial.AIC<-c()
-  		startingPosition<-1
+  		modelID<-p
   	}
+  	best.result <- c()
+  	best.result.objective <- badAIC
+  	if(is.na(modelID)) {
+		return(badAIC)
+  	}else{
+		paramNames<-MsIndividualParameters(migrationArray[[modelID]])
+		if(is.null(startGrid)) { #need to make our own grid
+			startingVectorList<-list()
+			nameCount<-1
+		
+			#Calculate number of collapse parameters to estimate (subtracting off those that are set to zero)
+			numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+			if(numCollapse < 0){ #If for some reason there are more fixed parameters than possible, reduce them
+				setCollapseZero<-sequence(sum(grepl("collapse",paramNames)))
+				numCollapse <- sum(grepl("collapse",paramNames)) - length(setCollapseZero)
+			}
+			if(!is.null(setCollapseZero)){ #If setCollapseZero is nonzero
+				collapses2estimate<-grep("collapse",paramNames,value=TRUE)[which(!grep("collapse",paramNames) %in% setCollapseZero)]
+			}else{
+				collapses2estimate<-grep("collapse",paramNames,value=TRUE)
+			}
+			if(numCollapse > 0) {
+				for (i in sequence(numCollapse)) {
+					startingVectorList<-append(startingVectorList, list(collapseStarts))
+					names(startingVectorList)[nameCount]<-collapses2estimate[i]
+					nameCount<-nameCount + 1
+				} 
+			}
+		
+			#Calculate number of n0 parameters (if just one, subtract it off)
+			if(sum(grepl("n0multiplier",paramNames)) == 1){
+			   numn0 <- sum(grepl("n0multiplier",paramNames)) - 1 # -1 since one is fixed to be 1
+			}else{
+			   numn0 <- sum(grepl("n0multiplier",paramNames))
+			}
+			if (numn0 > 0) {
+				for (i in sequence(numn0)) {
+					startingVectorList<-append(startingVectorList, list(n0Starts))
+					names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
+					nameCount<-nameCount + 1
+				} 
+			}	
+		
+			#Calculate number of growth parameters
+			numGrowth <- sum(grepl("growth",paramNames))
+			if (numGrowth > 0) {
+				for (i in sequence(numGrowth)) {
+					startingVectorList<-append(startingVectorList, list(growthStarts))
+					names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
+					nameCount<-nameCount + 1
+				} 
+			}
+		
+			#Calculate number of migration parameters
+			numMigration <- sum(grepl("migration",paramNames))
+			if (numMigration > 0) {
+				for (i in sequence(numMigration)) {
+					startingVectorList<-append(startingVectorList, list(migrationStarts))
+					names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
+					nameCount<-nameCount + 1
+				} 
+			}
+		
+			#If some collapses are set to zero, there are collapses in the model, and also added events,
+			#wait to filter the grid for added events until after zero-fixed collapses are stitched in below
+			if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0 && !is.null(addedEventTime)){
+				startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]])
+				startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+		
+			#Otherwise, filter for any added events now
+			}else{
+				startGrid<-CreateStartGrid(fineGrid=startingVectorList,migrationIndividual=migrationArray[[modelID]],
+					addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+				startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
+			}
+		
+			#If some collapses are set to zero (and there are collapses in the model), stitch these values into the startGrid
+			if(!is.null(setCollapseZero) && sum(grepl("collapse",paramNames)) != 0){
+			
+				#If there are only fixed parameters...
+				if(length(startGrid) == 0){
+					startGrid<-data.frame(matrix(rep(log(0),length(setCollapseZero)),nrow=1,ncol=length(setCollapseZero)))
+					for(g in 1:length(setCollapseZero)){
+						names(startGrid)[g]<-paste("collapse_",setCollapseZero[g],sep="")
+					}
+				}else{
+			
+					#Otherwise, if there are free parameters
+					for(z in 1:length(setCollapseZero)){
+						positionOfFirstCol<-setCollapseZero[z]
+						startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstCol - 1)])
+						names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstCol - 1)]
+						if((1 + length(sequence(positionOfFirstCol - 1))) > length(names(startGrid))){
+							startGridSecondPart<-c()
+							startGrid<-cbind(startGridFirstPart,log(0))
+						}else{
+							startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstCol - 1))):length(names(startGrid))]
+							startGrid<-cbind(startGridFirstPart,log(0),startGridSecondPart)
+						}
+				
+						names(startGrid)[positionOfFirstCol]<-paste("collapse_",setCollapseZero[z],sep="")
+					}
+				}
+			
+				#If there are added events in addition to zero-fixed collapses, need to re-filter the grid to make sure
+				#that added event times make sense in the context of the specified history
+				if(!is.null(addedEventTime)){
+					startGrid<-CreateStartGrid(startGrid,migrationIndividual=migrationArray[[modelID]],
+						addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
+						startGridWithSetCollapseZero=TRUE)
+					startGrid<-startGrid[[1]]
+				}
+			}
 
-  	if(!is.null(checkpointFile)){
-  		write.table(initial.AIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE)
-  	}
-  	
-  	if(startingPosition <= nrow(startGrid)){
-  		for(t in startingPosition:nrow(startGrid)){
-	    	currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
-   		 	badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,
-	   	 	unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
-   		 	ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
-   		 	totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
-   		 	summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,
-   		 	popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-   		 	
-   		 	initial.AIC<-append(initial.AIC,currentAIC)
-			if(!is.null(checkpointFile)){
-				write.table(currentAIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE,append=TRUE)
-    		}
-    	}
- 	}
-    if(debug){
-    	if(rm.n0){
-    		print(cbind(AIC=initial.AIC,exp(startGrid[,-(grep("n0multiplier",colnames(startGrid)))])))
-    	}else{
-    		print(cbind(AIC=initial.AIC,exp(startGrid)))
-    	}
-    }
-
-	#Save the grid as object
-    positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
-    if(length(popAssignments) > 1){
-   	 	thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
-   	}else{
-   	 	thisGrid<-cbind(AIC=initial.AIC,exp(startGrid))
-   	}
-    thisGrid<-thisGrid[order(thisGrid$AIC),]
-    #Save grid to file
-    if(!is.null(gridSave)) {
-    	save(thisGrid, file=gridSave)
-    }
-    
-    prunedStartGrid <- startGrid[,-1] #remove first col, which doesn't vary, from startGrid
-    nvars <- dim(prunedStartGrid)[1]
- 	searchResults<-genoud(fn=ReturnAIC, nvars= nvars, pop.size=genoudPopSize, starting.values= prunedStartGrid, Domains=matrix(c(rep(0, nvars), rep(maxParameterValue, nvars)), ncol=2, byrow=FALSE), boundary.enforcement=1, gradient.check=FALSE, hessian=FALSE, solution.tolerance= solutionTolerance,  migrationIndividual=migrationArray[[modelID]], 
- 	   		badAIC=badAIC, maxParameterValue=maxParameterValue,
- 	   		nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
- 	   		print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
- 	   		debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
- 	   		totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
- 	   		saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
- 	   		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-
-		#If setCollapseZero is being used, convert optimized parameters to log(0)
-		if(!is.null(setCollapseZero)){
-			searchResults$solution[setCollapseZero]<-log(0)
+			#Stitch in a 1 to replace the first n0 (which is never free)	
+			positionOfFirstN0 <- grep("n0multiplier", paramNames)[1]
+			startGridFirstPart<-data.frame(startGrid[,sequence(positionOfFirstN0 - 1)])
+			names(startGridFirstPart)<-names(startGrid)[sequence(positionOfFirstN0 - 1)]
+			if((1 + length(sequence(positionOfFirstN0 - 1))) > length(names(startGrid))){
+				startGridSecondPart<-c()
+				startGrid<-cbind(startGridFirstPart,log(1))
+			}else{
+				startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
+			}
+		
+			names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
 		}
 		
-		#Keep best values
- 	   	
-    
-    return(searchResults)    
-  }
+	
+		#Get and store AIC for each set of grid values (if checkpointing enabled, import and output AICs as necessary)
+		if(!is.null(checkpointFile)){
+			if(file.exists(checkpointFile)){
+				if(as.numeric(strsplit(system(paste("ls -s ",checkpointFile,sep=""),intern=TRUE)," ")[[1]][1]) != 0){
+					initial.AIC<-as.array(read.table(checkpointFile,stringsAsFactors=FALSE)[,1])
+					startingPosition<-length(initial.AIC) + 1
+				}else{
+					initial.AIC<-c()
+					startingPosition<-1
+				}
+			}else{
+				initial.AIC<-c()
+				startingPosition<-1
+			}
+			if(file.exists(checkpointFile)){
+				unlink(checkpointFile)
+			}
+		}else{
+			initial.AIC<-c()
+			startingPosition<-1
+		}
+
+		if(!is.null(checkpointFile)){
+			write.table(initial.AIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE)
+		}
+	
+		if(startingPosition <= nrow(startGrid)){
+			for(t in startingPosition:nrow(startGrid)){
+				currentAIC<-ReturnAIC(par=as.numeric(startGrid[t,]),migrationIndividual=migrationArray[[modelID]],
+				badAIC=badAIC,maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,
+				unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
+				ncores=ncores,debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,
+				totalPopVector=totalPopVector,popAssignments=popAssignments,subsampleWeights.df=subsampleWeights.df,
+				summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,
+				popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+			
+				initial.AIC<-append(initial.AIC,currentAIC)
+				if(!is.null(checkpointFile)){
+					write.table(currentAIC,file=checkpointFile,quote=FALSE,sep="\n",row.names=FALSE,col.names=FALSE,append=TRUE)
+				}
+			}
+		}
+		if(debug){
+			if(rm.n0){
+				print(cbind(AIC=initial.AIC,exp(startGrid[,-(grep("n0multiplier",colnames(startGrid)))])))
+			}else{
+				print(cbind(AIC=initial.AIC,exp(startGrid)))
+			}
+		}
+
+		#Save the grid as object
+		positionOfFirstN0 <- grep("n0multiplier", MsIndividualParameters(migrationArray[[modelID]]))[1]
+		if(length(popAssignments) > 1){
+			thisGrid<-cbind(AIC=initial.AIC[,1],exp(startGrid),initial.AIC[,2:length(initial.AIC)])
+		}else{
+			thisGrid<-cbind(AIC=initial.AIC,exp(startGrid))
+		}
+		thisGrid<-thisGrid[order(thisGrid$AIC),]
+		#Save grid to file
+		if(!is.null(gridSave)) {
+			save(thisGrid, file=gridSave)
+		}
+	
+	#    prunedStartGrid <- startGrid[,-1] #remove first col, which doesn't vary, from startGrid
+	
+		#Get starting parameters for genoud
+		prunedStartGrid1 <- as.matrix(startGrid[-grep("n0multiplier_1",names(startGrid))])
+		prunedStartGrid2 <- prunedStartGrid1[which(!is.na(thisGrid$AIC)),]
+		if(nrow(prunedStartGrid2) == 0){ #If no parameter estimates available from a gridSearch, take the grid median
+			prunedStartGrid2<-matrix(sapply(exp(as.data.frame(prunedStartGrid1)),median),nrow=1,ncol=ncol(prunedStartGrid2))
+			colnames(prunedStartGrid2)<-colnames(prunedStartGrid1)
+			prunedStartGrid2<-log(prunedStartGrid2)
+		}else{
+			if(nrow(prunedStartGrid2) >= 5){ #Take five best from grid search
+				prunedStartGrid2<-prunedStartGrid2[1:5,]
+			}else{ #Or all that's available
+				prunedStartGrid2<-prunedStartGrid2[1:nrow(prunedStartGrid2),]
+			}
+		}
+	
+		nvars <- dim(prunedStartGrid2)[1]
+		searchResults<-genoud(fn=ReturnAIC, nvars= nvars, pop.size=genoudPopSize, starting.values= prunedStartGrid2, Domains=matrix(c(rep(0, nvars), rep(maxParameterValue, nvars)), ncol=2, byrow=FALSE), boundary.enforcement=1, gradient.check=FALSE, hessian=FALSE, solution.tolerance= solutionTolerance,  migrationIndividual=migrationArray[[modelID]], 
+				badAIC=badAIC, maxParameterValue=maxParameterValue,
+				nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
+				print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
+				debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
+				totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
+				saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
+				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+
+			#If setCollapseZero is being used, convert optimized parameters to log(0)
+			if(!is.null(setCollapseZero)){
+				searchResults$solution[setCollapseZero]<-log(0)
+			}
+		
+			#Keep best values
+		
+	
+		return(searchResults)    
+	}
 }
 
 #This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
@@ -553,7 +530,8 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.1,0.22,0.46,1,2.15),
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
 		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
-		parameter.ambiguous=FALSE,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,...){		
+		parameter.ambiguous=FALSE,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="nloptr",
+		genoudPopSize=100,...){		
 	#If multiple n0multiplier values exists in the migrationArray, then make rm.n0 FALSE, else, leave it as specified
 	n0Values<-unlist(migrationArray)
 	if(length(unique(n0Values[grep("n0multiplier",names(n0Values))][!is.na(n0Values[grep("n0multiplier",names(n0Values))])])) > 1){
@@ -614,15 +592,29 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
  		}
 
   		result.indiv<-NULL
-  		try(result.indiv<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
-  		maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
-  		print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
-  		method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
-  		startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
-  		migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-  		subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
-  		setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
-  		addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, ...))
+  		if(optimization == "nloptr"){
+			try(result.indiv<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
+			maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
+			print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
+			method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
+			startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
+			migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
+			subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
+			setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
+			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, ...))
+		}
+		if(optimization == "genoud"){
+			try(result.indiv<-SearchContinuousModelSpaceGenoud(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
+			maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
+			print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
+			method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
+			startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
+			migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
+			subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
+			setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
+			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,genoudPopSize=genoudPopSize,
+			solutionTolerance=solutionTolerance, ...))
+		}
   		
   		if(rm.n0){
   			result.indiv[[2]]<-result.indiv[[2]][,-(grep("n0multiplier",colnames(result.indiv[[2]])))]
@@ -635,15 +627,28 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		}
   		results.list<-append(results.list, list(result.indiv[[1]]))
 
-  	} else {
-  		try(AIC.values[i]<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
-  		maxParameterValue=maxParameterValue, nTrees=nTrees, msPath=msPath,comparePath=comparePath,ncores=ncores,
-  		unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
-  		debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
-  		startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
-  		gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
-  		summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
-  		checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,...))
+  	}else{
+  		if(optiziation == "nloptr"){
+			try(AIC.values[i]<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
+			maxParameterValue=maxParameterValue, nTrees=nTrees, msPath=msPath,comparePath=comparePath,ncores=ncores,
+			unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
+			debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
+			startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
+			gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
+			summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
+			checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,...))
+		}
+		if(optiziation == "genoud"){
+			try(AIC.values[i]<-SearchContinuousModelSpaceGenoud(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
+			maxParameterValue=maxParameterValue, nTrees=nTrees, msPath=msPath,comparePath=comparePath,ncores=ncores,
+			unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
+			debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
+			startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
+			gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
+			summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
+			checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
+			genoudPopSize=genoudPopSize,solutionTolerance=solutionTolerance,...))
+		}
   	}
 
 #  	 	print(c(i, length(migrationArray), i/length(migrationArray), AIC.values[i]))
