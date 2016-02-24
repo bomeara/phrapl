@@ -222,7 +222,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 			save(thisGrid, file=gridSave)
 		}
     
-save(list=ls(),file="SAVED.rda")
+
     
 		#Finish off with nloptr optimization   
 		#Get starting parameters
@@ -244,6 +244,8 @@ save(list=ls(),file="SAVED.rda")
 		   if(debug) {
 			 print(startingVals) 
 			}
+	
+			#Note, there are instances when nloptr is throwing an error (x0 returns NA objective). Need to troubleshoot this.
 			searchResults<-nloptr(x0=startingVals, eval_f=ReturnAIC, opts=list("maxeval"=itnmax, "algorithm"="NLOPT_LN_SBPLX", "print_level"=1,
 				maxtime=maxtime, maxeval=maxeval), migrationIndividual=migrationArray[[modelID]],
 				badAIC=badAIC, maxParameterValue=maxParameterValue,
@@ -253,17 +255,20 @@ save(list=ls(),file="SAVED.rda")
 				totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
 				saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
 				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
-save(list=ls(),file="SAVED2.rda")
 			#If setCollapseZero is being used, convert optimized parameters to log(0)
 			if(!is.null(setCollapseZero)){
 				searchResults$solution[setCollapseZero]<-log(0)
 			}
 		
 			#Keep best values
-			if(searchResults$objective <= best.result.objective) {
-				best.result<-searchResults
-				best.result.objective<-searchResults$objective	
-		   }
+			if(!is.na(searchResults$objective)){
+				if(searchResults$objective <= best.result.objective) {
+					best.result<-searchResults
+					best.result.objective<-searchResults$objective	
+				}
+			}else{ #If the AIC estimated = NA, construct dummy result
+				best.result<-list("objective"=NA,"solution"=unname(startingVals))
+			}
 		}
 		best.resultGrid<-list(best.result,thisGrid)
 		ifelse(return.all, return(best.resultGrid), return(best.result.objective))   
@@ -282,6 +287,7 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
 	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,
 	genoudPopSize=100,solutionTolerance=0.05, ...) {
+
 	if(!is.null(migrationArrayMap)){
   		modelID<-ReturnModel(p,migrationArrayMap)
   	}else{
@@ -480,32 +486,47 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 			save(thisGrid, file=gridSave)
 		}
 	
-	#    prunedStartGrid <- startGrid[,-1] #remove first col, which doesn't vary, from startGrid
-	
-		#Get starting parameters for genoud
-		prunedStartGrid1 <- as.matrix(startGrid[-grep("n0multiplier_1",names(startGrid))])
+#save(list=ls(),file="SAVED.rda")	
+
+		#Get starting parameters for genoud, starting with the best parameter values from a gridSearch
+		desiredNumberOfValues<-20 #the number of grid values to use
+		prunedStartGrid1 <- data.frame(as.matrix(startGrid[-grep("n0multiplier_1",names(startGrid))]))
 		prunedStartGrid2 <- prunedStartGrid1[which(!is.na(thisGrid$AIC)),]
 		if(nrow(prunedStartGrid2) == 0){ #If no parameter estimates available from a gridSearch, take the grid median
 			prunedStartGrid2<-matrix(sapply(exp(as.data.frame(prunedStartGrid1)),median),nrow=1,ncol=ncol(prunedStartGrid2))
 			colnames(prunedStartGrid2)<-colnames(prunedStartGrid1)
 			prunedStartGrid2<-log(prunedStartGrid2)
 		}else{
-			if(nrow(prunedStartGrid2) >= 5){ #Take five best from grid search
-				prunedStartGrid2<-prunedStartGrid2[1:5,]
-			}else{ #Or all that's available
+			if(nrow(prunedStartGrid2) >= desiredNumberOfValues){ #Take the best values from grid search, if available
+				prunedStartGrid2<-prunedStartGrid2[1:desiredNumberOfValues,]
+			}else{ #Or take all that's available
 				prunedStartGrid2<-prunedStartGrid2[1:nrow(prunedStartGrid2),]
 			}
 		}
-	
-		nvars <- dim(prunedStartGrid2)[1]
-		searchResults<-genoud(fn=ReturnAIC, nvars= nvars, pop.size=genoudPopSize, starting.values= prunedStartGrid2, Domains=matrix(c(rep(0, nvars), rep(maxParameterValue, nvars)), ncol=2, byrow=FALSE), boundary.enforcement=1, gradient.check=FALSE, hessian=FALSE, solution.tolerance= solutionTolerance,  migrationIndividual=migrationArray[[modelID]], 
-				badAIC=badAIC, maxParameterValue=maxParameterValue,
-				nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
-				print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
-				debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
-				totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
-				saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
-				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+		
+		#Add in other random grid points if there aren't enough values with estimable AICs
+		prunedStartGridNAs<-prunedStartGrid1[which(is.na(thisGrid$AIC)),]
+		if(nrow(prunedStartGrid2) < desiredNumberOfValues){
+			if(nrow(prunedStartGridNAs) >= desiredNumberOfValues){
+				randomValues<-sort(sample(1:nrow(prunedStartGridNAs),(desiredNumberOfValues - nrow(prunedStartGrid2))))
+				prunedStartGrid2<-rbind(prunedStartGrid2,prunedStartGridNAs[randomValues,])
+			}else{
+				prunedStartGrid2<-rbind(prunedStartGrid2,prunedStartGridNAs)
+			}
+		}
+
+		nvars <- dim(prunedStartGrid2)[2]
+		prunedStartGrid2<-as.matrix(prunedStartGrid2)
+		searchResults<-genoud(fn=ReturnAIC, nvars= nvars, pop.size=genoudPopSize, starting.values= prunedStartGrid2, 
+			Domains=matrix(c(rep(log(0.01), nvars), rep(log(maxParameterValue), nvars)), ncol=2, byrow=FALSE), boundary.enforcement=1, 
+			gradient.check=FALSE, hessian=FALSE, solution.tolerance= solutionTolerance, migrationIndividual=migrationArray[[modelID]], 
+			badAIC=badAIC, maxParameterValue=maxParameterValue,
+			nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,ncores=ncores,
+			print.ms.string=print.ms.string, print.results=print.results,print.matches=print.matches,
+			debug=debug,numReps=numReps,parameterBounds=parameterBounds,subsamplesPerGene=subsamplesPerGene,summaryFn=summaryFn,
+			totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,popAssignments=popAssignments,
+			saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
+			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
 
 			#If setCollapseZero is being used, convert optimized parameters to log(0)
 			if(!is.null(setCollapseZero)){
@@ -594,28 +615,27 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
   		result.indiv<-NULL
   		if(optimization == "nloptr"){
 			try(result.indiv<-SearchContinuousModelSpaceNLoptr(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
-			maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
-			print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
-			method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
-			startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
-			migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-			subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
-			setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
-			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, ...))
+				maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
+				print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
+				method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
+				startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
+				migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
+				subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
+				setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
+				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, ...))
 		}
 		if(optimization == "genoud"){
-			try(result.indiv<-SearchContinuousModelSpaceGenoud(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
-			maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
-			print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
-			method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
-			startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
-			migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
-			subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
-			setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
-			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,genoudPopSize=genoudPopSize,
-			solutionTolerance=solutionTolerance, ...))
+			try(result.indiv<-SearchContinuousModelSpaceRGenoud(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
+				maxParameterValue=maxParameterValue,nTrees=nTrees,msPath=msPath,comparePath=comparePath,unresolvedTest=unresolvedTest,
+				print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,debug=debug,
+				method=method,itnmax=itnmax, maxtime=maxtime,ncores=ncores,maxeval=maxeval,return.all=return.all,numReps=numReps,
+				startGrid=currentStartGrid,gridSave=NULL,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts,
+				migrationStarts=migrationStarts,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
+				subsampleWeights.df=subsampleWeights.df,summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,
+				setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,checkpointFile=checkpointFile,
+				addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,genoudPopSize=genoudPopSize, ...))
 		}
-  		
+save(list=ls(),file="SAVED2.rda")  		
   		if(rm.n0){
   			result.indiv[[2]]<-result.indiv[[2]][,-(grep("n0multiplier",colnames(result.indiv[[2]])))]
   		}
@@ -636,10 +656,10 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 			startGrid=currentStartGrid,collapseStarts=collapseStarts,n0Starts=n0Starts,growthStarts=growthStarts, migrationStarts=migrationStarts,
 			gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
 			summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
-			checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,...))
+			checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, ...))
 		}
 		if(optiziation == "genoud"){
-			try(AIC.values[i]<-SearchContinuousModelSpaceGenoud(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
+			try(AIC.values[i]<-SearchContinuousModelSpaceRGenoud(p,migrationArrayMap,migrationArray,popAssignments,badAIC=badAIC,
 			maxParameterValue=maxParameterValue, nTrees=nTrees, msPath=msPath,comparePath=comparePath,ncores=ncores,
 			unresolvedTest=unresolvedTest,print.ms.string=print.ms.string,print.results=print.results,print.matches=print.matches,
 			debug=debug,method=method,itnmax=itnmax, maxtime=maxtime, maxeval=maxeval, return.all=return.all,numReps=numReps,
@@ -647,7 +667,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 			gridSave=NULL,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,subsampleWeights.df=subsampleWeights.df,
 			summaryFn=summaryFn,saveNoExtrap=saveNoExtrap,doSNPs=doSNPs,nEq=nEq,setCollapseZero=setCollapseZero,rm.n0=rm.n0,popScaling=popScaling,
 			checkpointFile=checkpointFile,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,
-			genoudPopSize=genoudPopSize,solutionTolerance=solutionTolerance,...))
+			genoudPopSize=genoudPopSize, ...))
 		}
   	}
 
@@ -659,10 +679,12 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 	}
 
   	#Toss temporary tree and assign files
-	for(k in 1:length(popAssignments)){
-		unlink(c(paste(tempdir(),"/assign",k,".txt",sep=""),paste(tempdir(),"/observed",k,".tre",sep=""),paste(tempdir(), "/mstrees.txt", sep="")))
-	}
+# 	for(k in 1:length(popAssignments)){
+# 		unlink(c(paste(tempdir(),"/assign",k,".txt",sep=""),paste(tempdir(),"/observed",k,".tre",sep=""),paste(tempdir(), "/mstrees.txt", sep="")))
+# 	}
 #	print(results.list)
+
+
 
 	#Save table of best models
 	if(numReps==0){

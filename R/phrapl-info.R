@@ -353,7 +353,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 	if(!is.null(setCollapseZero)){
 		parameterVector[setCollapseZero]<-0
 	}
-	
+save(list=ls(),file="SAVED.rda")	
 	#Weed out values outside of proposed bounds (only if doing numerical optimization)
 	if(numReps > 0){ 
 		if(!is.null(setCollapseZero)){
@@ -961,18 +961,44 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #although effective subsample sizes can be considered by using SumDivScaledNreps
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
 		totalPopVector,summaryFn="mean", nEq=100, propZeroMatchedThreshold=0.1, exponent=1, constant=4,
-		assignBadAIC=FALSE){
-	
+		calculateBeta=TRUE){
+
+	#Get the Beta estimate, if desired (for cases where no matches are found)
+	if(calculateBeta){
+		outputVectorBeta<-as.numeric(outputVector)
+		outputVectorBeta<-AdjustUsingBeta(numMatches=outputVectorBeta, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
+		outputVectorBeta<-log(outputVectorBeta)
+		lnLBeta<-0
+		localVectorBeta<-rep(NA, subsamplesPerGene)
+		baseIndex<-1
+		locusIndex<-1
+		for (i in sequence(length(outputVectorBeta))) {
+			localVectorBeta[baseIndex]<-outputVectorBeta[i]
+			baseIndex <- baseIndex+1
+			if(i%%subsamplesPerGene == 0) {
+				if(summaryFn=="SumDivScaledNreps"){
+					lnLBeta<-lnLBeta+get(summaryFn)(localVector=localVector,popAssignments,totalPopVector=totalPopVector[locusIndex],
+						subsamplesPerGene=subsamplesPerGene)
+				}else{
+					lnLBeta<-lnLBeta+get(summaryFn)(localVectorBeta)
+				}
+				localVectorBeta<-rep(NA, subsamplesPerGene)
+				baseIndex<-1
+				locusIndex<-locusIndex + 1
+			}
+		}
+	}
+
 	#First, get mean number of matches across each set of subsamples. We do this so that if there
 	#are a mix of zero and non-zero matching subsamples, this information can be brought to bear on 
 	#the log-likelihood estimate for that locus. If we wait to take the mean in log space, then any
 	#matchless trees will produce a mean value of infinity. In addition, zero-matching values will
 	#only be produced when ALL of the subsamples return zero matches, in which case we assign these loci
 	#the min matching value (plus a penalty) observed across loci.
-
+	
 	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
-#	outputVector<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
+#	outputVectorBeta<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
 	summaryVector<-c()
 	localVector<-rep(NA, subsamplesPerGene)
 	baseIndex<-1
@@ -1005,8 +1031,8 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 		summaryVector[which(summaryVector == -Inf)]<-minVal
 		lnL<-sum(summaryVector)
 	}else{
-		if(assignBadAIC){
-			lnL<- -1000000
+		if(calculateBeta){
+			lnL<-lnLBeta
 		}else{
 			lnL<-NA
 		}
