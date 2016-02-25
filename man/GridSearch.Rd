@@ -231,7 +231,7 @@ Dictates whether added event times set by addedEventTime are treated as scalars 
 absolute values (when \code{FALSE}).
 }
   \item{optimization}{
-Dictates how parameters are estimated. Options are \code{"grid"}, \code{"nloptr"}, or \code{"genoud.}" 
+Dictates how parameters are estimated. Options are \code{"grid"}, \code{"nloptr"}, or \code{"genoud"}. 
 If \code{"nloptr"} or \code{"genoud"} are selected, this causes PHRAPL to first run a grid search to 
 obtain starting values; then further optimization occurs using an algorithm.
 }
