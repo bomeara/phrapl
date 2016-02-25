@@ -29,7 +29,9 @@ migrationStarts = c(0.1, 0.22, 0.46, 1, 2.15),
 subsamplesPerGene = 1, totalPopVector = NULL, summaryFn = "mean", 
 saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
 dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
-parameter.ambiguous = FALSE, addedEventTime = NULL, addedEventTimeAsScalar = TRUE...)
+parameter.ambiguous = FALSE, addedEventTime = NULL, addedEventTimeAsScalar = TRUE,
+optimization = "grid", genoudPopSize = 25, numGridStartVals = 25, 
+solutionTolerance = 1, skipGrid = FALSE, ...)
 }
 \arguments{
    \item{modelRange}{
@@ -226,7 +228,33 @@ for a model, but this parameter space will always fit the model.
 }
   \item{addedEventTimeAsScalar}{
 Dictates whether added event times set by addedEventTime are treated as scalars (when \code{TRUE}) or as
-absolute values (whien \code{FALSE}).
+absolute values (when \code{FALSE}).
+}
+  \item{optimization}{
+Dictates how parameters are estimated. Options are \code{"grid"}, \code{"nloptr"}, or \code{"genoud.}" 
+If \code{"nloptr"} or \code{"genoud"} are selected, this causes PHRAPL to first run a grid search to 
+obtain starting values; then further optimization occurs using an algorithm.
+}
+  \item{genoudPopSize}{
+Specifies the population size (pop.size) value used by genoud.
+}
+  \item{numGridStartVals}{
+Specifies the number of grid value combinations used as starting values for genoud (where grid values are
+sorted by AIC such that the best models are preferentially chosen). If one carries out an initial grid search to 
+obtain starting values for genoud (\code{skipGrid = FALSE}), then smaller \code{numGridStartVals} values will 
+give more weight to the best values inferred from a grid search. Using a large number for \code{numGridStartVals}
+will dampen the impact of grid search optimization. Note that if \code{numGridStartVals} is less than 
+\code{genoudPopSize}, genoud will automatically add in addition "individuals". If \code{numGridStartVals} exceeds 
+the number of grid values for a given model, genoud will simply add more individuals such that \code{genoudPopSize}
+is satisfied.
+}
+  \item{solutionTolerance}{
+This gives the \code{solution.tolerance} level used by genoud
+}
+  \item{skipGrid}{
+If set to \code{TRUE}, the initial grid search is skipped when doing genoud optimization. In this case, 
+starting values are determined by randomly selecting values from the grid (the number of which is determined 
+by \code{numGridStartVals}).
 }
   \item{\dots}{
 Other items to pass to heuristic search functions.
