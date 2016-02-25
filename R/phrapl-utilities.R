@@ -2834,7 +2834,7 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 #This function is implemented at the end of a GridSearch and is called when parameters
 #are estimated using optimization (either nloptr or genoud).
 ExtractUnambiguousOptimizationParameters<-function(overall.results=NULL,results.list=NULL,migrationArray,
-	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2,optimization=NULL){
+	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2,optimization="grid"){
 
 	#Add parameters
 	all.parameters <- unique(sort(sapply(migrationArray, 

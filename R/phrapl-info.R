@@ -339,7 +339,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
 		subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-		setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization=NULL){
+		setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid"){
 	parameterVector<-exp(par)
 	
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -964,12 +964,30 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 
 #If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
 #although effective subsample sizes can be considered by using SumDivScaledNreps
+
+#The way this works: first, get mean number of matches across each set of subsamples. We do this so that if there
+#are a mix of zero and non-zero matching subsamples, this information can be brought to bear on 
+#the log-likelihood estimate for that locus. If we wait to take the mean in log space, then any
+#matchless trees will produce a mean value of infinity. In addition, zero-matching values will
+#only be produced when ALL of the subsamples return zero matches, in which case we assign these loci
+#the min matching value (plus a penalty) observed across loci. The penalty is governed by the exponent
+#and constant arguments, whose default values here were optimized empirically. 
+
+#In the case where there are no matches across all subsamples and loci, the beta binomial will be used to estimate
+#the lnL when nloptr or genoud optimization are being employed, as these methods require an lnL estimate. When the 
+#grid alone is being used to optimize, these completely matchless datasets can also be assigned an lnL using beta
+#binomial if calculateBetaWithoutOptimization = TRUE; otherwise, lnL will be set to be NA.
+
+#MatchedThreshold gives the proportion of the total loci that must have an estimated lnL (i.e., have some matches) 
+#before these lnLs can be used to estimate lnLs for the loci without an estimate (based on the min matching value + penalty).
+#If the proportion of matching loci falls below this threshold, then either beta binomial will be used or
+#lnL will be assign NA, as per above.
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
-		totalPopVector,summaryFn="mean", nEq=100, propZeroMatchedThreshold=0.1, exponent=1, constant=4,
-		optimization=NULL,calculateBetaWithoutOptimization=TRUE){
+		totalPopVector,summaryFn="mean", nEq=100, propMatchedThreshold=0.1, exponent=1, constant=4,
+		optimization="grid",calculateBetaWithoutOptimization=FALSE){
 
 	#Get the Beta estimate, if desired (for cases where no matches are found)
-	if(calculateBetaWithoutOptimization == TRUE || !is.null(optimization)){
+	if(calculateBetaWithoutOptimization == TRUE || optimization != "grid"){
 		outputVectorBeta<-as.numeric(outputVector)
 		outputVectorBeta<-AdjustUsingBeta(numMatches=outputVectorBeta, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
 		outputVectorBeta<-log(outputVectorBeta)
@@ -993,13 +1011,6 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 			}
 		}
 	}
-
-	#First, get mean number of matches across each set of subsamples. We do this so that if there
-	#are a mix of zero and non-zero matching subsamples, this information can be brought to bear on 
-	#the log-likelihood estimate for that locus. If we wait to take the mean in log space, then any
-	#matchless trees will produce a mean value of infinity. In addition, zero-matching values will
-	#only be produced when ALL of the subsamples return zero matches, in which case we assign these loci
-	#the min matching value (plus a penalty) observed across loci.
 	
 	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
@@ -1029,14 +1040,14 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 	summaryVector<-log(summaryVector)
 	
 	#Assign likelihood to matchless loci and then sum across loci
- 	numZeroMatched<-length(summaryVector[which(summaryVector == -Inf)]) #number of loci with matches
- 	propZeroMatched<-(length(summaryVector) - numZeroMatched) / length(summaryVector) #proportion of loci with matches
- 	if(propZeroMatched >= propZeroMatchedThreshold){ #If there are enough matching loci, assign lnL to zero-matching loci
- 		minVal<-min(summaryVector[which(summaryVector != -Inf)]) - (propZeroMatched^exponent * constant) #value assigned to zero matches
+ 	numZeroMatched<-length(summaryVector[which(summaryVector == -Inf)]) #number of matchless loci
+ 	propMatched<-(length(summaryVector) - numZeroMatched) / length(summaryVector) #proportion of loci with matches
+ 	if(propMatched >= propMatchedThreshold){ #If there are enough matching loci, assign lnL to zero-matching loci
+ 		minVal<-min(summaryVector[which(summaryVector != -Inf)]) - (propMatched^exponent * constant) #value assigned to zero matches
 		summaryVector[which(summaryVector == -Inf)]<-minVal
 		lnL<-sum(summaryVector)
 	}else{
-		if(calculateBetaWithoutOptimization == TRUE || !is.null(optimization)){
+		if(calculateBetaWithoutOptimization == TRUE || optimization != "grid"){
 			lnL<-lnLBeta
 		}else{
 			lnL<-NA
