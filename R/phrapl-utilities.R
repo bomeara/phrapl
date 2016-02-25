@@ -2208,14 +2208,21 @@ SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,total
 }
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
-#of models into a table
-ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray)),
-	setCollapseZero=NULL){
+#of models into a table (nloptr or genoud)
+ExtractOptimizationAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray)),
+	setCollapseZero=NULL,optimization=NULL){
 
 	#Pull out the overall AICs
-	AIC<-grep("objective",result,value=TRUE)
-	AIC<-gsub(".+objective = ","",AIC)
-	AIC<-gsub(", solution.+","",AIC)
+	if(optimization == "nloptr"){
+		AIC<-grep("objective",result,value=TRUE)
+		AIC<-gsub(".+objective = ","",AIC)
+		AIC<-gsub(", solution.+","",AIC)
+	}
+	if(optimization == "genoud"){
+		AIC<-grep("value",result,value=TRUE)
+		AIC<-gsub(".+value = ","",AIC)
+		AIC<-gsub(", par.+","",AIC)
+	}
 	
 	#Construct dataframe consisting of AICs and model descriptions for each model
   	overall.results<-data.frame
@@ -2252,7 +2259,7 @@ ExtractAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1
 }
 
 #This function takes output from an exhaustive search and assembles AICs and Likelihoods for a given set
-#of models into a table
+#of models into a table (grid)
 ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray)),
 	setCollapseZero=NULL){
 
@@ -2825,9 +2832,9 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 #model averaged parameter values for each parameter and model. The parameters are
 #unambiguous in that tip population information is included in ancestral population names.
 #This function is implemented at the end of a GridSearch and is called when parameters
-#are estimated using nLoptr optimization.
-ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsList=NULL,migrationArray,
-	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
+#are estimated using optimization (either nloptr or genoud).
+ExtractUnambiguousOptimizationParameters<-function(overall.results=NULL,results.list=NULL,migrationArray,
+	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2,optimization=NULL){
 
 	#Add parameters
 	all.parameters <- unique(sort(sapply(migrationArray, 
@@ -2850,8 +2857,14 @@ ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsL
 			param.unique<-param.unique[grep("n0multiplier",param.unique,invert=TRUE)]
 			param.mappings.temp[,2][which(param.mappings.temp[,2] == "n0multiplier_1")]<-"1"
 		}
-		nLoptr.parameters<-exp(nLoptrResultsList[[whichRep]]$solution)
-		nLoptr.AIC<-nLoptrResultsList[[whichRep]]$AIC
+		if(optimization == "nloptr"){
+			nLoptr.parameters<-exp(results.list[[whichRep]]$solution)
+			nLoptr.AIC<-results.list[[whichRep]]$objective
+		}
+		if(optimization == "genoud"){
+			nLoptr.parameters<-exp(results.list[[whichRep]]$par)
+			nLoptr.AIC<-results.list[[whichRep]]$value
+		}
 		names(nLoptr.parameters)<-param.unique
 
 		##DoSingleRowExtraction Stuff
@@ -2872,7 +2885,12 @@ ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsL
 			} 	
 		}
 		result.vector[1]<-models
-		result.vector[2]<-nLoptrResultsList[[whichRep]][[17]]	
+		if(optimization == "nloptr"){
+			result.vector[2]<-results.list[[whichRep]]$objective
+		}
+		if(optimization == "genoud"){
+			result.vector[2]<-results.list[[whichRep]]$value
+		}
 		results.all<-rbind(results.all,result.vector)
 		whichRep<-whichRep + 1
 	}
@@ -2911,6 +2929,9 @@ ExtractUnambiguousNLoptrParameters<-function(overall.results=NULL,nLoptrResultsL
     }
     return(results.all)   
 }
+
+
+
 
 #This function concatenates together results from separate phrapl runs using the merge function. 
 #It accommodates the new way that GridSearch calculates model averaged parameter values for unambiguous 

@@ -184,8 +184,13 @@ ProportionDifference <- function(a,b) {
 }
 
 PassBounds <- function(parameterVector, parameterBounds) {
-	#To makes sure later taus remain larger than earlier taus...
+	#If collapse values zero (i.e., Inf), just return(FALSE) here, so the Infs don't cause problems later on
 	collapseParameters<-parameterVector[grep("collapse",names(parameterVector))]
+	if(length(grep("Inf",collapseParameters)) > 0){
+		return(FALSE)
+	}
+
+	#To makes sure later taus remain larger than earlier taus...
 	if(length(collapseParameters)>1) { #have at least two
 		for(i in sequence(length(collapseParameters)-1)){
 			if(collapseParameters[i] > collapseParameters[i+1]){
@@ -334,7 +339,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 		minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
 		subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-		setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE){
+		setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization=NULL){
 	parameterVector<-exp(par)
 	
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -353,7 +358,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
 	if(!is.null(setCollapseZero)){
 		parameterVector[setCollapseZero]<-0
 	}
-save(list=ls(),file="SAVED.rda")	
+	
 	#Weed out values outside of proposed bounds (only if doing numerical optimization)
 	if(numReps > 0){ 
 		if(!is.null(setCollapseZero)){
@@ -416,7 +421,7 @@ save(list=ls(),file="SAVED.rda")
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
-  			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq)	
+  			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq,optimization=optimization)	
   		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))		
 	}
 	
@@ -961,10 +966,10 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #although effective subsample sizes can be considered by using SumDivScaledNreps
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
 		totalPopVector,summaryFn="mean", nEq=100, propZeroMatchedThreshold=0.1, exponent=1, constant=4,
-		calculateBeta=TRUE){
+		optimization=NULL,calculateBetaWithoutOptimization=TRUE){
 
 	#Get the Beta estimate, if desired (for cases where no matches are found)
-	if(calculateBeta){
+	if(calculateBetaWithoutOptimization == TRUE || !is.null(optimization)){
 		outputVectorBeta<-as.numeric(outputVector)
 		outputVectorBeta<-AdjustUsingBeta(numMatches=outputVectorBeta, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
 		outputVectorBeta<-log(outputVectorBeta)
@@ -1031,7 +1036,7 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 		summaryVector[which(summaryVector == -Inf)]<-minVal
 		lnL<-sum(summaryVector)
 	}else{
-		if(calculateBeta){
+		if(calculateBetaWithoutOptimization == TRUE || !is.null(optimization)){
 			lnL<-lnLBeta
 		}else{
 			lnL<-NA
