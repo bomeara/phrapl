@@ -2808,9 +2808,13 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 	#Remove undesired parameters
 	if(rm.n0==TRUE){
 		if(longNames==TRUE){
-    		results.temp<-results.temp[,!grepl("n0multiplier", colnames(results.temp))]
+			if(length(grep("0multiplier", colnames(results.temp))) <= 1){
+    			results.temp<-results.temp[,!grepl("n0multiplier", colnames(results.temp))]
+    		}
     	}else{
-    		results.temp<-results.temp[,!grepl("n", colnames(results.temp))]
+    		if(length(grep("n", colnames(results.temp))) <= 1){
+    			results.temp<-results.temp[,!grepl("n", colnames(results.temp))]
+    		}
     	}
 	}
 
@@ -3172,27 +3176,27 @@ sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
     			grep("migration",colnames(parmsOnly))]))])
     }else{
     	#If there is only a single parameter, need to coerce back into a data.frame
-    	if(length(parmsOnly[, grep("t",colnames(parmsOnly))]) == 1){
+    	if(length(parmsOnly[1, grep("t",colnames(parmsOnly))]) == 1){
     		parms.t<-data.frame(matrix(parmsOnly[, grep("t",colnames(parmsOnly))]))
     		colnames(parms.t)<-colnames(parmsOnly)[grep("t",colnames(parmsOnly))]
     	}else{
     		parms.t<-parmsOnly[, grep("t",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("t",colnames(parmsOnly))])]
     	}
-    	if(length(parmsOnly[, grep("n",colnames(parmsOnly))]) == 1){
+    	if(length(parmsOnly[1, grep("n",colnames(parmsOnly))]) == 1){
     		parms.n<-data.frame(matrix(parmsOnly[, grep("n",colnames(parmsOnly))]))
-    		colnames(parms.t)<-colnames(parmsOnly)[grep("n",colnames(parmsOnly))]
+    		colnames(parms.n)<-colnames(parmsOnly)[grep("n",colnames(parmsOnly))]
     	}else{
     		parms.n<-parmsOnly[, grep("n",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("n",colnames(parmsOnly))])]
     	}
-    	if(length(parmsOnly[, grep("g",colnames(parmsOnly))]) == 1){
+    	if(length(parmsOnly[1, grep("g",colnames(parmsOnly))]) == 1){
     		parms.g<-data.frame(matrix(parmsOnly[, grep("g",colnames(parmsOnly))]))
-    		colnames(parms.t)<-colnames(parmsOnly)[grep("g",colnames(parmsOnly))]
+    		colnames(parms.g)<-colnames(parmsOnly)[grep("g",colnames(parmsOnly))]
     	}else{
     		parms.g<-parmsOnly[, grep("g",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("g",colnames(parmsOnly))])]
     	}
-    	if(length(parmsOnly[, grep("m",colnames(parmsOnly))]) == 1){
+    	if(length(parmsOnly[1, grep("m",colnames(parmsOnly))]) == 1){
     		parms.m<-data.frame(matrix(parmsOnly[, grep("m",colnames(parmsOnly))]))
-    		colnames(parms.t)<-colnames(parmsOnly)[grep("m",colnames(parmsOnly))]
+    		colnames(parms.m)<-colnames(parmsOnly)[grep("m",colnames(parmsOnly))]
     	}else{
     		parms.m<-parmsOnly[, grep("m",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("m",colnames(parmsOnly))])]
     	}

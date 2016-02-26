@@ -8,7 +8,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	numReps=0, startGrid=startGrid, collapseStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00), n0Starts=c(0.1,0.5,1,2,4), 
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,...) {
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,
+	optimization="grid",...) {
 	if(!is.null(migrationArrayMap)){
 		modelID<-ReturnModel(p,migrationArrayMap)
   	}else{
@@ -141,13 +142,16 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 				startGridSecondPart<-c()
 				startGrid<-cbind(startGridFirstPart,log(1))
 			}else{
-				startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				if(length(grep("n0multiplier", paramNames)) <= 1){
+					startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				}else{
+					startGridSecondPart<-startGrid[(2 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				}
 				startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
 			}
-  		
 			names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
 		}            
-        
+      
 		if(is.null(nTreesGrid)){
 			nTreesGrid<-10*nTrees #thinking here that want better estimate on the grid than in the heat of the search
 		}
@@ -410,10 +414,13 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 				startGridSecondPart<-c()
 				startGrid<-cbind(startGridFirstPart,log(1))
 			}else{
-				startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				if(length(grep("n0multiplier", paramNames)) <= 1){
+					startGridSecondPart<-startGrid[(1 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				}else{
+					startGridSecondPart<-startGrid[(2 + length(sequence(positionOfFirstN0 - 1))):length(names(startGrid))]
+				}
 				startGrid<-cbind(startGridFirstPart,log(1),startGridSecondPart)
 			}
-		
 			names(startGrid)[positionOfFirstN0]<-"n0multiplier_1"
 		}
 		
@@ -752,23 +759,26 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 			##Get unambiguous parameters (grid)
 			parameters<-ExtractUnambiguousGridParameters(overall.results=overall.results,gridList=gridList,
 				migrationArray=migrationArray,sortParameters=TRUE,sortModelsAIC=TRUE)
+			parameters<-parameters[order(parameters$models),]
 			parametersOnly<-data.frame(matrix(as.matrix(parameters[,-c(1:2)]),nrow=nrow(parameters)))
 			colnames(parametersOnly)<-colnames(parameters)[-c(1:2)]
+			overall.results<-cbind(overall.results,parametersOnly)
 			
 			##Concatenate overall.results and parameters
-			results.final<-list("AIC.Grid"=gridList,"overall.results"=cbind(overall.results,
-				parametersOnly))
+			results.final<-list("AIC.Grid"=gridList,"overall.results"=overall.results)
 		}else{
 			##Get unambiguous parameters (optimization)
 			parameters<-ExtractUnambiguousOptimizationParameters(overall.results=overall.results,
 				results.list=results.list,migrationArray=migrationArray,sortParameters=TRUE,
 				sortModelsAIC=TRUE,optimization=optimization)
+			parameters<-parameters[order(parameters$models),]
 			parametersOnly<-data.frame(matrix(as.matrix(parameters[,-c(1:2)]),nrow=nrow(parameters)))
 			colnames(parametersOnly)<-colnames(parameters)[-c(1:2)]
+			overall.results<-cbind(overall.results,parametersOnly)
 			
 			##Concatenate overall.results and parameters
 			results.final<-list("search.results"=results.list,"AIC.Grid"=gridList,
-				"overall.results"=cbind(overall.results,parametersOnly))
+				"overall.results"=overall.results)
 		}
 	}
 
