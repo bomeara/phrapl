@@ -35,7 +35,7 @@ MsIndividualParameters<-function(migrationIndividual) {
 }
 
 KAll<-function(migrationIndividual) {
-  return(length(MsIndividualParameters(migrationIndividual)) -1) #-1 since first n0 is not free
+  return(length(MsIndividualParameters(migrationIndividual)) - 1) #-1 since first n0 is not free
 }
 
 KPopInterval<-function(popInterval) {
@@ -422,7 +422,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
   			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq,optimization=optimization)	
-  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))		
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))		
 	}
 	
 	if(print.results) {
@@ -1014,6 +1014,7 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 	
 	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
+save(list=ls(),file="SAVED.rda")
 #	outputVectorBeta<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
 	summaryVector<-c()
 	localVector<-rep(NA, subsamplesPerGene)
