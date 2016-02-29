@@ -1014,7 +1014,6 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 	
 	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
-save(list=ls(),file="SAVED.rda")
 #	outputVectorBeta<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
 	summaryVector<-c()
 	localVector<-rep(NA, subsamplesPerGene)
