@@ -2934,9 +2934,6 @@ ExtractUnambiguousOptimizationParameters<-function(overall.results=NULL,results.
     return(results.all)   
 }
 
-
-
-
 #This function concatenates together results from separate phrapl runs using the merge function. 
 #It accommodates the new way that GridSearch calculates model averaged parameter values for unambiguous 
 #parameters (implemented in December 2015). These parameters are calculated in a GridSearch using the 
@@ -2960,68 +2957,110 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	result <- c()
 	time.elapsed <- c()
 	row.counter<-1
+	templateRep<-c()
 	if(addTime.elapsed == TRUE){
 		nonparmColsWithTime<-nonparmCols + 1
 	}
-	for (rep in 1:length(rdaFiles)){
+	nonparmColsOriginal<-nonparmCols
+	
+	#Extract and combine results across models
+	for(rep in 1:length(rdaFiles)){
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
-
+		
 		#Combine results from the rda into dataframe
-		current.results<-result$overall.results[order(result$overall.results$models),] #sort by model number (same order as parameters)
-		if(addTime.elapsed==TRUE){
-			current.results<-cbind(current.results[,1:nonparmCols],elapsedHrs=time.elapsed[,2],
-				current.results[,(nonparmCols + 1):ncol(current.results)])
-			nonparmCols<-nonparmColsWithTime
+		#If a result exists...
+		if(!is.null(result)){ 
+			templateRep<-append(templateRep,rep) #Save those rep numbers that yield a result
+			current.results<-result$overall.results[order(result$overall.results$models),] #sort by model number (same order as parameters)
+ 		
+ 		#If a result is null for this model...
+ 		}else{ 
+			#Fill in null results for the null model (i.e., NAs)
+			current.results<-data.frame(matrix(NA,nrow=1,ncol=nonparmColsOriginal))
+			colnames(current.results)<-c("models","AIC","lnL","params.K","params.vector")
+			#First fill in the model info
+			current.results$models<-model
+			current.results$params.K<-KAll(migrationArray[[model]])
+			if(length(grep("n0multiplier",MsIndividualParameters(migrationArray[[model]]))) == 1){ #Toss n0multi, if there's one
+				current.results$params.vector<-paste(MsIndividualParameters(migrationArray[[model]])[-grep("n0multiplier",
+					MsIndividualParameters(migrationArray[[model]]))],collapse=" ")
+			}else{
+				current.results$params.vector<-paste(MsIndividualParameters(migrationArray[[model]]),collapse=" ")
+			}
+			#Then get the parameters
+			param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[model]])
+			parametersNullNames<-param.mappings[which(param.mappings[,2] != "0"),][,1]
+			parametersNull<-data.frame(matrix(NA,nrow=1,ncol=length(parametersNullNames)))
+			colnames(parametersNull)<-parametersNullNames
+			current.results<-cbind(current.results,parametersNull)
 		}
 		
+		#Add time if desired		
+		if(addTime.elapsed==TRUE){
+			load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #make sure current model is loaded again
+			current.results<-cbind(current.results[,1:nonparmColsOriginal],elapsedHrs=time.elapsed[,2],
+				current.results[,(nonparmColsOriginal + 1):ncol(current.results)])
+			nonparmCols<-nonparmColsWithTime
+		}
+
 		#Add current.results to totalData
-    	#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
-    	#unique such that they can be merged. The row is tossed eventually.
+		#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
+		#unique such that they can be merged. The row is tossed eventually.
 		row.col<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
-    	colnames(row.col)<-"row.col"
-    	current.results<-cbind(row.col,current.results)
-    	
-    	if(rep == 1){
+		colnames(row.col)<-"row.col"
+		current.results<-cbind(row.col,current.results)
+
+		if(rep == 1){
 			totalData<-rbind(totalData,current.results)
-    	}else{ 
-    		totalData<-merge(totalData,current.results,all=TRUE)
-    	}
-    	row.counter<-nrow(totalData) + 1
+		}else{ 
+			totalData<-merge(totalData,current.results,all=TRUE)
+		}
+		row.counter<-nrow(totalData) + 1
 	}
-	
+
 	#Remove undesired parameters
 	if(rm.n0==TRUE){
 		if(longNames==TRUE){
-    		totalData<-totalData[,!grepl("n0multiplier", colnames(totalData))]
-    	}else{
-    		totalData<-totalData[,!grepl("n[0123456789]", colnames(totalData))]
-    	}
+			totalData<-totalData[,!grepl("n0multiplier", colnames(totalData))]
+		}else{
+			totalData<-totalData[,!grepl("n[0123456789]", colnames(totalData))]
+		}
 	}
-	
+
 	#Sort parameter columns into desired order
-    totalData<-sortParameterTable(totalData,(nonparmCols + 2),longNames=longNames)
-	
+	totalData<-sortParameterTable(totalData,(nonparmCols + 2),longNames=longNames)
+
 	#Make sure totalData is all sorted by model
 	totalData<-totalData[order(totalData$models),] 
-	
+
 	#Remove row counter column
 	totalData<-totalData[,-1]
 	row.names(totalData)<-1:nrow(totalData)    
-	
+
 	#Add model ranks, dAIC, and wAIC
 	if(addAICweights==TRUE){
-		dAICRankWeights<-GetAICweights(totalData)
-		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])		
+		totalDataRank<-totalData[which(!is.na(totalData$AIC)),] #Break up dataset by AICs with and without NA
+		totalDataNA<-totalData[which(is.na(totalData$AIC)),]
+		dAICRankWeights<-GetAICweights(totalDataRank)
+		totalDataRank<-cbind(totalDataRank[,1:3],dAICRankWeights,totalDataRank[,4:ncol(totalDataRank)])
+		if(nrow(totalDataNA) > 0){
+			totalDataNA<-cbind(totalDataNA[,1:3],dAICRankWeights[1:nrow(totalDataNA),],totalDataNA[,4:ncol(totalDataNA)])
+			totalDataNA[,4:6]<-NA
+			totalData<-rbind(totalDataRank,totalDataNA)
+		}else{
+			totalData<-totalDataRank
+		}
 		totalData<-totalData[order(totalData$dAIC,totalData$models),]			
 	}
-	
+
 	#Print table
 	if(!is.null(outFile)){
 		write.table(totalData,outFile,quote=FALSE,sep="\t",row.names=FALSE)
 	}
 	
-    return(totalData)
-}	
+	return(totalData)
+
+}		
 
 #This function concatenates together results from separate phrapl runs.
 #This differs from ConcatenateResults in that it can be used on phrapl results produced prior to adding
