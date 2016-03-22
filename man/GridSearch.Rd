@@ -175,7 +175,9 @@ automatically to account for the specified fixed parameters.
 A value specifying how optimized parameter values should be selected. Parameter
 estimates are calculated by taking the mean parameter value across all values
 within an AIC distance of dAIC.cutoff relative to the lowest AIC value. The 
-default is 2 AIC points.
+default is 2 AIC points. Note that this argument only applies when calculating
+parameters with the ambiguous name format that was used prior to
+December 2015.
 }
   \item{rm.n0}{
 A boolean indicating whether n0multiplier parameter estimates should be outputted
