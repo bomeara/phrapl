@@ -399,8 +399,10 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
  	 	#Apply weights to matches
 		if(!is.null(subsampleWeights.df)) {
 			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent) * subsampleWeights.df[[j]][,1]
+			subsampleWeightsVec<-subsampleWeights.df[[j]][,1]
 		} else {
 			likelihoodVectorCurrent<-as.numeric(likelihoodVectorCurrent)
+			subsampleWeightsVec<-rep(1,length(subsampleWeights.df[[j]][,1]))
 		}
 
 	  	likelihoodVector<-append(likelihoodVector,likelihoodVectorCurrent)
@@ -420,8 +422,9 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=sys
   		}		
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
-  			popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,
-  			totalPopVector=totalPopVector,summaryFn=summaryFn,nEq=nEq,optimization=optimization)	
+  			popAssignments=popAssignments,subsampleWeightsVec=subsampleWeightsVec,nTrees=nTrees,
+  			subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,summaryFn=summaryFn,
+  			nEq=nEq,optimization=optimization)	
   		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))		
 	}
 	
@@ -965,13 +968,15 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #If only one set of subsamples is used, use this to calculate likelihoods (no extrapolation),
 #although effective subsample sizes can be considered by using SumDivScaledNreps
 
-#The way this works: first, get mean number of matches across each set of subsamples. We do this so that if there
-#are a mix of zero and non-zero matching subsamples, this information can be brought to bear on 
-#the log-likelihood estimate for that locus. If we wait to take the mean in log space, then any
-#matchless trees will produce a mean value of infinity. In addition, zero-matching values will
-#only be produced when ALL of the subsamples return zero matches, in which case we assign these loci
-#the min matching value (plus a penalty) observed across loci. The penalty is governed by the exponent
-#and constant arguments, whose default values here were optimized empirically. 
+#The way this works: Overall likelihoods are calculated by first taking the mean value across subsamples,
+#and then summing these means across all loci. Prior to taking the mean value, subsamples that yielded zero
+#matches must be assigned a likelihood. To do this, we assume that a single match occurred, calculate the
+#likelihood of a single match (assuming the subsampleWeight of the tree and nTrees), and then apply an lnL penalty (to
+#account for the fact that zero matches were actually observed). This penalty was optimized empirically to produce 
+#likelihood values observed using coal looking at both nTrees = 1e4 and 1e5 (nTrees should rarely smaller or larger
+#than this). Although the proportion of matchless trees in a dataset was also considered when optimizing the penalty,
+#the best penalties excluded this information. The best penalty was -5 and -4 lnL points for 1e4 and 1e5 nTrees,
+#respectively. The penalty applied by default is thus calculated assuming the slope derived from this fact. 
 
 #In the case where there are no matches across all subsamples and loci, the beta binomial will be used to estimate
 #the lnL when nloptr or genoud optimization are being employed, as these methods require an lnL estimate. When the 
@@ -979,14 +984,14 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #binomial if calculateBetaWithoutOptimization = TRUE; otherwise, lnL will be set to be NA.
 
 #MatchedThreshold gives the proportion of the total loci that must have an estimated lnL (i.e., have some matches) 
-#before these lnLs can be used to estimate lnLs for the loci without an estimate (based on the min matching value + penalty).
-#If the proportion of matching loci falls below this threshold, then either beta binomial will be used or
-#lnL will be assign NA, as per above.
-ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1, 		
-		totalPopVector,summaryFn="mean", nEq=100, propMatchedThreshold=0.1, exponent=1, constant=4,
-		optimization="grid",calculateBetaWithoutOptimization=FALSE){
+#before lnLs can be estimated based on the min matching value + penalty. The idea here is that if zero-matching is so
+#pervasive, then who's to say the lnL isn't extremely low (e.g., infinity). If the proportion of matching loci falls 
+#below this threshold, then either beta binomial will be used or lnL will be assign NA, as per above.
+ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsampleWeightsVec,nTrees=1,
+	subsamplesPerGene=1,totalPopVector,summaryFn="mean", nEq=100, propMatchedThreshold=0.05,penaltyAtIntercept=5.11,
+	penaltySlope=0.000011,optimization="grid",calculateBetaWithoutOptimization=FALSE){
 
-	#Get the Beta estimate, if desired (for cases where no matches are found)
+	##First get the Beta estimate, if desired, in case needed (for cases where no matches are found)
 	if(calculateBetaWithoutOptimization == TRUE || optimization != "grid"){
 		outputVectorBeta<-as.numeric(outputVector)
 		outputVectorBeta<-AdjustUsingBeta(numMatches=outputVectorBeta, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
@@ -1012,16 +1017,32 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 		}
 	}
 	
+	##Now get the likelihood using the "min possible" method (assuming 1 match minus an empirically derived penalty) 
 	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
-#	outputVectorBeta<-AdjustUsingBeta(numMatches=outputVector, nTrees=nTrees, nTips=sum(popAssignments[[1]]), nEq=nEq)
+	
+	#Calculate log-likelihoods for each locus
+	outputVector<-outputVector/nTrees #get likelihood
+	outputVector<-log(outputVector)
+	
+	#Assign likelihood to matchless loci (assume 1 match)
+	zeroMatchers<-grep(-Inf,outputVector) #keep track of the distribution of zero matching trees
+	penaltyConstant<-penaltyAtIntercept - (nTrees * penaltySlope) #calculate penalty based on nTrees
+	outputVector[which(outputVector == -Inf)]<-log(subsampleWeightsVec[which(outputVector == -Inf)] / nTrees) - penaltyConstant
+	
+	#Summarize likelihoods across subsamples for each locus
 	summaryVector<-c()
 	localVector<-rep(NA, subsamplesPerGene)
+	matchlessLoci<-c()
 	baseIndex<-1
 	locusIndex<-1
+	counterAll<-0
+	currentCounter<-c()
 	for (i in sequence(length(outputVector))) {
 		localVector[baseIndex]<-outputVector[i]
 		baseIndex <- baseIndex+1
+		counterAll<-counterAll + 1
+		currentCounter<-append(currentCounter,counterAll)
 		if(i%%subsamplesPerGene == 0) {
 			if(summaryFn=="SumDivScaledNreps"){
 				summaryVector<-summaryVector+get(summaryFn)(localVector=localVector,popAssignments,
@@ -1029,22 +1050,26 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,nTree
 			}else{
 				summaryVector<-append(summaryVector,get(summaryFn)(localVector))
 			}
+			
+			#Build object that keeps track of which loci were characterized by completely matchless subsamples
+			areThereMatches<-currentCounter %in% zeroMatchers
+			if(sum(areThereMatches) == length(currentCounter)){
+				matchlessLoci<-append(matchlessLoci,1)
+			}else{
+				matchlessLoci<-append(matchlessLoci,0)
+			}
+			
+			#Reset
 			localVector<-rep(NA, subsamplesPerGene)
 			baseIndex<-1
 			locusIndex<-locusIndex + 1
+			currentCounter<-c()
 		}
 	}
-
-	#Calculate log-likelihoods for each locus
-	summaryVector<-summaryVector/nTrees #get likelihood
-	summaryVector<-log(summaryVector)
 	
 	#Assign likelihood to matchless loci and then sum across loci
- 	numZeroMatched<-length(summaryVector[which(summaryVector == -Inf)]) #number of matchless loci
- 	propMatched<-(length(summaryVector) - numZeroMatched) / length(summaryVector) #proportion of loci with matches
+ 	propMatched<-1 - (sum(matchlessLoci==1) / length(matchlessLoci)) #proportion of loci with matches
  	if(propMatched >= propMatchedThreshold){ #If there are enough matching loci, assign lnL to zero-matching loci
- 		minVal<-min(summaryVector[which(summaryVector != -Inf)]) - (propMatched^exponent * constant) #value assigned to zero matches
-		summaryVector[which(summaryVector == -Inf)]<-minVal
 		lnL<-sum(summaryVector)
 	}else{
 		if(calculateBetaWithoutOptimization == TRUE || optimization != "grid"){
