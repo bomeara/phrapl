@@ -1,0 +1,104 @@
+---
+title: "Setting Up and Running PHRAPL"
+author: "Nathan Jackson"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Setting Up and Running PHRAPL}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This is a brief tutorial that will walk you through the necessary steps required for doing model selection with PHRAPL, using a toy dataset. The steps involved are as follows:
+
+1. Instal PHRAPL and its dependencies
+2. Prepare the dataset
+3. Analyze the dataset
+4. View results
+
+This tutorial assumes you are using a Mac. For more detailed information about certain tasks, take a look at the help files within PHRAPL (for a list of these, type `library(help=phrapl)` once the package is installed).
+
+The included files used in this tutorial are
+
+1. trees.tre, which gives 10 sample trees for three simulated populations
+2. cladeAssignments.txt, which gives the assignment of individuals to populations
+3. InstallPhraplDependencies.R, which gives code for installing dependencies used by phrapl
+
+# Installing PHRAPL and its dependencies
+
+## 1. Install ms
+
+The first step is to install Richard Hudson's coalescent simulator, ms, which PHRAPL uses to simulate trees under a model. To do this, first download the program available here:
+
+    http://home.uchicago.edu/rhudson1/source/mksamples.html
+
+Then, to extract the files, in the terminal, navagate to the ms directory and type
+
+    tar -xvf ms.gz
+
+To compile the program (per the ms manual), navagate to msdir (by typing `cd msdir`) and type
+
+    gcc -o ms ms.c streec.c rand1.c -lm
+
+If this doesn't work, try this instead:
+
+    gcc -o ms ms.c streec.c rand2.c -lm
+
+Then copy ms to local bin by typing
+
+    cp ms /usr/local/bin
+
+
+
+Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+
+## 2. Install Xcode
+
+Next, install the integrated development environment, Xcode, which can be downloaded from the following webpage:
+
+    https://developer.apple.com/xcode/downloads/
+
+##3. Install perl
+
+The scripting language, perl, comes pre-intalled on Mac OS X systems. However, to make sure, type `perl -v`, which will give the version installed. If a new version needs to be installed for whatever reason, you can download it from the following webpage:
+
+    http://www.perl.org/get.html
+
+
+
+
+The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+
+    output: 
+      rmarkdown::html_vignette:
+        css: mystyles.css
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+plot(1:10)
+plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
