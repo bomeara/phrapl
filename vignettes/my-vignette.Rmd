@@ -48,10 +48,6 @@ Then copy ms to local bin by typing
 
     cp ms /usr/local/bin
 
-
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
 ## 2. Install Xcode
 
 Next, install the integrated development environment, Xcode, which can be downloaded from the following webpage:
@@ -63,6 +59,31 @@ Next, install the integrated development environment, Xcode, which can be downlo
 The scripting language, perl, comes pre-intalled on Mac OS X systems. However, to make sure, type `perl -v`, which will give the version installed. If a new version needs to be installed for whatever reason, you can download it from the following webpage:
 
     http://www.perl.org/get.html
+
+##4. Install PHRAPL from Github
+
+PHRAPL can currently be found on Github. To install it, first install the R package, `devtools` by typing
+
+    install.packages("devtools")
+    
+Then load devtools (`library(devtools)`) and type
+
+    devtools::install_github("bomeara/phrapl")
+  
+##5. Install PHRAPL R package dependencies
+
+PHRAPL uses functions from a variety of other R pacakges. To install these, open R and load the PHRAPL library by typing `library(phrapl)`. Then type
+
+    source(paste(path.package("phrapl"),"/extdata/InstallPhraplDependencies.R",sep=""))
+
+Now PHRAPL is ready to run. Type `library(help=phrapl)` to get a list of functions with documentation. To open a help file for a particular function, type `?function_name`.
+
+#Preparing your dataset for a PHRAPL analysis
+
+
+
+
+
 
 
 

@@ -103,7 +103,6 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <pre><code>gcc -o ms ms.c streec.c rand2.c -lm</code></pre>
 <p>Then copy ms to local bin by typing</p>
 <pre><code>cp ms /usr/local/bin</code></pre>
-<p>Note the various macros within the <code>vignette</code> section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the <code>title</code> field and the <code>\VignetteIndexEntry</code> to match the title of your vignette.</p>
 </div>
 <div id="install-xcode" class="section level2">
 <h2>2. Install Xcode</h2>
@@ -112,13 +111,29 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </div>
 <div id="install-perl" class="section level2">
 <h2>3. Install perl</h2>
-<p>The scripting language, perl, comes pre-intalled on Mac OS X systems. However, to make sure, type <code>perl -v</code>, which will give the version installed. If a new version needs to be installed, download it from the following webpage:</p>
+<p>The scripting language, perl, comes pre-intalled on Mac OS X systems. However, to make sure, type <code>perl -v</code>, which will give the version installed. If a new version needs to be installed for whatever reason, you can download it from the following webpage:</p>
 <pre><code>http://www.perl.org/get.html</code></pre>
+</div>
+<div id="install-phrapl-from-github" class="section level2">
+<h2>4. Install PHRAPL from Github</h2>
+<p>PHRAPL can currently be found on Github. To install it, first install the R package, <code>devtools</code> by typing</p>
+<pre><code>install.packages(&quot;devtools&quot;)</code></pre>
+<p>Then load devtools (<code>library(devtools)</code>) and type</p>
+<pre><code>devtools::install_github(&quot;bomeara/phrapl&quot;)</code></pre>
+</div>
+<div id="install-phrapl-r-package-dependencies" class="section level2">
+<h2>5. Install PHRAPL R package dependencies</h2>
+<p>PHRAPL uses functions from a variety of other R pacakges. To install these, open R and load the PHRAPL library by typing <code>library(phrapl)</code>. Then type</p>
+<pre><code>source(paste(path.package(&quot;phrapl&quot;),&quot;/extdata/InstallPhraplDependencies.R&quot;,sep=&quot;&quot;))</code></pre>
+<p>Now PHRAPL is ready to run. Type <code>library(help=phrapl)</code> to get a list of functions with documentation. To open a help file for a particular function, type <code>?function_name</code>.</p>
+</div>
+</div>
+<div id="preparing-your-dataset-for-a-phrapl-analysis" class="section level1">
+<h1>Preparing your dataset for a PHRAPL analysis</h1>
 <p>The <code>html_vignette</code> template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:</p>
 <pre><code>output: 
   rmarkdown::html_vignette:
     css: mystyles.css</code></pre>
-</div>
 <div id="figures" class="section level2">
 <h2>Figures</h2>
 <p>The figure sizes have been customised so that you can easily put two images side-by-side.</p>
