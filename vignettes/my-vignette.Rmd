@@ -1,6 +1,6 @@
 ---
 title: "Setting Up and Running PHRAPL"
-author: "Nathan Jackson"
+author: "Nathan D. Jackson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -9,20 +9,25 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-This is a brief tutorial that will walk you through the necessary steps required for doing model selection with PHRAPL, using a toy dataset. The steps involved are as follows:
+This is a brief tutorial that will walk you through the necessary steps required for doing model selection with PHRAPL, using a toy dataset. Prior to running an analysis on your dataset, you should read the original paper that describes the principles and methodology behind PHRAPL. The best source can currenly be found at
 
-1. Instal PHRAPL and its dependencies
+    http://www.biorxiv.org/content/early/2015/08/24/025353.abstract
+
+    `O'Meara, BC, ND Jackson, AE Morales-Garcia, and BC Carstens. 2015. Phylogeographic inference        using model selection. BioRxiv. 025353. doi: http://dx.doi.org/10.1101/025353`  
+
+Thus, this tutorial will assume that the reader already has a basic understanding of how PHRAPL works and the problems it is meant to address, and will instead focus on the practical issues surrounding the analysis of a dataset.
+
+This vignette will in turn address four major steps behind running a PHRAPL analysis
+
+1. Install PHRAPL and its dependencies
 2. Prepare the dataset
 3. Analyze the dataset
 4. View results
 
-This tutorial assumes you are using a Mac. For more detailed information about certain tasks, take a look at the help files within PHRAPL (for a list of these, type `library(help=phrapl)` once the package is installed).
+This tutorial assumes you are using a Mac. We have not yet done any testing of the method on a PC, athough this is something we would like to pursue in the future. For more detailed information about certain tasks, take a look at the help files within PHRAPL (for a list of these, type `library(help=phrapl)` once the package is installed).
 
-The included files used in this tutorial are
 
-1. trees.tre, which gives 10 sample trees for three simulated populations
-2. cladeAssignments.txt, which gives the assignment of individuals to populations
-3. InstallPhraplDependencies.R, which gives code for installing dependencies used by phrapl
+
 
 # Installing PHRAPL and its dependencies
 
@@ -78,7 +83,242 @@ PHRAPL uses functions from a variety of other R pacakges. To install these, open
 
 Now PHRAPL is ready to run. Type `library(help=phrapl)` to get a list of functions with documentation. To open a help file for a particular function, type `?function_name`.
 
+
+
 #Preparing your dataset for a PHRAPL analysis
+
+Three R objects must be initially specified to run a PHRAPL analysis:
+
+1. A set of trees in newick format
+2. An assignment table that assigns tips of the trees into populations or species
+3. A vector specifying the number of populations in the dataset as well as the number of tips to subsample per population
+
+##Importing trees
+
+If you are begining with sequence data, note that PHRAPL includes a function for inferring gene trees from sequence data by calling up RAxML (type `?RunRaxml` for more information on using this function). If your sequence data is in nexus format, there is also a function for converting your data into phylip format, which is the required format for running RAxML (type `?RunSeqConverter`). This function calls up a perl script written by Olaf R.P. Bininda-Emonds.
+
+For the purposes of this tutorial, I will assume that you already have a set of trees in newick format sitting in a text file called "trees.tre". To bring these trees into R, first load the `ape` library:
+
+    library(ape)
+  
+Then read the trees into R and create a multiPhylo tree object called `trees`:
+
+    trees<-read.tree("trees.tre")
+  
+PHRAPL comes packaged with a toy dataset that we will use during this tutorial. This dataset consists of 10 trees, each with 61 tips: 20 tips from each of three populations, plus one outgroup individual. To bring this dataset into R, type
+
+    trees<-read.tree(paste(path.package("phrapl"),"/extdata/trees.tre",sep=""))
+
+Note that multiPhylo objects behave as R lists. Thus to access the the first tree within the object, type
+
+    trees[[1]]
+
+To plot this tree, type
+
+    plot.phylo(trees[[1]])
+
+
+##Importing an assignment table
+
+The population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., "A", "B", "C"). If there is an outgroup taxon, it MUST be listed as the last population in the table. A header row of some sort must also be included.
+
+You can of course create this table direcly in R as a data.frame. If you've created the assignment table as a tab-delimited text file (e.g., "cladeAssignments.txt"), you can import it into R as a data.frame by typing
+
+    assignFile<-read.table("cladeAssignments.txt",header=TRUE,stringsAsFactors=FALSE) 
+
+To import an assignment table for our toy dataset, type
+
+    assignFile<-read.table(paste(path.package("phrapl"),"/extdata/cladeAssignments.txt",sep=""),header=TRUE,stringsAsFactors=FALSE) 
+
+##Specifying popAssignments
+
+Rather than fitting datasets to models using all the tree tips simultaneously, PHRAPL uses iterative subsamples of tips, allowing for the method to work in a managable tree space. Thus, the number of tips to subsample per population must be specified by the user using `popAssignments`.
+
+A `popVector` is a vector, whoes length is equal to the number of populations in the dataset and whoes values are equal to the number of subsampled tips. So, for example, if are subsampling 3 tips from a dataset that contains 3 populations, `popVector = c(3,3,3)`. If subsampling 4 tips from 2 populations, `popVector = c(4,4)`. 
+
+Because PHRAPL possesses the ability to analyze a dataset under a series of different subsampling regimes, `popAssignments` is the object that users actually specify, which is simply a list of popVectors (although popAssignments will typically be a list that contains only a single popVector). So, if the desired `popVector = c(3,3,3)`, then `popAssignments` should be set by typing
+
+    popAssignments<-list(c(3,3,3))
+    
+which is the value we should use for our toy dataset.    
+
+Typically, we recommend subsampling 3 or 4 tips per population. However, subsampling 2 may be necessary with more than 5 populations while subsampling 5 tips may work fine with 3 or fewer populations. As a rule of thumb, we recommend subsampling in a way that keeps the sum of popAssignments at 16 or less. With greater than 16 tips, the number of possible trees becomes so large that PHRAPL has a difficult time simulating enough trees under a given model to find any matches to the empirical trees, precluding lnL estimation. 
+
+
+
+#Generating a model set
+
+A model analyzed by PHRAPL is called a `migrationIndividual`, which contains matrices that define the unique coalescence (`collapseMatrix`), population size (`n0multiplierMap`), population growth (`growthMap`), and migration (`migrationArray`) parameters included in that model. A set of models is also called a `migrationArray`, which is an R list of `migrationIndividuals`. 
+
+One advantage of PHRAPL, is that it can generate and analyze a large set of models relatively quickly. A model set (`migrationArray`) consisting of all possible models given certain constraints, such as the number of free parameters, K, available for a particular parameter (maxN0K,maxGrowthK, and maxMigrationK) or available overall (maxK), can be generated using the `GenerateMigrationIndividuals` function. 
+For example, a list of models for 3 populations with
+
+1. an overall maximum K of 3 (`maxK = 3`)
+2. a maximum number of migration parameters of 1 (`maxMigrationK = 1`) 
+3. no variation in population size among populations (`maxN0K = 1`)
+4. only fully resolved trees (`forceTree = TRUE`)
+5. migration set to be symmetrical between populations (`forceSymmetricalMigration = TRUE`) 
+
+can be generated as follows:
+
+First, define the arguments within `GenerateMigrationInidividuals` as specified above:
+
+    popVector<-popAssignments[[1]]
+    maxK<-3
+    maxMigrationK=1
+    maxN0K=1
+    maxGrowth=0
+    forceTree=TRUE
+    forceSymmetricalMigration=TRUE
+
+Then, create the migrationArray:
+
+        migrationArray<-GenerateMigrationIndividuals(popVector=popVector,maxK=maxK,maxMigrationK=maxMigrationK,maxN0K=maxN0K,maxGrowth=maxGrowth,forceTree=forceTree,forceSymmetricalMigration=forceSymmetricalMigration)
+
+This yields a `migrationArray` containing 48 models. If desired, one can also
+specify a particular set of fixed parameter indexes (using the `collapseList`, `n0multiplierList`,
+`growthList`, and `migrationList` arguments) such that only a subset of parameters will be
+varied in the outputted migrationArray. For more on this, see the R documentation (`?GenerateMigrationIndividuals`).
+
+#Generating a single *a prior* model
+
+What if, in addition to generating a list of possible models, one would like to create a specific
+model for which one has some a priori reason to analyze alone or to add to a larger `migrationArray` as generated above? Do do this, you can use the function `MakingMigrationIndividualsOneAtATime`, whoes purpose is to create a single a priori `migrationIndividual` for a specified coalescence, n0multiplier, growth, and migration history. The four corresponding arguments for this function are `collapseList`, `n0multiplierMapList`, `growthList` and `migrationList`.
+
+`collapseList` is a list of coalescence history vectors, one vector for each 
+coalescent event in the tree. So, 
+
+    collapseList = list(c(1,1,0),c(2,NA,2)) 
+    
+means that there are two coalescence events: in the first event, populations 1 and 2 
+coalesce while population 3 does not; in the second event, ancestral population 
+1-2 coalesces with population 3. 
+
+`n0multiplierList` and `growhtList` are specified in the same format as collapseList, and the available parameters for this must match the splitting history depicted in the collapseList.  Note that the `n0multiplier` parameter is not a parameter for population size, but is rather a population size scalar. So, a model in which population sizes are equal across populations (contemporary and ancestral) would be specified as
+
+    n0multiplierList = list(c(1,1,0),c(1,NA,1))
+    
+If you would like a model positing one growth rate for tip populations, and another growth rate for ancestral populations, this would be specified as 
+
+    growthList = list(c(1,1,0),c(2,NA,2))
+    
+However, to keep things simple for analyzing this toy dataset, lets just set all growth parameters to zero
+
+    growthList = list(c(0,0,0),c(0,NA,0))
+
+Finally, `MigrationList` is a list of migration matrices for the model. There will be one migration matrix for the present generation, plus any historical matrices that apply (there will be as many matrices as there are collapse events). So, in the three population scenario, if there is symmetrical migration between populations 1 and 2 and no historical migration, migrationList will be:
+
+      migrationList<-list(
+      t(array(c(
+      NA, 1, 0,
+      1, NA, 0,
+      0, 0, NA),
+      dim=c(3,3))),
+      
+      t(array(c(
+      NA, NA, 0,
+      NA, NA, NA,
+      0,  NA, NA),
+      dim=c(3,3))))
+
+Note that in R, arrays are constructed by reading in values from column 1 first then from column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e., first listing values for row 1, then row 2, etc). Thus, here, arrays are typed in by rows and then transposed (using `t`). Also, spacing and hard returns can be used to visualize these values in the form of matrices.
+
+So, let's say you want to add one more model to our 48-model migrationArray. The desired model is the same as model #1 (i.e., `migrationArray[[1]]`, where ((pop1, pop2) pop3))), but which includes asymmetrical migration rates between sister populations at the tips: 1 rate for pop1 --> pop2 and another rate for pop2 --> pop1. This migrationList would be specified as
+```
+    migration_1<-t(array(c(
+    			NA, 1, 0,
+    			2, NA, 0,
+    			0, 0, NA),
+    			dim=c(3,3)))
+    
+    migration_2<-t(array(c(
+    			NA, NA, 0,
+    			NA, NA, NA,
+    			0,  NA, NA),
+    			dim=c(3,3)))
+    			
+    migrationList<-list(migration_1,migration_2)
+```
+
+So, to produce our desired model, we use the function `GenerateMigrationIndividualsOneAtATime`:
+
+    migrationIndividual<-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,n0multiplierList=n0multiplierList,growthList=growthList,migrationList=migrationList)
+
+Then, we can add this model to the migrationArray:
+
+    migrationArray<-c(migrationArray,list(migrationIndividual))
+
+and view it (`migrationArray[[49]]`).
+
+Note that a collapseList must always be specified. However, the remaining three parameters are optional, and if they are not specified, null matrices will be automatically produced in which all n0multipliers are set to one, and all growth and migration parameters are set to zero.
+
+Thus, the same migrationIndividual as above can be produced by simply typing
+
+    migrationIndividual<-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,migrationList=migrationList)
+
+##Adding demographic events to a model that are not tied to a coalescence event
+
+One final note on model creation is that one can add additional complexity to generated or specified models using the function `AddEventToMigrationArray`. This function can add additional demographic shifts over time that do not correspond to a splitting event. For example, if one would like to simulate a divergence event that occurs when populations are in allopatry, followed by the resumption of migration at a latter time upon secondary contact, using `AddEventToMigrationArray`, one can add a new migration matrix to an existing model that is applied prior to the coalescence event. For details about how to add such demographic events that are not tied to a coalescence events to a model, see the R documentation (`?AddEventToMigrationArray`).
+
+
+
+#Subsampling trees
+
+As discussed above, approximate likelihood calculation as currently implemented in PHRAPL requires that trees not be too large (~16 tips or fewer) such that there exists a measurable chance of observing the empirical tree within a distribution of simulated trees. Since most phylogeographic datasets are considerably larger than this, PHRAPL relies on analyzing replicate subsamples of trees, rather than the full trees all at once. Trees are subsampled (randomly, with replacement) using the function `PrepSubsampling`, which requires the following arguments:
+
+1. `assignmentsGlobal`, which gives the population assignments
+2. `observedTrees`, which gives the original trees
+3. `popAssignments`, which gives the number of tips subsampled per population
+4. `subsamplesPerGene`, which gives the number of replicate subsamples to take per locus
+5. `outgroup`, which specifies whether an outgroup is present in the dataset (`TRUE` or `FALSE`)
+6. `outgroupPrune`, which specifies whether an outgroup, if present, should be excluded from the subsampled trees.
+
+To subsample our toy dataset using 10 replicates and 3 tips per population, do the following:
+```
+    assignmentsGlobal<-assignFile
+    observedTrees<-trees
+    subsamplesPerGene<-10 
+    outgroup=TRUE
+    outgroupPrune=TRUE
+
+    observedTrees<-PrepSubsampling(assignmentsGlobal=assignmentsGlobal,observedTrees=observedTrees,popAssignments=popAssignments,subsamplesPerGene=subsamplesPerGene,outgroup=outgroup,outgroupPrune=outgroupPrune)
+```
+Note that this function produces a list of subsampled tree sets to match the format of popAssignments (i.e., one set per popVector). Thus, if you have a single popVector, the `PrepSubsampling` function will output a list with a single set of trees. This set of subsampled trees first contains all the subsample iterations for the first locus, then the all the iterations for the second locus, etc. Thus, for example, for our `observedTrees` we just generated, we can access the first subsample iteration of the second locus by typing `observedTrees[[1]][[11]]`.
+
+Note also that the more tips that exist in the original tree, the larger the number of subsample iterations that must be taken in order to capture a representative sample of the tree. One rule of thumb is to take AT LEAST as many subsample iterations that would be required to sample each tip once if subsampling were being done without replacement. So, for our current dataset, with three tips being taken per population, this would require that `subsamplesPerGene` be at least 7 (3 subsampled tips * 7 iterations > 20 total tips for a given population in the toy tree). However,increasing the number of subsamples to 2, 3, or more times this number will likely to reduce the error in the likelihood estimate for a given tree. We suggest taking as many subsample iterations as is logistically feasible, although keeping in mind that there will be a point of diminishing returns that should be weighed against other specifications of the analysis (e.g., the number of models to run, the number of parameters to specify, the number of trees to simulate, etc).
+
+Finally, keep in mind that PHRAPL requires that trees be rooted, but not that the outgroup be included in the anlaysis. The purpose of including an outgroup taxon is merely to ensure that the subsampled trees are properly rooted. Thus, typically if an outgroup is present, `outgroupPrune` should be set to TRUE. If an outgroup is not available, one could midpoint root the subsampled trees. One way to do this in R is to use the `midpoint` function within the `phangorn` package. For example,
+
+    library(phangorn)
+    observedTreesMidpoint<-lapply(observedTrees[[1]],midpoint)
+    class(observedTreesMidpoint)<-"multiPhylo"
+    observedTreesMidpoint<-list(observedTreesMidpoint)
+
+
+
+#Calculate degeneracy weights for subsampled trees
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
