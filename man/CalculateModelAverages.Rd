@@ -20,8 +20,8 @@ is NA) this method simply assumes that the value for that parameter is zero. If 
 parameter is model averaged by only considering those models that include the relevant parameter.
 
 The former method may be most appropriate for migration, as models that exclude this parameter 
-are effectively setting migration to zero. However, the latter method may be more appropriate
-for the collapse time parameter (t) given that when a model excluding a particular coalescent 
+are effectively setting migration to zero. One should be careful interpreting model averaged 
+coalescence times (t), however. Keep in mind that when a model excluding a particular coalescent 
 event recieves high support, this can be subject to different interpretations. For example, this
 could signal that these two populations are so similar that coalescence time between them is
 effectively zero. However, it could also signal that these two populations are very distinct, 
