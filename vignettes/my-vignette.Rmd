@@ -153,9 +153,9 @@ The parameter units used in PHRAPL are the same as those used in the program ms:
 1. Coalescence time (*t*) is relative to the present time and is in units of 4*N* (where *N* = the diploid population size)
 2. The population size scalar (*n0*) is a multiplier of *N*
 3. Exponential growth rate (*g*) is in units of *$\alpha$*, as defined in the equation *Ne<sup>-$\alpha$t</sup>*, where a positive *$\alpha$* produces population growth (moving toward the tips) and a negative *$\alpha$* produces population contraction.
-4. Migration rate (*M*) is in units of 4*Nm*, where *m* equals equals the number of migrants per generation.
+4. Migration rate (*M*) is in units of 4*Nm*, where *m* equals the number of migrants per generation.
 
-Zero, one, or more free parameter values can be established for each parameter type within a model, where parameter indeces are labeled consecutivley as 1, 2,...*K* for *K* free parameters for a given type of parameter. For example, if the `collapseMatrix` is 
+Zero, one, or multiple free parameter values can be established for each parameter type within a model, where parameter indeces are labeled consecutivley as 1, 2,...*K* for *K* free parameters for a given type of parameter. For example, if the `collapseMatrix` is 
 
 ````
      [,1] [,2]
@@ -186,9 +186,27 @@ Similarly, if the corresponding migration matrices are
 
 where matrix 1 is for the present generation and matrix 2 is for the ancestral generation, three free migration parameters exist: *M1*, from population 1 into population 2, *M2*, from population 2 into population 1, and *M3*, which defines symmetrical migration rates between ancestral populations 1-2 and 3. 
 
+Note that the matrix dimensions and population histories for population size and growth matrices must always match those of the `collapseMatrix`. For example, if there is no population growth or population size differences within the model model specified above, the `n0multiplierMap` would be
+
+````
+     [,1] [,2]
+[1,]    1    1
+[2,]    1   NA
+[3,]    1    1
+````
+
+and the `growthMap` would be
+
+````
+     [,1] [,2]
+[1,]    0    0
+[2,]    0   NA
+[3,]    0    0
+````
+
 ###*2. Generating a set of models*
 
-One advantage of PHRAPL, is that it can generate and analyze a large set of models relatively quickly. A model set (`migrationArray`) consisting of all possible models given certain constraints, such as the number of free parameters, K, available for a particular parameter (maxN0K,maxGrowthK, and maxMigrationK) or available overall (maxK), can be generated using the `GenerateMigrationIndividuals` function. 
+One advantage of PHRAPL, is that it can generate and analyze a large set of models relatively quickly. A model set (`migrationArray`) consisting of all possible models given certain constraints, such as the number of free parameters, *K*, available for a particular parameter (maxN0K,maxGrowthK, and maxMigrationK) or available overall (maxK), can be generated using the `GenerateMigrationIndividuals` function. 
 For example, a list of models for 3 populations with
 
 1. an overall maximum K of 3 (`maxK = 3`)
@@ -199,7 +217,7 @@ For example, a list of models for 3 populations with
 
 can be generated as follows:
 
-First, define the arguments within `GenerateMigrationInidividuals` as specified above:
+First, define the arguments within `GenerateMigrationIndividuals` as specified above:
 
     popVector<-popAssignments[[1]]
     maxK<-3
@@ -219,6 +237,25 @@ This yields a `migrationArray` containing 48 models. If desired, one can also
 specify a particular set of fixed parameter indexes (using the `collapseList`, `n0multiplierList`,
 `growthList`, and `migrationList` arguments) such that only a subset of parameters will be
 varied in the outputted migrationArray. For more on this, see the R documentation (`?GenerateMigrationIndividuals`).
+
+A word of warning: if significant constraints are not placed on the number of parameters and populations specified when using `GenerateMigrationIndividuals`, then you can easily generate a list of models that will overwhelm your hard disk space, let alone your ability to analyze them. For example, with just four populations, assuming you are only considering fully resolved topologies (`forceTree=TRUE`), there are 18 possible coalescence histories. Taking just one of these histories and adding a single migration rate parameter yields a list of 1,024 models. Multiple this by 18 and you have over 18,000 models to analyze, with just `maxMigrationK=1` (and with `maxGrowth` and `maxN0K = 0`). By just adding in two different possible population sizes (setting `maxN0K = 2`), this number of models jumps up to > 82,944,000, which would be difficult to analyze to say the least.
+
+Given that migrationArrays can take a while to generate when they are large, we have pre-generated some that come packaged with PHRAPL. To view the `migrationArray`s available, type
+
+````
+unlist(strsplit(grep("MigrationArray",list.files(paste(path.package("phrapl"),"/data/",sep="")),
+     value=TRUE),".rda"))
+````
+
+Then to load one of these `migrationArray`s into your current environment, type
+
+    data("Name_of_migrationArray")
+    
+Note that the imported object will always be called `migrationArray` and will thus override any previous `migrationArray` that exists in your current R session. 
+
+If you have a `migrationArray` produced under a previous version of PHRAPL that did not model population growth, you will need to add growth matrices to these models prior to running them on the current version. To add a null growth statement (i.e., zero growth) to each model, use the function `AddGrowthToAMigrationArray`, e.g.:
+
+    migrationArray<-AddGrowthToAMigrationArray(migrationArray)
 
 ###*3. Generating a single* a priori *model*
 
@@ -392,7 +429,7 @@ result<-GridSearch(migrationArray=migrationArray,modelRange=modelRange,
 `GridSearch` outputs a list containing 
 
 1. Parameter grids (with AICs) for each model (itself a list)
-2. A results table that gives AICs, lnLs, Ks (`params.K`), parameters (`params.vector`), and parameter estimates for each model
+2. A results table that gives AICs, lnLs, *K*s (`params.K`), parameters (`params.vector`), and parameter estimates for each model
 
 Grid points with an AIC of `NA` did not yield enough matches between observed and expected trees to caluclate a lnL for those parameter combinations. Parameter estimates equal to `NA` signal that the given parameter was not in the model. Parameter estimates are obtained by model averaging across the grid. Parameters for *t*, *n0*, *g*, and *M* are given for each time slice in the model, starting at the tips and moving toward the root (t1 = coalescence time at time 1, m2 = ancestral migration rates at time 2, etc). For *t*, the coalescing populations follow the underscore and are separated by a period (e.g., `t2_1-2.3` gives the coalescence time for ancestral populations 1-2 and 3 at time 2); for *m*, migration moves from the population before the period to the population after the period (e.g., `m1_2.1` gives the rate of migration at the tips, from population 2 into population 1). 
     

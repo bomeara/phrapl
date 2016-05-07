@@ -7,14 +7,12 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <meta name="author" content="Nathan Jackson" />
 
 
 <title>Setting Up and Running PHRAPL</title>
-
 
 
 
@@ -28,11 +26,14 @@
 
 
 
+<div class="fluid-row" id="header">
 
-<h1 class="title toc-ignore">Setting Up and Running PHRAPL</h1>
+
+<h1 class="title">Setting Up and Running PHRAPL</h1>
 <h4 class="author"><em><em>Nathan Jackson</em></em></h4>
 <h4 class="date"><em><em>May 6, 2016</em></em></h4>
 
+</div>
 
 
 <p>PHRAPL is a phylogeographic model selection method based on approximate likelihoods. This method estimates the probability of observing a set of gene trees under a model by calculating the frequency with which observed tree topologies occur in a distibution of expected tree topologies. The relative probability of models within a set can be assessed using Akaike Information Criterion (AIC). Because the method uses gene tree toplogies only (excluding branch lengths), it can, relatively quickly, compare the fit of a broad range of models that include coalescence times, migration rates, and distinct/fluctuating population sizes, potentially all acting simultaneously.</p>
@@ -131,9 +132,9 @@
 <li>Coalescence time (<em>t</em>) is relative to the present time and is in units of 4<em>N</em> (where <em>N</em> = the diploid population size)</li>
 <li>The population size scalar (<em>n0</em>) is a multiplier of <em>N</em></li>
 <li>Exponential growth rate (<em>g</em>) is in units of <em><span class="math inline">\(\alpha\)</span></em>, as defined in the equation <em>Ne<sup>-<span class="math inline">\(\alpha\)</span>t</sup></em>, where a positive <em><span class="math inline">\(\alpha\)</span></em> produces population growth (moving toward the tips) and a negative <em><span class="math inline">\(\alpha\)</span></em> produces population contraction.</li>
-<li>Migration rate (<em>M</em>) is in units of 4<em>Nm</em>, where <em>m</em> equals equals the number of migrants per generation.</li>
+<li>Migration rate (<em>M</em>) is in units of 4<em>Nm</em>, where <em>m</em> equals the number of migrants per generation.</li>
 </ol>
-<p>Zero, one, or more free parameter values can be established for each parameter type within a model, where parameter indeces are labeled consecutivley as 1, 2,…<em>K</em> for <em>K</em> free parameters for a given type of parameter. For example, if the <code>collapseMatrix</code> is</p>
+<p>Zero, one, or multiple free parameter values can be established for each parameter type within a model, where parameter indeces are labeled consecutivley as 1, 2,…<em>K</em> for <em>K</em> free parameters for a given type of parameter. For example, if the <code>collapseMatrix</code> is</p>
 <pre><code>     [,1] [,2]
 [1,]    1    2
 [2,]    1   NA
@@ -154,10 +155,20 @@
 [2,]   NA   NA   NA
 [3,]    3   NA   NA</code></pre>
 <p>where matrix 1 is for the present generation and matrix 2 is for the ancestral generation, three free migration parameters exist: <em>M1</em>, from population 1 into population 2, <em>M2</em>, from population 2 into population 1, and <em>M3</em>, which defines symmetrical migration rates between ancestral populations 1-2 and 3.</p>
+<p>Note that the matrix dimensions and population histories for population size and growth matrices must always match those of the <code>collapseMatrix</code>. For example, if there is no population growth or population size differences within the model model specified above, the <code>n0multiplierMap</code> would be</p>
+<pre><code>     [,1] [,2]
+[1,]    1    1
+[2,]    1   NA
+[3,]    1    1</code></pre>
+<p>and the <code>growthMap</code> would be</p>
+<pre><code>     [,1] [,2]
+[1,]    0    0
+[2,]    0   NA
+[3,]    0    0</code></pre>
 </div>
 <div id="generating-a-set-of-models" class="section level3">
 <h3><em>2. Generating a set of models</em></h3>
-<p>One advantage of PHRAPL, is that it can generate and analyze a large set of models relatively quickly. A model set (<code>migrationArray</code>) consisting of all possible models given certain constraints, such as the number of free parameters, K, available for a particular parameter (maxN0K,maxGrowthK, and maxMigrationK) or available overall (maxK), can be generated using the <code>GenerateMigrationIndividuals</code> function. For example, a list of models for 3 populations with</p>
+<p>One advantage of PHRAPL, is that it can generate and analyze a large set of models relatively quickly. A model set (<code>migrationArray</code>) consisting of all possible models given certain constraints, such as the number of free parameters, <em>K</em>, available for a particular parameter (maxN0K,maxGrowthK, and maxMigrationK) or available overall (maxK), can be generated using the <code>GenerateMigrationIndividuals</code> function. For example, a list of models for 3 populations with</p>
 <ol style="list-style-type: decimal">
 <li>an overall maximum K of 3 (<code>maxK = 3</code>)</li>
 <li>a maximum number of migration parameters of 1 (<code>maxMigrationK = 1</code>)</li>
@@ -166,7 +177,7 @@
 <li>migration set to be symmetrical between populations (<code>forceSymmetricalMigration = TRUE</code>)</li>
 </ol>
 <p>can be generated as follows:</p>
-<p>First, define the arguments within <code>GenerateMigrationInidividuals</code> as specified above:</p>
+<p>First, define the arguments within <code>GenerateMigrationIndividuals</code> as specified above:</p>
 <pre><code>popVector&lt;-popAssignments[[1]]
 maxK&lt;-3
 maxMigrationK=1
@@ -179,6 +190,15 @@ forceSymmetricalMigration=TRUE</code></pre>
      maxMigrationK=maxMigrationK,maxN0K=maxN0K,maxGrowth=maxGrowth,forceTree=forceTree,
      forceSymmetricalMigration=forceSymmetricalMigration)</code></pre>
 <p>This yields a <code>migrationArray</code> containing 48 models. If desired, one can also specify a particular set of fixed parameter indexes (using the <code>collapseList</code>, <code>n0multiplierList</code>, <code>growthList</code>, and <code>migrationList</code> arguments) such that only a subset of parameters will be varied in the outputted migrationArray. For more on this, see the R documentation (<code>?GenerateMigrationIndividuals</code>).</p>
+<p>A word of warning: if significant constraints are not placed on the number of parameters and populations specified when using <code>GenerateMigrationIndividuals</code>, then you can easily generate a list of models that will overwhelm your hard disk space, let alone your ability to analyze them. For example, with just four populations, assuming you are only considering fully resolved topologies (<code>forceTree=TRUE</code>), there are 18 possible coalescence histories. Taking just one of these histories and adding a single migration rate parameter yields a list of 1,024 models. Multiple this by 18 and you have over 18,000 models to analyze, with just <code>maxMigrationK=1</code> (and with <code>maxGrowth</code> and <code>maxN0K = 0</code>). By just adding in two different possible population sizes (setting <code>maxN0K = 2</code>), this number of models jumps up to &gt; 82,944,000, which would be difficult to analyze to say the least.</p>
+<p>Given that migrationArrays can take a while to generate when they are large, we have pre-generated some that come packaged with PHRAPL. To view the <code>migrationArray</code>s available, type</p>
+<pre><code>unlist(strsplit(grep(&quot;MigrationArray&quot;,list.files(paste(path.package(&quot;phrapl&quot;),&quot;/data/&quot;,sep=&quot;&quot;)),
+     value=TRUE),&quot;.rda&quot;))</code></pre>
+<p>Then to load one of these <code>migrationArray</code>s into your current environment, type</p>
+<pre><code>data(&quot;Name_of_migrationArray&quot;)</code></pre>
+<p>Note that the imported object will always be called <code>migrationArray</code> and will thus override any previous <code>migrationArray</code> that exists in your current R session.</p>
+<p>If you have a <code>migrationArray</code> produced under a previous version of PHRAPL that did not model population growth, you will need to add growth matrices to these models prior to running them on the current version. To add a null growth statement (i.e., zero growth) to each model, use the function <code>AddGrowthToAMigrationArray</code>, e.g.:</p>
+<pre><code>migrationArray&lt;-AddGrowthToAMigrationArray(migrationArray)</code></pre>
 </div>
 <div id="generating-a-single-a-priori-model" class="section level3">
 <h3><em>3. Generating a single</em> a priori <em>model</em></h3>
@@ -297,7 +317,7 @@ result&lt;-GridSearch(migrationArray=migrationArray,modelRange=modelRange,
 <p><code>GridSearch</code> outputs a list containing</p>
 <ol style="list-style-type: decimal">
 <li>Parameter grids (with AICs) for each model (itself a list)</li>
-<li>A results table that gives AICs, lnLs, Ks (<code>params.K</code>), parameters (<code>params.vector</code>), and parameter estimates for each model</li>
+<li>A results table that gives AICs, lnLs, <em>K</em>s (<code>params.K</code>), parameters (<code>params.vector</code>), and parameter estimates for each model</li>
 </ol>
 <p>Grid points with an AIC of <code>NA</code> did not yield enough matches between observed and expected trees to caluclate a lnL for those parameter combinations. Parameter estimates equal to <code>NA</code> signal that the given parameter was not in the model. Parameter estimates are obtained by model averaging across the grid. Parameters for <em>t</em>, <em>n0</em>, <em>g</em>, and <em>M</em> are given for each time slice in the model, starting at the tips and moving toward the root (t1 = coalescence time at time 1, m2 = ancestral migration rates at time 2, etc). For <em>t</em>, the coalescing populations follow the underscore and are separated by a period (e.g., <code>t2_1-2.3</code> gives the coalescence time for ancestral populations 1-2 and 3 at time 2); for <em>m</em>, migration moves from the population before the period to the population after the period (e.g., <code>m1_2.1</code> gives the rate of migration at the tips, from population 2 into population 1).</p>
 </div>
