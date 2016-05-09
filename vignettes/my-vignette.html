@@ -36,7 +36,7 @@
 </div>
 
 
-<p>PHRAPL is a phylogeographic model selection method based on approximate likelihoods. This method estimates the probability of observing a set of gene trees under a model by calculating the frequency with which observed tree topologies occur in a distibution of expected tree topologies. The relative probability of models within a set can be assessed using Akaike Information Criterion (AIC). Because the method uses gene tree toplogies only (excluding branch lengths), it can, relatively quickly, compare the fit of a broad range of models that include coalescence times, migration rates, and distinct/fluctuating population sizes, potentially all acting simultaneously.</p>
+<p>PHRAPL is a phylogeographic model selection method based on approximate likelihoods. This method estimates the probability of observing a set of gene trees under a model by calculating the frequency at which observed tree topologies occur in a distibution of expected tree topologies. The relative probability of models within a set can be assessed using Akaike Information Criterion (AIC). Because the method uses gene tree toplogies only (excluding branch lengths), it can, relatively quickly, compare the fit of a broad range of models that include coalescence times, migration rates, and distinct/fluctuating population sizes, potentially all acting simultaneously.</p>
 <p>The purpose of this vignette is to provide a brief tutorial for using this method. It will walk you through the necessary steps required for installing the package, preparing a dataset and model set using R, running an analysis, and summarizing results, all using a toy dataset. This tutorial will assume that the reader already has a basic understanding of how PHRAPL works and the problems it is meant to address. The focus here will rather be on the practical issues surrounding the analysis of a dataset. Thus, prior to analyzing an empirical dataset, users should read the original paper that describes the principles and methodology behind PHRAPL. The best source can currenly be found at</p>
 <pre><code>http://www.biorxiv.org/content/early/2015/08/24/025353.abstract</code></pre>
 <pre><code>O'Meara, BC, ND Jackson, AE Morales-Garcia, and BC Carstens. 2015. Phylogeographic inference
@@ -67,8 +67,8 @@
 <p>The scripting language, Perl, comes pre-intalled on Mac OS X systems. However, to make sure, type <code>perl -v</code> in the terminal, which will give the version installed. If a new version needs to be installed for whatever reason, you can download it from the Perl website:</p>
 <pre><code>http://www.perl.org/get.html</code></pre>
 </div>
-<div id="install-phrapl-from-github" class="section level3">
-<h3><em>4. Install PHRAPL from Github</em></h3>
+<div id="install-phrapl" class="section level3">
+<h3><em>4. Install PHRAPL</em></h3>
 <p>PHRAPL can currently be found on Github. To install it, first install the R package, <code>devtools</code> by typing</p>
 <pre><code>install.packages(&quot;devtools&quot;)</code></pre>
 <p>Then load the devtools library (e.g., <code>library(devtools)</code>) and type</p>
@@ -81,17 +81,17 @@
 <p>Now PHRAPL is ready to run. Type <code>library(help=phrapl)</code> to get a list of functions with documentation. To open a help file for a particular function, type <code>?function_name</code>.</p>
 </div>
 </div>
-<div id="ii.-preparing-your-dataset-for-a-phrapl-analysis" class="section level2">
-<h2>II. Preparing your dataset for a PHRAPL analysis</h2>
+<div id="ii.-importing-your-dataset-into-r" class="section level2">
+<h2>II. Importing your dataset into R</h2>
 <p>Three R objects must be initially specified to run a PHRAPL analysis:</p>
 <ol style="list-style-type: decimal">
 <li>A set of trees in newick format</li>
 <li>A table that assigns tips of the trees to populations or species</li>
-<li>A vector specifying the number of populations in the dataset as well as the number of tips to subsample per population</li>
+<li>A vector specifying the number of tips to subsample per population</li>
 </ol>
 <div id="importing-trees" class="section level3">
 <h3><em>1. Importing trees</em></h3>
-<p>If you are begining with sequence data, note that PHRAPL includes a function for inferring gene trees from sequence data by calling up RAxML (type <code>?RunRaxml</code> for more information on using this function). If your sequence data is in nexus format, there is also a function for converting your data into phylip format, which is the required format for running RAxML (type <code>?RunSeqConverter</code>). This function calls up a perl script written by Olaf R.P. Bininda-Emonds.</p>
+<p>If you are begining with sequence data, note that PHRAPL includes a function for inferring gene trees from sequence data by calling up RAxML (type <code>?RunRaxml</code> for more information on using this function). If your sequence data is in nexus format, there is also a function for converting your data to phylip format, which is the required format for running RAxML (type <code>?RunSeqConverter</code>). This function calls up a Perl script written by Olaf R.P. Bininda-Emonds.</p>
 <p>For the purposes of this tutorial, I will assume that you already have a set of trees in newick format sitting in a text file called “trees.tre”. To bring these trees into R, first load the <code>ape</code> library:</p>
 <pre><code>library(ape)</code></pre>
 <p>Then read the trees into R and create a multiPhylo tree object called <code>trees</code>:</p>
@@ -105,25 +105,62 @@
 </div>
 <div id="importing-an-assignment-table" class="section level3">
 <h3><em>2. Importing an assignment table</em></h3>
-<p>The population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., “A”, “B”, “C”). If there is an outgroup taxon, it MUST be listed as the last population in the table. A header row of some sort must also be included.</p>
+<p>PHRAPL assumes that the assignment of tips to populations or species is known. Thus these assignments must be specified upfront in the form of a table. This population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., “A”, “B”, “C”). If there is an outgroup taxon, it MUST be listed as the last population in the table. A header row of some sort must also be included.</p>
 <p>You can of course create this table direcly in R as a data.frame. If you’ve created the assignment table as a tab-delimited text file (e.g., “cladeAssignments.txt”), you can import it into R as a data.frame by typing</p>
 <pre><code>assignFile&lt;-read.table(&quot;cladeAssignments.txt&quot;,header=TRUE,stringsAsFactors=FALSE) </code></pre>
 <p>To import an assignment table for our toy dataset, type</p>
 <pre><code>assignFile&lt;-read.table(paste(path.package(&quot;phrapl&quot;),&quot;/extdata/cladeAssignments.txt&quot;,sep=&quot;&quot;),
      header=TRUE,stringsAsFactors=FALSE) </code></pre>
 </div>
-<div id="specifying-popassignments" class="section level3">
-<h3><em>3. Specifying popAssignments</em></h3>
+<div id="specifying-the-number-of-tips-to-subsample-popassignments" class="section level3">
+<h3><em>3. Specifying the number of tips to subsample (popAssignments)</em></h3>
 <p>Rather than fitting datasets to models using all the tree tips simultaneously, PHRAPL uses iterative subsamples of tips, allowing for the method to work in a managable tree space. Thus, the number of tips to subsample per population must be specified by the user.</p>
-<p>A <code>popVector</code> is a vector, whoes length is equal to the number of populations in the dataset and whoes values are equal to the number of subsampled tips. So, for example, if are subsampling 3 tips from a dataset that contains 3 populations, <code>popVector = c(3,3,3)</code>. If subsampling 4 tips from 2 populations, <code>popVector = c(4,4)</code>.</p>
-<p>Because PHRAPL possesses the ability to analyze a dataset under a series of different subsampling regimes, <code>popAssignments</code> is the object that users actually specify, which is simply a list of popVectors (although popAssignments will typically be a list that contains only a single popVector). So, if the desired <code>popVector = c(3,3,3)</code>, then <code>popAssignments</code> should be set by typing</p>
+<p>A <code>popVector</code> is a vector, whoes length is equal to the number of populations in the dataset and whoes values are equal to the number of subsampled tips. So, for example, if you are subsampling 3 tips from a dataset that contains 3 populations, then <code>popVector = c(3,3,3)</code>. If subsampling 4 tips from 2 populations, <code>popVector = c(4,4)</code>.</p>
+<p>Because PHRAPL possesses the ability to analyze a dataset under a series of different subsampling regimes, <code>popAssignments</code>, which is simply a list of <code>popVectors</code>, is the object that users actually specify (although <code>popAssignments</code> will typically be a list of one <code>popVector</code>). So, if the desired <code>popVector = c(3,3,3)</code>, then <code>popAssignments</code> should be defined by typing</p>
 <pre><code>popAssignments&lt;-list(c(3,3,3))</code></pre>
 <p>which is the value we will use for our toy dataset.</p>
-<p>Typically, we recommend subsampling 3 or 4 tips per population. However, subsampling 2 may be necessary with more than 5 populations while subsampling 5 tips may work fine with 3 or fewer populations. As a rule of thumb, we recommend subsampling in a way that keeps the sum of <code>popAssignments</code> at 16 or less. With greater than 16 tips, the number of possible trees becomes so large that PHRAPL has a difficult time simulating enough trees under a given model to find any matches to the empirical trees, precluding lnL estimation.</p>
+<p>We recommend generally subsampling 3 or 4 tips per population. However, subsampling 2 tips may be necessary with more than 5 populations while subsampling 5 tips may work fine with 3 or fewer populations. As a rule of thumb, we recommend subsampling in a way that keeps the sum of <code>popAssignments</code> at 16 or less. With greater than 16 tips, the number of possible trees becomes so large that PHRAPL has a difficult time simulating enough trees under a given model to find any matches to the empirical trees, rendering lnL estimation challenging.</p>
 </div>
 </div>
-<div id="iii.-generating-models" class="section level2">
-<h2>III. Generating models</h2>
+<div id="iii.-subsampling-trees" class="section level2">
+<h2>III. Subsampling trees</h2>
+<p>As discussed above, approximate likelihood calculation as currently implemented in PHRAPL requires that trees not be too large (~16 tips or fewer) such that there exists a measurable chance of observing the empirical tree within a distribution of simulated trees. Since most phylogeographic datasets are considerably larger than this, PHRAPL relies on analyzing replicate subsamples of trees, rather than the full trees all at once. Trees are subsampled (randomly, with replacement) using the function <code>PrepSubsampling</code>, which requires the following arguments:</p>
+<ol style="list-style-type: decimal">
+<li><code>assignmentsGlobal</code>, which gives the population assignments</li>
+<li><code>observedTrees</code>, which gives the original trees</li>
+<li><code>popAssignments</code>, which gives the number of tips subsampled per population</li>
+<li><code>subsamplesPerGene</code>, which gives the number of replicate subsamples to take per locus</li>
+<li><code>outgroup</code>, which specifies whether an outgroup is present in the dataset (<code>TRUE</code> or <code>FALSE</code>)</li>
+<li><code>outgroupPrune</code>, which specifies whether an outgroup, if present, should be excluded from the subsampled trees.</li>
+</ol>
+<p>To subsample our toy dataset using 10 replicates and 3 tips per population, do the following:</p>
+<pre><code>assignmentsGlobal&lt;-assignFile
+observedTrees&lt;-trees
+subsamplesPerGene&lt;-10 
+outgroup=TRUE
+outgroupPrune=TRUE
+
+observedTrees&lt;-PrepSubsampling(assignmentsGlobal=assignmentsGlobal,
+     observedTrees=observedTrees,popAssignments=popAssignments,
+     subsamplesPerGene=subsamplesPerGene,outgroup=outgroup,outgroupPrune=outgroupPrune)</code></pre>
+<p>Note that this function produces a list of subsampled tree sets to match the format of popAssignments (i.e., one set per popVector). Thus, if you have a single popVector, the <code>PrepSubsampling</code> function will output a list with a single set of trees. This set of subsampled trees first contains all the subsample iterations for the first locus, then the all the iterations for the second locus, etc. Thus, for example, for our <code>observedTrees</code> we just generated, we can access the first subsample iteration of the second locus by typing <code>observedTrees[[1]][[11]]</code>.</p>
+<p>Note also that the more tips that exist in the original tree, the larger the number of subsample iterations that must be taken in order to capture a representative sample of the tree. One rule of thumb is to take AT LEAST as many subsample iterations that would be required to sample each tip once if subsampling were being done without replacement. So, for our current dataset, with three tips being taken per population, this would require that <code>subsamplesPerGene</code> be at least 7 (3 subsampled tips * 7 iterations &gt; 20 total tips for a given population in the toy tree). However,increasing the number of subsamples to 2, 3, or more times this number will likely to reduce the error in the likelihood estimate for a given tree. We suggest taking as many subsample iterations as is logistically feasible, although keeping in mind that there will be a point of diminishing returns that should be weighed against other specifications of the analysis (e.g., the number of models to run, the number of parameters to specify, the number of trees to simulate, etc).</p>
+<p>Finally, keep in mind that PHRAPL requires that trees be rooted, but not that the outgroup be included in the anlaysis. The purpose of including an outgroup taxon is merely to ensure that the subsampled trees are properly rooted. Thus, typically if an outgroup is present, <code>outgroupPrune</code> should be set to TRUE. If an outgroup is not available, one could midpoint root the subsampled trees. One way to do this in R is to use the <code>midpoint</code> function within the <code>phangorn</code> package. For example,</p>
+<pre><code>library(phangorn)
+observedTreesMidpoint&lt;-lapply(observedTrees[[1]],midpoint)
+class(observedTreesMidpoint)&lt;-&quot;multiPhylo&quot;
+observedTreesMidpoint&lt;-list(observedTreesMidpoint)</code></pre>
+</div>
+<div id="iv.-calculating-degeneracy-weights-for-subsampled-trees" class="section level2">
+<h2>IV. Calculating degeneracy weights for subsampled trees</h2>
+<p>As a way to reduce the tree space that PHRAPL faces when calculating the probability of a gene topology, all tip labels <em>within</em> populations are essentially ignored when assessing matches between simulated and observed trees. If the only differences between two trees consist of intra-population discrepancies, this is still counted as a “match”. To adjust lnLs in a way that accounts for this degeneracy of intra-population tip lables, topological weights are calculated based on the proportion of times that the intra-population permuting of labels across a tree results in the same toplogy. These weights can be calculated during the PHRAPL search analysis - to do this, when running <code>GridSearch</code> (described below), set <code>subsampleWeights.df = NULL</code> and <code>doWeights = TRUE</code>. However, when there are more than a few tips in the subsampled trees, this can be time consuming, and thus it is helpful to calculate these upfront. To get these weights beforehand, you can use the function <code>GetPermutationWeightsAcrossSubsamples</code>, which takes as input <code>popAssignments</code> and the set of subsampled trees:</p>
+<pre><code>subsampleWeights.df&lt;-GetPermutationWeightsAcrossSubsamples(popAssignments=popAssignments,
+     observedTrees=observedTrees)</code></pre>
+<p>As with PrepSubsampling, this function produces a list of weights tables with the same length as popAssignments. Within a weights table, each weight corresponds to a subsampled tree.</p>
+</div>
+<div id="v.-generating-models" class="section level2">
+<h2>V. Generating models</h2>
+<p>The last thing we need prior to analyzing the dataset is a set of models to test. This set of models can be constructed one at a time if one has specific <em>a priori</em> histories to compare, or a set of “all possible models” can be generated automatically given a specified a list of criteria. Or of course you can combine these approaches. This section first describes the structure of models in PHRAPL and then outlines how to go about generating a model set.</p>
 <div id="some-background-on-model-structure" class="section level3">
 <h3><em>1. Some background on model structure</em></h3>
 <p>A model analyzed by PHRAPL is called a <code>migrationIndividual</code>, which contains matrices that define the unique coalescence (<code>collapseMatrix</code>), population size (<code>n0multiplierMap</code>), population growth (<code>growthMap</code>), and migration (<code>migrationArray</code>) parameters included in that model. A set of models (confusedly) is also called a <code>migrationArray</code>, which is an R list of <code>migrationIndividuals</code>.</p>
@@ -253,42 +290,6 @@ migrationList&lt;-list(migration_1,migration_2)</code></pre>
 <h3><em>4. Adding demographic events to a model that are not tied to a coalescence event</em></h3>
 <p>One final note on model creation is that one can add additional complexity to generated or specified models using the function <code>AddEventToMigrationArray</code>. This function can add additional demographic shifts over time that do not correspond to a splitting event. For example, if one would like to simulate a divergence event that occurs when populations are in allopatry, followed by the resumption of migration at a latter time upon secondary contact, using <code>AddEventToMigrationArray</code>, one can add a new migration matrix to an existing model that is applied prior to the coalescence event. For details about how to add such demographic events that are not tied to a coalescence events to a model, see the R documentation (<code>?AddEventToMigrationArray</code>).</p>
 </div>
-</div>
-<div id="iv.-subsampling-trees" class="section level2">
-<h2>IV. Subsampling trees</h2>
-<p>As discussed above, approximate likelihood calculation as currently implemented in PHRAPL requires that trees not be too large (~16 tips or fewer) such that there exists a measurable chance of observing the empirical tree within a distribution of simulated trees. Since most phylogeographic datasets are considerably larger than this, PHRAPL relies on analyzing replicate subsamples of trees, rather than the full trees all at once. Trees are subsampled (randomly, with replacement) using the function <code>PrepSubsampling</code>, which requires the following arguments:</p>
-<ol style="list-style-type: decimal">
-<li><code>assignmentsGlobal</code>, which gives the population assignments</li>
-<li><code>observedTrees</code>, which gives the original trees</li>
-<li><code>popAssignments</code>, which gives the number of tips subsampled per population</li>
-<li><code>subsamplesPerGene</code>, which gives the number of replicate subsamples to take per locus</li>
-<li><code>outgroup</code>, which specifies whether an outgroup is present in the dataset (<code>TRUE</code> or <code>FALSE</code>)</li>
-<li><code>outgroupPrune</code>, which specifies whether an outgroup, if present, should be excluded from the subsampled trees.</li>
-</ol>
-<p>To subsample our toy dataset using 10 replicates and 3 tips per population, do the following:</p>
-<pre><code>assignmentsGlobal&lt;-assignFile
-observedTrees&lt;-trees
-subsamplesPerGene&lt;-10 
-outgroup=TRUE
-outgroupPrune=TRUE
-
-observedTrees&lt;-PrepSubsampling(assignmentsGlobal=assignmentsGlobal,
-     observedTrees=observedTrees,popAssignments=popAssignments,
-     subsamplesPerGene=subsamplesPerGene,outgroup=outgroup,outgroupPrune=outgroupPrune)</code></pre>
-<p>Note that this function produces a list of subsampled tree sets to match the format of popAssignments (i.e., one set per popVector). Thus, if you have a single popVector, the <code>PrepSubsampling</code> function will output a list with a single set of trees. This set of subsampled trees first contains all the subsample iterations for the first locus, then the all the iterations for the second locus, etc. Thus, for example, for our <code>observedTrees</code> we just generated, we can access the first subsample iteration of the second locus by typing <code>observedTrees[[1]][[11]]</code>.</p>
-<p>Note also that the more tips that exist in the original tree, the larger the number of subsample iterations that must be taken in order to capture a representative sample of the tree. One rule of thumb is to take AT LEAST as many subsample iterations that would be required to sample each tip once if subsampling were being done without replacement. So, for our current dataset, with three tips being taken per population, this would require that <code>subsamplesPerGene</code> be at least 7 (3 subsampled tips * 7 iterations &gt; 20 total tips for a given population in the toy tree). However,increasing the number of subsamples to 2, 3, or more times this number will likely to reduce the error in the likelihood estimate for a given tree. We suggest taking as many subsample iterations as is logistically feasible, although keeping in mind that there will be a point of diminishing returns that should be weighed against other specifications of the analysis (e.g., the number of models to run, the number of parameters to specify, the number of trees to simulate, etc).</p>
-<p>Finally, keep in mind that PHRAPL requires that trees be rooted, but not that the outgroup be included in the anlaysis. The purpose of including an outgroup taxon is merely to ensure that the subsampled trees are properly rooted. Thus, typically if an outgroup is present, <code>outgroupPrune</code> should be set to TRUE. If an outgroup is not available, one could midpoint root the subsampled trees. One way to do this in R is to use the <code>midpoint</code> function within the <code>phangorn</code> package. For example,</p>
-<pre><code>library(phangorn)
-observedTreesMidpoint&lt;-lapply(observedTrees[[1]],midpoint)
-class(observedTreesMidpoint)&lt;-&quot;multiPhylo&quot;
-observedTreesMidpoint&lt;-list(observedTreesMidpoint)</code></pre>
-</div>
-<div id="v.-calculating-degeneracy-weights-for-subsampled-trees" class="section level2">
-<h2>V. Calculating degeneracy weights for subsampled trees</h2>
-<p>As a way to reduce the tree space that PHRAPL faces when calculating the probability of a gene topology, all tip labels <em>within</em> populations are essentially ignored when assessing matches between simulated and observed trees. If the only differences between two trees consist of intra-population discrepancies, this is still counted as a “match”. To adjust lnLs in a way that accounts for this degeneracy of intra-population tip lables, topological weights are calculated based on the proportion of times that the intra-population permuting of labels across a tree results in the same toplogy. These weights can be calculated during the PHRAPL search analysis - to do this, when running <code>GridSearch</code> (described below), set <code>subsampleWeights.df = NULL</code> and <code>doWeights = TRUE</code>. However, when there are more than a few tips in the subsampled trees, this can be time consuming, and thus it is helpful to calculate these upfront. To get these weights beforehand, you can use the function <code>GetPermutationWeightsAcrossSubsamples</code>, which takes as input <code>popAssignments</code> and the set of subsampled trees:</p>
-<pre><code>subsampleWeights.df&lt;-GetPermutationWeightsAcrossSubsamples(popAssignments=popAssignments,
-     observedTrees=observedTrees)</code></pre>
-<p>As with PrepSubsampling, this function produces a list of weights tables with the same length as popAssignments. Within a weights table, each weight corresponds to a subsampled tree.</p>
 </div>
 <div id="vi.-running-a-phrapl-grid-search" class="section level2">
 <h2>VI. Running a PHRAPL grid search</h2>
