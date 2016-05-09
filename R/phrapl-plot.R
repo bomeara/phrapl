@@ -29,8 +29,10 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
         names(parameterVector))]
     collapseParameters <- parameterVector[grep("collapse", names(parameterVector))]
     try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters))
-    try(migrationParameters <- migrationParameters/max(migrationParameters))
-    try(collapseParameters <- collapseParameters/max(collapseParameters))
+    if(length(migrationParameters) > 0){
+         try(migrationParameters <- migrationParameters/max(migrationParameters))
+    }
+    try(collapseParameters <- collapseParameters/min(collapseParameters))
     num.steps <- 10
     base.radius <- 0.3
     collapseMatrix <- migrationIndividual$collapseMatrix
@@ -73,9 +75,9 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
                   next.terminal.pos[i, ] <- current.terminal.pos[i, 
                     ]
                 }
-                if (collapseMatrix[i, regime] == 1) {
+                if (collapseMatrix[i, regime] >= 1) {
                   next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[, 
-                    regime] == 1), ])
+                    regime] >= 1), ])
                 }
                 center <- cbind(rbind(current.terminal.pos[i, 
                   ], current.terminal.pos[i, ]), z = c(regime, 
@@ -92,9 +94,9 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
                   "Set1")))[n0multiplierMap[i, regime]]), silent=TRUE) 
             }
         }
-        if (max(collapseMatrix[, regime], na.rm = TRUE) == 1) {
+        if (max(collapseMatrix[, regime], na.rm = TRUE) >= 1) {
             collapsing.individuals <- which(collapseMatrix[, 
-                regime] == 1)
+                regime] >= 1)
             if (length(collapsing.individuals) > 2) {
                 for (collapsing.individuals.index in sequence(length(collapsing.individuals))) {
                   center <- cbind(rbind(current.terminal.pos[collapsing.individuals[collapsing.individuals.index], 
@@ -115,8 +117,8 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
             }
             else {
                 center <- cbind(rbind(current.terminal.pos[which(collapseMatrix[, 
-                  regime] == 1), ], current.terminal.pos[which(collapseMatrix[, 
-                  regime] == 1), ]), z = c(regime + 1, regime + 
+                  regime] >= 1), ], current.terminal.pos[which(collapseMatrix[, 
+                  regime] >= 1), ]), z = c(regime + 1, regime + 
                   1))
                 for (length.out in 2:6) {
                   try(shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from = center[1, 
