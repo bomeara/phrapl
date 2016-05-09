@@ -54,7 +54,7 @@ Next, install the integrated development environment, Xcode, which can be downlo
 
     https://developer.apple.com/xcode/downloads/
 
-###*3. Install perl*
+###*3. Install Perl*
 
 The scripting language, Perl, comes pre-installed on Mac OS X systems. However, to make sure, type `perl -v` in the terminal, which will give the version installed. If a new version needs to be installed for whatever reason, you can download it from the Perl website:
 
