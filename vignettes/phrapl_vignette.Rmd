@@ -1,7 +1,7 @@
 ---
 title: "Setting Up and Running PHRAPL"
 author: "*by Nathan Jackson*"
-date: "*May 9, 2016*"
+date: "*May 10, 2016*"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Setting Up and Running PHRAPL}
@@ -12,9 +12,8 @@ vignette: >
 
 PHRAPL is a phylogeographic model selection method based on approximate likelihoods. This method estimates the probability of observing a set of gene trees under a model by calculating the frequency at which observed tree topologies occur in a distribution of expected tree topologies. The relative probability of models within a set can be assessed using Akaike Information Criterion (AIC). Because the method uses gene tree topologies only (excluding branch lengths), it can, relatively quickly, compare the fit of a broad range of models that include coalescence times, migration rates, and distinct/fluctuating population sizes, potentially all acting simultaneously.
 
-The purpose of this vignette is to provide a brief tutorial for using this method. It will walk you through the necessary steps required for installing the package, preparing a dataset and model set using R, running an analysis, and summarizing results, all using a toy dataset. This tutorial will assume that the reader already has a basic understanding of how PHRAPL works and the problems it is meant to address. The focus here will rather be on the practical issues surrounding the analysis of a dataset. Thus, prior to analyzing an empirical dataset, users should read the original paper that describes the principles and methodology behind PHRAPL. The best source can currently be found at
+The purpose of this vignette is to provide a brief tutorial for using this method. It will walk you through the necessary steps required for installing the package, preparing a dataset and model set using R, running an analysis, and summarizing results, all using a toy dataset. This tutorial will assume that the reader already has a basic understanding of how PHRAPL works and the problems it is meant to address. The focus here will rather be on the practical issues surrounding the analysis of a dataset. Thus, prior to analyzing an empirical dataset, users should read the original paper that describes the principles and methodology behind PHRAPL. The best source can currently be found here:
 
-    http://www.biorxiv.org/content/early/2015/08/24/025353.abstract
 ```
 O'Meara, BC, ND Jackson, AE Morales-Garcia, and BC Carstens. 2015. Phylogeographic inference
      using model selection. BioRxiv. 025353. doi: http://dx.doi.org/10.1101/025353  
@@ -26,9 +25,15 @@ This tutorial assumes you are working in a Mac/Linux environment. We have yet to
 
 ## I. Installing PHRAPL and its dependencies
 
-###*1. Install ms*
+###*1. Install Xcode*
 
-The first step is to install Richard Hudson's coalescent simulator, ms, which PHRAPL uses to simulate trees under a model. To do this, first download the program available here:
+The first step is to install the integrated development environment, Xcode, which can be downloaded from the following webpage:
+
+    https://developer.apple.com/xcode/downloads/
+    
+###*2. Install ms*
+
+Next, install Richard Hudson's coalescent simulator, ms, which PHRAPL uses to simulate trees under a model. To do this, first download the program available here:
 
     http://home.uchicago.edu/rhudson1/source/mksamples.html
 
@@ -48,12 +53,6 @@ Then copy ms to your local bin by typing
 
     cp ms /usr/local/bin
 
-###*2. Install Xcode*
-
-Next, install the integrated development environment, Xcode, which can be downloaded from the following webpage:
-
-    https://developer.apple.com/xcode/downloads/
-
 ###*3. Install Perl*
 
 The scripting language, Perl, comes pre-installed on Mac OS X systems. However, to make sure, type `perl -v` in the terminal, which will give the version installed. If a new version needs to be installed for whatever reason, you can download it from the Perl website:
@@ -62,7 +61,7 @@ The scripting language, Perl, comes pre-installed on Mac OS X systems. However, 
 
 ###*4. Install PHRAPL*
 
-PHRAPL can currently be found on Github. To install it, first install the R package, `devtools` by typing
+PHRAPL can currently be found on Github. To install it (and it's R package dependencies), first install the R package, `devtools`, by typing
 
     install.packages("devtools")
     
@@ -70,12 +69,6 @@ Then load the devtools library (e.g., `library(devtools)`) and type
 
     devtools::install_github("bomeara/phrapl")
   
-###*5. Install PHRAPL R package dependencies*
-
-PHRAPL uses functions from a variety of other R packages. To install these, open R and load the PHRAPL library by typing `library(phrapl)`. Then type
-
-    source(paste(path.package("phrapl"),"/extdata/InstallPhraplDependencies.R",sep=""))
-
 Now PHRAPL is ready to run. Type `library(help=phrapl)` to get a list of functions with documentation. To open a help file for a particular function, type `?function_name`.
 
 
@@ -191,17 +184,17 @@ subsampleWeights.df<-GetPermutationWeightsAcrossSubsamples(popAssignments=popAss
      observedTrees=observedTrees)
 ````
 	
-As with PrepSubsampling, this function produces a list of weights tables with the same length as popAssignments. Within a weights table, each weight corresponds to a subsampled tree.
+As with `PrepSubsampling`, this function produces a list of weights tables with the same length as `popAssignments`. Within a weights table, each weight corresponds to a subsampled tree.
 
 
 
 ##V. Generating models
 
-The last thing we need prior to analyzing the dataset is a set of models to test. This set of models can be constructed "one at a time"", if you have specific *a priori* histories to compare, or a set of "all possible models" can be generated automatically given a specified a list of criteria. Or of course you can combine these approaches. This section first describes the structure of models in PHRAPL and then outlines how to go about generating a model set using these two approaches.
+The last thing we need prior to analyzing the dataset is a set of models to test. This set of models can be constructed "one at a time", if you have specific *a priori* histories to compare, or a set of "all possible models" can be generated automatically given a specified list of criteria. Or of course you can combine these approaches. This section first describes the structure of models in PHRAPL and then outlines how to go about generating a model set using these two approaches.
 
 ###*1. Some background on model structure*
 
-A model analyzed by PHRAPL is called a `migrationIndividual`, which contains matrices that define the unique coalescence (`collapseMatrix`), population size (`n0multiplierMap`), population growth (`growthMap`), and migration (`migrationArray`) parameters included in that model. A set of models (confusedly) is also called a `migrationArray`, which is an R list of `migrationIndividual`s. All four parameter matrices must be included within a `migrationIndividual`, even if a parameter is excluded from the model. 
+A model analyzed by PHRAPL is called a `migrationIndividual`, which contains matrices that define the unique coalescence (`collapseMatrix`), population size (`n0multiplierMap`), population growth (`growthMap`), and migration (`migrationArray`) parameters included in that model. A set of models (confusedly) is also called a `migrationArray`, which is an R list of `migrationIndividual`s. All four parameter matrices must be included within a `migrationIndividual`, even if a parameter type is excluded from the model. 
 
 The parameter units used in PHRAPL are the same as those used in the program ms: 
 
@@ -261,7 +254,7 @@ and the `growthMap` would be
 
 ###*2. Generating a set of models*
 
-One advantage of PHRAPL is that it can generate and analyze a large set of models relatively quickly. A model set (`migrationArray`) consisting of all possible models, given certain constraints such as the number of free parameters, *K*, available overall (set by `maxK`), or available for a particular parameter (set by `maxN0K`,`maxGrowthK`, and `maxMigrationK`), can be generated using the `GenerateMigrationIndividuals` function. This generates a model set that includes all possible combinations of parameter indices, given the constraints.
+One advantage of PHRAPL is that it can generate and analyze a large set of models relatively quickly. A model set (`migrationArray`) consisting of all possible models, given certain constraints such as the number of free parameters, *K*, available overall (set by `maxK`), or available for a particular parameter (set by `maxN0K`, `maxGrowthK`, and `maxMigrationK`), can be generated using the `GenerateMigrationIndividuals` function. This generates a model set that includes all possible combinations of parameter indices, given the constraints.
 
 For example, a list of models for 3 populations with
 
@@ -420,11 +413,11 @@ The main inputs for `GridSearch` are
 
 If you only want to run a subset of the models within `migrationArray`, you can specify this using `modelRange` (e.g., `modelRange = 1:5` will run only the first five models). This is useful if you wish to break up analyses across a computer cluster. If a single model will take a long time to run, you can also set `checkpointFile = TRUE`, which will cause results to be printed to a checkpoint file throughout the analysis, such that, if the analysis needs to be terminated prior to completion, one can resume the analysis later from the most recently analyzed grid point.
 
-If the dataset being analyzed contains loci that differ in their prevalence in a population (e.g., mix of diploid/haploid or organellar/nuclear loci), the relative scaling of effective population size should be inputted using `popScaling`. This argument takes a vector of scaling values, one value for each locus in the dataset, e.g., where a diploid nuclear locus = 1, X-linked locus = 0.75, mtDNA/chloroplast locus = 0.25, etc.).
+If the dataset being analyzed contains loci that differ in their prevalence in a population (e.g., mix of diploid/haploid or organellar/nuclear loci), the relative scaling of effective population size should be inputted using `popScaling`. This argument takes a vector of scaling values, one value for each locus in the dataset (e.g., where a diploid nuclear locus = 1, X-linked locus = 0.75, mtDNA/chloroplast locus = 0.25, etc.).
 
 Finally, if you would like to compare the fit of a particular tree model with the fit of that same model, but where one or more coalescence times are set to zero, you can use `setCollapseZero`. This argument takes a vector of coalescence time parameters in a model that you would like to be set to zero. So, for our toy dataset, setting `setCollapseZero = 1` when fitting an isolation-only model will essentially collapse populations A and B into a single population; setting `setCollapseZero = 1:2` will simulate a single panmictic population. This is useful if the question of interest is the delimitation of putative species that are specified in the dataset.
 
-To run a grid search on our toy dataset, lets just analyze the first three models using `nTrees = 1000` (so it runs quickly):
+To run a grid search on our toy dataset, let's just analyze the first three models using `nTrees = 1000` (so it runs quickly):
 
 ````
 modelRange<-1:3
