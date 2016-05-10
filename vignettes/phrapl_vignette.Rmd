@@ -4,9 +4,10 @@ author: "*by Nathan Jackson*"
 date: "*May 10, 2016*"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Setting Up and Running PHRAPL}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Setting Up and Running PHRAPL}
+  \usepackage[utf8]{inputenc}
+#  %\VignetteEncoding{UTF-8}
 
 ---
 
