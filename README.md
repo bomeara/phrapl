@@ -1,4 +1,4 @@
-https://cloud.githubusercontent.com/assets/7992349/15196013/661bb536-1798-11e6-964f-100ae6aa1b7a.jpg
+![alt tag](https://cloud.githubusercontent.com/assets/7992349/15196013/661bb536-1798-11e6-964f-100ae6aa1b7a.jpg)
 
 PHRAPL (Phylogeography using approximate likelihoods) is a method for phylogeographic model selection. This method can estimate the probability of observing a set of gene trees across a set of models that include population genetic parameters, e.g., population coalescence times and gene flow, in order to infer the model(s) in the set that most likely gave rise to the observed data.
 
