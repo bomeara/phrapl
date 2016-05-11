@@ -212,7 +212,7 @@ Zero, one, or multiple free parameter values can be established for each paramet
 [3,]    0    2
 ````
 
-where rows are populations and columns are coalescence events, chronologically ordered from left to right, two free coalescence time parameters exist: *t1* for coalescence between populations 1 and 2, and *t2*, for coalescence between ancestral populations 1-2 and 3.
+where rows are populations and columns are coalescence events, chronologically ordered (tip to root) from left to right, two free coalescence time parameters exist: *t1* for coalescence between populations 1 and 2, and *t2*, for coalescence between ancestral populations 1-2 and 3.
 
 Similarly, if the corresponding migration matrices are
 
