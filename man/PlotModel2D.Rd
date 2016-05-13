@@ -48,6 +48,12 @@ Color for migration arrows
   \item{arrow.lty}{
 Line type for migration arrows
 }
+  \item{tip.cex}{
+Specify tip size
+}
+  \item{tip.col}{
+Specify tip color
+}
 }
 \details{
 This will create a plot showing migration, population collapse, and other features. It does not yet use parameter estimates. It shows a gradient for branches at the base of the tree to represent the history being lost in the mists of time.
