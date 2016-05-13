@@ -28,10 +28,9 @@ Maintainer: Brian O'Meara <bomeara@utk.edu>
 }
 \examples{
 	
-## In this example model number 54 is shown when there are 3 populations and 3 
-##free parameters were specified (maxK=3)  
+## Get the parameters in model 6
 
-data(MigrationArray_4pop_3K)
-MsIndividualParameters(migrationArray[[54]])
+data(MigrationArray_3pops_maxMigrationK1)
+MsIndividualParameters(migrationArray[[6]])
 }
 
