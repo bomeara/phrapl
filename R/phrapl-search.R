@@ -285,7 +285,7 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
 	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,
-	genoudPopSize=25,numGridStartVals=25,solutionTolerance=1,skipGrid=FALSE, ...) {
+	genoudPopSize=25,numGridStartVals=25,solutionTolerance=1,skipGrid=FALSE,optimization="genoud", ...) {
 
 	if(!is.null(migrationArrayMap)){
   		modelID<-ReturnModel(p,migrationArrayMap)

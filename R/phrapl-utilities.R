@@ -3869,7 +3869,7 @@ return(modelWeightsScaled)
 GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migrationArray,
 	modelRange=c(1:length(migrationArray)),subsamplesPerGene,popAssignments,collapseStarts,
 	migrationStarts,n0multiplierStarts,setCollapseZero=NULL,cumulative=FALSE,nTrees,
-	dAIC.cutoff=2,nEq=nEq){
+	dAIC.cutoff=2,nEq=nEq,totalPopVector=totalPopVector){
 
 	#Get matching vectors from Rout
     matchesTEMP<-system(paste("grep matches -A1 ",RoutFilename," | grep [0123456789]",sep=""),intern=TRUE)
