@@ -61,7 +61,7 @@ row 1, then row 2, etc). Thus, in the example above, arrays are entered as rows,
 Other methods of model filtering (using forceSymmetricalMigration or forceTree) can also be implemented.
 }
 \usage{
-GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1,maxGrowthK=0,
+GenerateMigrationIndividuals(popVector,maxK=SetMaxK(popVector),maxN0K=1,maxGrowthK=0,
 	maxMigrationK=1,collapseList=NULL,n0multiplierList=NULL,growthList=NULL,migrationList=NULL,
 	forceSymmetricalMigration=TRUE,forceTree=FALSE,verbose=FALSE,parallelRep=NULL)
 }

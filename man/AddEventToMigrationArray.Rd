@@ -11,7 +11,7 @@ do not correspond to a splitting event (e.g., one would like migration to only o
 for a given length of time after a split, but then to cease).
 }
 \usage{
-AddEventToMigrationArray<-function(migrationArray, eventTime, n0multiplierVec = NULL, 
+AddEventToMigrationArray(migrationArray, eventTime, n0multiplierVec = NULL, 
 	growthVec = NULL, migrationMat = NULL)
 }
 %- maybe also 'usage' for other objects documented here.

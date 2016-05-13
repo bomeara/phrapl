@@ -13,7 +13,7 @@ and adds an empty growthMap to each model (i.e., a growthMap filled with zeros) 
 migrationArray.
 }
 \usage{
-AddGrowthToAMigrationArray<-function(migrationArray)
+AddGrowthToAMigrationArray(migrationArray)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
