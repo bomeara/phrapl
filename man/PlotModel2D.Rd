@@ -62,8 +62,8 @@ This will create a plot showing migration, population collapse, and other featur
 Creates a stunning image.
 }
 \examples{
-data(MigrationArray_3pop_3K)
-pretty.model <- migrationArray[[15]]
+data(MigrationArray_3pops_maxMigrationK1)
+pretty.model <- migrationArray[[1]]
 PlotModel2D(pretty.model)	
 }
 \author{
