@@ -9,8 +9,8 @@ This function creates a single a priori model (migrationIndividual)
 for a given collapse, n0multiplier, growth, and migration history.
 }
 \usage{
-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,n0multiplierList=n0multiplierList,
-	growthList=growthList,migrationList=migrationList)
+GenerateMigrationIndividualsOneAtATime(collapseList, n0multiplierList = NULL,
+	growthList = NULL, migrationList = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,13 +18,13 @@ GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,n0multiplierLis
 List of collapse histories in the model
 }
   \item{n0multiplierList}{
-List of population size scalars in the model
+List of population size scalars in the model (if NULL, all are set to 1)
 }
   \item{growthList}{
-List of growth rate scalars in the model
+List of growth rate scalars in the model (if NULL, all are set to 0)
 }
   \item{migrationList}{
-List of migration rate matrices in the model
+List of migration rate matrices in the model (if NULL, all are set to 0)
 }
 }
 \details{

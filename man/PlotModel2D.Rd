@@ -12,8 +12,8 @@ This creates a two-dimensional model
 }
 \usage{
 PlotModel2D(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
-pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1, 
-arrow.col="red", arrow.lty="solid")
+	pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1, 
+	arrow.col="red", arrow.lty="solid", tip.cex = 1, tip.col = "black")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

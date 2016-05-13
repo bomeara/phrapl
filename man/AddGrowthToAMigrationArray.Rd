@@ -18,8 +18,8 @@ AddGrowthToAMigrationArray<-function(migrationArray)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{migrationArray}{
-A list of models to which empty growth matrices should be added. A single model can also be
-specified.
+A list of models to which NULL growth matrices should be added (i.e., matrices positing zero
+growth). A single model can also be specified.
 }
 }
 \author{

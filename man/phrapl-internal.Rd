@@ -2,6 +2,7 @@
 \alias{Arrow3d2}
 \alias{ColCountIf}
 \alias{ColCountLast}
+\alias{ColCountLastZero}
 \alias{ColMax}
 \alias{ColMin}
 \alias{CombineSubsampleLikelihoods}
@@ -98,12 +99,19 @@
 \alias{DoSingleRowExtraction}
 \alias{ExtractUnambiguousGridParameters}
 \alias{ExtractUnambiguousNLoptrParameters}
+\alias{ExtractUnambiguousOptimizationParameters}
 \alias{ConcatenateResults_unambiguousParametersForOldRuns}
 \alias{ConcatenateResults_ambiguousParameters}
 \alias{sortParameterTable}
 \alias{MsIndividualParametersConversionToUnambiguous}
 \alias{RenumberWithoutGaps}
 \alias{ModelAverageEachModel}
+\alias{ExtractOptimizationAICs}
+\alias{GenerateGrowthIndividuals}
+\alias{GetCollapseGenerationNamesWhenAddedEventsExist}
+\alias{KGrowthMap}
+\alias{N0multiplierGrowthindividual}
+\alias{PassBounds.addedEvents}
 \title{Internal phrapl Functions}
 \description{
   Internal \pkg{phrapl} functions.
