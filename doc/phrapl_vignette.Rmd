@@ -1,7 +1,7 @@
 ---
 title: "Setting Up and Running PHRAPL"
 author: "*by Nathan Jackson*"
-date: "*May 10, 2016*"
+date: "*May 13, 2016*"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteEngine{knitr::rmarkdown}
@@ -300,6 +300,8 @@ Then to load one of these `migrationArray`s into your current environment, type
 
     data("Name_of_migrationArray")
     
+You can get more information about the specifications for each `migrationArray` by typing `?CachedMigrationArrays`.
+
 Note that the imported object will always be called `migrationArray` and will thus override any previous `migrationArray` that exists in your current R session. 
 
 If you have a `migrationArray` produced under a previous version of PHRAPL that did not model population growth, you will need to add growth matrices to these models prior to running them with the current version. To add a null growth statement (i.e., zero growth) to each model, use the function `AddGrowthToAMigrationArray`, e.g.:

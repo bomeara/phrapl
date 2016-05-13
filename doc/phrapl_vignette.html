@@ -11,7 +11,7 @@
 
 <meta name="author" content="by Nathan Jackson" />
 
-<meta name="date" content="2016-05-10" />
+<meta name="date" content="2016-05-13" />
 
 <title>Setting Up and Running PHRAPL</title>
 
@@ -32,7 +32,7 @@
 
 <h1 class="title">Setting Up and Running PHRAPL</h1>
 <h4 class="author"><em><em>by Nathan Jackson</em></em></h4>
-<h4 class="date"><em><em>May 10, 2016</em></em></h4>
+<h4 class="date"><em><em>May 13, 2016</em></em></h4>
 
 </div>
 
@@ -229,6 +229,7 @@ forceSymmetricalMigration=TRUE</code></pre>
      value=TRUE),&quot;.rda&quot;))</code></pre>
 <p>Then to load one of these <code>migrationArray</code>s into your current environment, type</p>
 <pre><code>data(&quot;Name_of_migrationArray&quot;)</code></pre>
+<p>You can get more information about the specifications for each <code>migrationArray</code> by typing <code>?CachedMigrationArrays</code>.</p>
 <p>Note that the imported object will always be called <code>migrationArray</code> and will thus override any previous <code>migrationArray</code> that exists in your current R session.</p>
 <p>If you have a <code>migrationArray</code> produced under a previous version of PHRAPL that did not model population growth, you will need to add growth matrices to these models prior to running them with the current version. To add a null growth statement (i.e., zero growth) to each model, use the function <code>AddGrowthToAMigrationArray</code>, e.g.:</p>
 <pre><code>migrationArray&lt;-AddGrowthToAMigrationArray(migrationArray)</code></pre>
