@@ -3474,13 +3474,16 @@ ModelAverageEachModel<-function(totalData,parmStartCol){
 
 #parmStartCol gives the column number in totalData in which the parameter values begin. If using default 
 #PHRAPL output, this should be column 9.
-CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStartCol = 9){
+CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStartCol=9,keep.na=FALSE){
     #Add model averaged parameter estimates to a dataframe
     totalData <- totalData[order(totalData$AIC, totalData$models),]#sort parameters by AIC to match totalData
     totalData <- totalData[, grep(".*_I", colnames(totalData), invert = TRUE)]#Remove parameter index columns
+    totalData <- totalData[which(!is.na(totalData$AIC)),] #Toss columns for which AIC is an NA
     
     #Remove parameter columns that contain only NAs
-    totalData <- RemoveParameterNAs(totalData)
+    if(keep.na == FALSE){
+	    totalData <- RemoveParameterNAs(totalData)
+	}
    
    	#If there is only a single model in the input, just return the values
    	if(nrow(totalData) == 1){
@@ -3495,8 +3498,18 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 		modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
 			totalData$wAIC))
 		colnames(modelAverages)<-colnames(totalData)[-c(0:(parmStartCol - 1))]
-		modelAverages <- apply(modelAverages, 2, sum, na.rm = TRUE)
-
+		
+		#Get model averages
+		if(keep.na == TRUE){
+			#If keeping parameter columns that contain only NAs, convert these model averages to NA...
+			na.rm.dataset <- RemoveParameterNAs(modelAverages)
+			NAcols<-which(colnames(modelAverages) %in% colnames(na.rm.dataset) == FALSE)
+			modelAverages<-apply(modelAverages, 2, sum, na.rm = TRUE)
+			modelAverages[NAcols]<-NA
+		}else{
+			modelAverages<-apply(modelAverages, 2, sum, na.rm = TRUE)
+		}
+		
 		#Convert modelAverages into a dataframe
 		modelAveragesMat <- data.frame(matrix(modelAverages, nrow = 1, 
 			ncol = length(names(modelAverages))))
@@ -3515,6 +3528,17 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 			modelAverages<-sum(modelAverages)
 			modelAveragesVec<-append(modelAveragesVec,modelAverages)
 		}
+		
+		#If keeping parameter columns that contain only NAs, convert these model averages to NA...
+		if(keep.na == TRUE){
+			modelAveragesTemp<-data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
+				totalData$wAIC))
+			na.rm.dataset <- RemoveParameterNAs(modelAveragesTemp)
+			NAcols<-which(colnames(modelAveragesTemp) %in% colnames(na.rm.dataset) == FALSE)
+			modelAveragesVec<-apply(modelAveragesTemp, 2, sum, na.rm = TRUE)
+			modelAveragesVec[NAcols]<-NA
+		}
+
 		modelAverages<-data.frame(matrix(modelAveragesVec,nrow=1,ncol=length(modelAveragesVec)))
 		colnames(modelAverages)<-colnames(totalData)[parmStartCol:ncol(totalData)]
   	}		
