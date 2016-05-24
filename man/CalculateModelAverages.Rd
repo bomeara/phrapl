@@ -7,7 +7,8 @@ Calculate Model Averages
 This function outputs model averaged parameter estimates for a set of models.
 }
 \usage{
-CalculateModelAverages(totalData, averageAcrossAllModels = TRUE, parmStartCol = 9)
+CalculateModelAverages(totalData, averageAcrossAllModels = TRUE, parmStartCol = 9, 
+keep.na = FALSE)
 }
 \arguments{
   \item{totalData}{
@@ -30,6 +31,9 @@ but that they coalesce with other populations prior to coalescing with each othe
   \item{parmStartCol}{
 This gives the column number in totalData in which the parameter values begin. If using default 
 PHRAPL output, this should be column 9.
+}
+  \item{keep.na}{
+When TRUE, columns that only contain only NAs are retained in the output.
 }
 }
 \seealso{
