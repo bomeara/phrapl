@@ -4029,18 +4029,24 @@ FilterMigrationByCriterion<-function(gridListCurrent,migrationIndividual,whichMi
 	return(gridListCurrent)
 }
 
-#This function calculates an index of divergence using a given tau and migration rate
+#This function calculates the genealogical divergence index using a given tau and migration rate
 #from ms. To obtain this index, trees are iteratively simulated in ms with two species 
 #and three individuals under the given tau and migration rate (which can be asymmetrical). 
 #Then, the proportion of times that the given parameter values yield the true 
-#topology is calculated. This index gives something similar to what the genealogical sorting index does, 
-#except for a given set of migration and tau values instead of for groups on a tree: to what 
+#topology is calculated. This index gives something similar to the genealogical sorting index, 
+#except for a given set of migration and tau values instead of for groups on a tree (and for two
+#focal taxa rather than for one focal taxon in relation to the rest of the tree): to what 
 #degree does the resulting location of alleles align with underlying species boundaries?
 #We've scaled the index to be between 0 and 1, such that 0 = panmixia and 1 = strong support 
 #for divergence between whatever lineages are defined by the given tau and migration rate. 
-#Except for extreme parameter values, there is a fairly high variance for the index, such that 
-#it should be caluculated using a large number of replicates (10,000 at a minimum).
-GetIntraspeciesCoalescentFraction<-function(tau,migration.in,migration.out=NULL,nreps=5000) {
+#Except when gdi is close to 1, there is a fairly high variance for the index, such that 
+#it should be calculated using a large number of replicates (10,000 at a minimum).
+#It is possible to calculate a confidence interval. We have incorporated the binom.confint function
+#from the binom package to do this, which can calculate a binomial confidence interval using
+#eight different methods ("exact","asymptotic","agresti-coull","wilson","prop.test","bayes",
+#"logit","cloglog","probit",or "profile"). Any of these can be specified using ciMethod, or "all" 
+#will result in all eight being calculated. If ciMethod=NULL, only the gdi will be outputted.
+CalculateGdi<-function(tau,migration.in,migration.out=NULL,nreps=10000,ciMethod="exact") {
 	if(is.null(migration.out)) {
 		migration.out<-migration.in
 	}
@@ -4050,10 +4056,18 @@ GetIntraspeciesCoalescentFraction<-function(tau,migration.in,migration.out=NULL,
 	intra.coalescence<-sapply(output,TestForWithinPopCoalescenceThreeSamplesOnly)
 	#Return the proportion of three taxon trees where 1 and 2 coalesce before either coalesces with 3
 	#Standardize so between 0 and 1
-	fraction<-sum(intra.coalescence)/length(intra.coalescence)
-	fraction_standardized<-(fraction - 0.333) / (1 - 0.333)
-	
-	return(fraction_standardized)
+	if(is.null(ciMethod)){
+		fraction<-sum(intra.coalescence)/length(intra.coalescence)
+		fraction_standardized<-(fraction - 0.333) / (1 - 0.333)
+		return(fraction_standardized)
+	}else{
+		ci<-binom.confint(x=sum(intra.coalescence),n=length(intra.coalescence),conf.level=0.95,
+			methods=ciMethod)
+		ci$mean<-(ci$mean - 0.333) / (1 - 0.333)
+		ci$lower<-(ci$lower - 0.333) / (1 - 0.333)
+		ci$upper<-(ci$upper - 0.333) / (1 - 0.333)
+		return(ci)
+	}
 }
 
 #Called within GetIntraspeciesCoalescentFraction
