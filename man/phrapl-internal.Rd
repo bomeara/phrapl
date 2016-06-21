@@ -90,7 +90,6 @@
 \alias{FilterGridForMigration}
 \alias{FilterMigrationByCriterion}
 \alias{GenerateSetLoci}
-\alias{GetIntraspeciesCoalescentFraction}
 \alias{GetLengthGridList}
 \alias{GetNumTreeHistories}
 \alias{GuessAssignments}
