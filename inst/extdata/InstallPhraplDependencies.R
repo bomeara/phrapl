@@ -13,4 +13,5 @@ if(!require("nloptr")){install.packages("nloptr",repos="http://cran.rstudio.com"
 if(!require("Matrix")){install.packages("Matrix",repos="http://cran.rstudio.com")}
 if(!require("rgl")){install.packages("rgl",repos="http://cran.rstudio.com")}
 if(!require("RColorBrewer")){install.packages("RColorBrewer",repos="http://cran.rstudio.com")}
+if(!require("binom")){install.packages("binom",repos="http://cran.rstudio.com")}
 			
