@@ -4093,11 +4093,12 @@ CheckMS<-function(){
 
 #This function compiles ms if necessary
 CompileMS<-function(rand=1){
-	workdir<-getwd()
+	currentdir<-getwd()
 	setwd(system.file("msdir",package="phrapl"))
 	if(rand==1){
 		system("gcc -o ms ms.c streec.c rand1.c -lm")
 	}else{
 		system("gcc -o ms ms.c streec.c rand2.c -lm")
 	}
+	setwd(currentdir)
 }
