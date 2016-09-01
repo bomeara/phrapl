@@ -198,7 +198,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 			}
 		}
 		
-		initialMigration<-"-ma"
+		initialMigration<-" -ma"
 		for (i in 1:nPop) {
 			for (j in 1:nPop) {
 				if (i==j) {
@@ -214,7 +214,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 				}
 			}
 		}
-		msString<-paste(msString,initialN0multipler,initialGrowth,initialMigration,sep=" ")
+		msString<-paste(msString,initialN0multipler,initialGrowth,initialMigration,sep="")
 		
 		#is there a collapse in the first gen?
 		if(sum(!is.na(collapseMatrix[,1])) > 0){ #If this is not an added non-coalescence event
@@ -224,7 +224,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 				for (i in 2:length(popsToCollapse)) {
 					initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[1]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
 				}
-				msString<-paste(msString,initialCollapse,sep=" ")
+				msString<-paste(msString,initialCollapse,sep="")
 			}
 		}
 
@@ -293,7 +293,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 						for (i in 2:length(popsToCollapse)) {
 							initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[collapseCount]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
 						}
-						msString<-paste(msString,initialCollapse,sep=" ")
+						msString<-paste(msString,initialCollapse,sep="")
 					}
 				}
 				
@@ -1292,13 +1292,13 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 	return(migrationIndividual)
 }
 
-LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms") {
+LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation=system.file("msdir","ms",package="phrapl")) {
 	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
 	geneTrees<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';'"),intern=TRUE)
 	return(geneTrees)
 }
 
-SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation="/usr/local/bin/ms",file="sim.tre") {
+SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation=system.file("msdir","ms",package="phrapl"),file="sim.tre") {
 	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
 	returnCode<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' >",file),intern=FALSE)
 	return(returnCode)
@@ -4078,4 +4078,26 @@ ConvertTreeString <- function(x) {
 #Called within GetIntraspeciesCoalescentFraction
 TestForWithinPopCoalescenceThreeSamplesOnly <- function(x) {
 	return(2==sum(grepl("1_2",GetClades(ConvertTreeString(x)))))	
+}
+
+#This function checks whether the pre-compiled ms program is working
+CheckMS<-function(){
+	msPath<-system.file("msdir","ms",package="phrapl")
+	treeCheck<-suppressWarnings(system(paste(msPath," 1 1 -t 1",sep=""),intern=TRUE))
+	if(length(grep(paste(msPath," 1 1 -t 1",sep=""),treeCheck[1])) > 0){
+		return("ms is working")
+	}else{
+		return("Something is wrong. Run CompileMS")
+	}
+}
+
+#This function compiles ms if necessary
+CompileMS<-function(rand=1){
+	workdir<-getwd()
+	setwd(system.file("msdir",package="phrapl"))
+	if(rand==1){
+		system("gcc -o ms ms.c streec.c rand1.c -lm")
+	}else{
+		system("gcc -o ms ms.c streec.c rand2.c -lm")
+	}
 }

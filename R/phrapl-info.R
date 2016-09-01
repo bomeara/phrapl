@@ -333,13 +333,13 @@ ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mito
 }
 
 #Return AIC for a given model and tree
-ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
-		subsampleWeights.df=NULL,
-		unresolvedTest=TRUE,print.results=TRUE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
-		badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
-		minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
-		subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-		setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid"){
+ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir","ms",package="phrapl"),
+	comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),subsampleWeights.df=NULL,
+	unresolvedTest=TRUE,print.results=TRUE, print.ms.string=FALSE,debug=FALSE,print.matches=FALSE,
+	badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
+	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
+	subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid"){
 	parameterVector<-exp(par)
 	
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -751,7 +751,7 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 }
 
 ##Match simulated trees to observed trees and export vector of matches
-PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath="ms",
+PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath=system.file("msdir","ms",package="phrapl"),
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
 		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE, popScaling=popScaling,addedEventTime=NULL,
 		addedEventTimeAsScalar=TRUE){

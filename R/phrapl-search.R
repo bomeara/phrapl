@@ -1,7 +1,7 @@
 #TO DO: If the optimal value is outside the bounds of the grid, offer warning or option to restart search centered at new grid
 SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationArray, popAssignments, badAIC=100000000000000, 
-	maxParameterValue=20, nTrees=2e5, nTreesGrid=nTrees ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
-	subsampleWeights.df=NULL,
+	maxParameterValue=20, nTrees=2e5, nTreesGrid=nTrees ,msPath=system.file("msdir","ms",package="phrapl"),
+	comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),subsampleWeights.df=NULL,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=TRUE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1,
 	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1), 
@@ -276,8 +276,8 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 
 
 SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migrationArray, popAssignments, badAIC=100000000000000, 
-	maxParameterValue=20, nTrees=2e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
-	subsampleWeights.df=NULL,
+	maxParameterValue=20, nTrees=2e5 ,msPath=system.file("msdir","ms",package="phrapl"),
+	comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),subsampleWeights.df=NULL,
 	unresolvedTest=TRUE,print.ms.string=FALSE, ncores=1,print.results=TRUE,print.matches=FALSE,debug=FALSE,method="nlminb",
 	itnmax=NULL, return.all=FALSE, maxtime=0, maxeval=0, parameterBounds=list(minCollapseTime=0.1,
 	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1), 
@@ -553,7 +553,8 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 #This function was formally known as "ExhaustiveSearchNLoptr", and still has the capabilities of running a heuristic
 #nloptr search. However, since we are currently focusing on a grid search, we have changed the name of the function
 GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NULL,migrationArray,popAssignments, 
-		badAIC=100000000000000,maxParameterValue=20,nTrees=1e5 ,msPath="ms",comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
+		badAIC=100000000000000,maxParameterValue=20,nTrees=1e5 ,msPath=system.file("msdir","ms",package="phrapl"),
+		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),
 		observedTrees,subsampleWeights.df=NULL, doWeights=TRUE, unresolvedTest=TRUE,
 		print.ms.string=FALSE,print.results=TRUE,print.matches=FALSE,debug=FALSE,method="nlminb",itnmax=NULL,
 		ncores=1,results.file=NULL,maxtime=0, maxeval=0,return.all=TRUE, numReps=0,startGrid=NULL,
