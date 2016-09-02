@@ -1292,13 +1292,13 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 	return(migrationIndividual)
 }
 
-LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation=system.file("msdir","ms",package="phrapl")) {
+LoadMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation=system.file("msdir","ms",package="P2C2M")) {
 	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
 	geneTrees<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';'"),intern=TRUE)
 	return(geneTrees)
 }
 
-SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation=system.file("msdir","ms",package="phrapl"),file="sim.tre") {
+SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocation=system.file("msdir","ms",package="P2C2M"),file="sim.tre") {
 	msCallInfo<-CreateMSstringSpecific(popVector,migrationIndividual,parameterVector,nTrees)
 	returnCode<-system(paste(msLocation,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts," | grep ';' >",file),intern=FALSE)
 	return(returnCode)
@@ -4080,9 +4080,14 @@ TestForWithinPopCoalescenceThreeSamplesOnly <- function(x) {
 	return(2==sum(grepl("1_2",GetClades(ConvertTreeString(x)))))	
 }
 
-#This function checks whether the pre-compiled ms program is working
+#The raw code as well as a binary executable for the program ms (Hudson 2002) comes pre-packaged with P2C2PM, 
+#a PHRAPL dependency. The purpose of \code{CheckMS} is to check whether the compiled binary file is compatible 
+#with one's operating system. If running this function returns a message that ms is working, then there is no 
+#need to compile ms prior to running PHRAPL. If the function returns an error or a message that there is 
+#something wrong, then you will need to compile ms using the \code{CompileMS} function. Once
+#you have compiled ms, this check can again be run to ensure that the compilation was sucessful.
 CheckMS<-function(){
-	msPath<-system.file("msdir","ms",package="phrapl")
+	msPath<-system.file("msdir","ms",package="P2C2M")
 	treeCheck<-suppressWarnings(system(paste(msPath," 1 1 -t 1",sep=""),intern=TRUE))
 	if(length(grep(paste(msPath," 1 1 -t 1",sep=""),treeCheck[1])) > 0){
 		return("ms is working")
@@ -4091,10 +4096,12 @@ CheckMS<-function(){
 	}
 }
 
-#This function compiles ms if necessary
+#If for whatever reason, the pre-packaged ms binary file doesn't work, you can compile the program
+#on the fly using this function. ms can use one of two different random number generators. 
+#If compilation using the default \code{rand = 1} does not work, try \code{rand = 2}. 
 CompileMS<-function(rand=1){
 	currentdir<-getwd()
-	setwd(system.file("msdir",package="phrapl"))
+	setwd(system.file("msdir",package="P2C2M"))
 	if(rand==1){
 		system("gcc -o ms ms.c streec.c rand1.c -lm")
 	}else{

@@ -111,6 +111,8 @@
 \alias{KGrowthMap}
 \alias{N0multiplierGrowthindividual}
 \alias{PassBounds.addedEvents}
+\alias{CompileMS}
+\alias{CheckMS}
 \title{Internal phrapl Functions}
 \description{
   Internal \pkg{phrapl} functions.
