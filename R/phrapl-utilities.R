@@ -755,8 +755,7 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 
 				#If no migration desired, just create empty matrices
 				if(maxMigrationK == 0){
-					migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix)),
-						dimnames=c("from","to","generation"))
+					migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix))) #dimnames=c("from","to","generation")
 					for(interval in 1:ncol(collapseMatrix)) {
 						for(fromPop in 1:nrow(collapseMatrix)) {
 							for(toPop in 1:nrow(collapseMatrix)) {
@@ -782,7 +781,7 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 				}else{
 		
 					#Else, produce all possible matrices
-					migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps),dimnames=c("from","to","generation"))
+					migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps)) #dimnames=c("from","to","generation")
 					for (interval in 1:numSteps) {
 						for (fromPop in 1:numFinalPops) {
 							for (toPop in 1:numFinalPops) {
@@ -1260,8 +1259,7 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 		
 	#Make migrationArray
 	if(is.null(migrationList)){
-		migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix)),
-			dimnames=c("from","to","generation"))
+		migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix)))
 		for(interval in 1:ncol(collapseMatrix)) {
 			for(fromPop in 1:nrow(collapseMatrix)) {
 				for(toPop in 1:nrow(collapseMatrix)) {
