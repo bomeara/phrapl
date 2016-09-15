@@ -43,24 +43,21 @@ Setting Up and Running PHRAPL
 
 
 <p>PHRAPL is a phylogeographic model selection method based on approximate likelihoods. This method estimates the probability of observing a set of gene trees under a model by calculating the frequency at which observed tree topologies occur in a distribution of expected tree topologies. The relative probability of models within a set can be assessed using Akaike information criterion (AIC). Because the method uses gene tree topologies only (excluding branch lengths), it can, relatively quickly, compare the fit of a broad range of models that include coalescence times, migration rates, and distinct/fluctuating population sizes, potentially all acting simultaneously.</p>
-<p>The purpose of this vignette is to provide a brief tutorial for using this method. It will walk you through the necessary steps required for installing the package, preparing a dataset and model set using R, running an analysis, and summarizing results, all using a toy dataset. There are many options that one can persue when running a PHRAPL analysis, which could get a bit confusing for someone using the program for the first time. For this reason, we have highlighted those blocks of code in <span style="color:FA1704">orange</span> that constitute the minimum steps that must be taken to run a PHRAPL analysis using the toy dataset.</p>
+<p>The purpose of this vignette is to provide a brief tutorial for using this method. It will walk you through the necessary steps required for installing the package, preparing a dataset and model set using R, running an analysis, and summarizing results, all using a toy dataset. There are many options that one can persue when running a PHRAPL analysis, which could get a bit confusing for someone using the program for the first time. For this reason, we have highlighted with <font color="FA1704">red asterisks</font> those blocks of code that constitute the minimum steps that must be taken to run a PHRAPL analysis using the toy dataset.</p>
 <p>This tutorial will assume that the reader already has a basic understanding of how PHRAPL works and the problems it is meant to address. The focus here will rather be on the practical issues surrounding the analysis of a dataset. Thus, prior to analyzing an empirical dataset, users should read the original paper that describes the principles and methodology behind PHRAPL. The best source can currently be found here:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> O’Meara, BC, ND Jackson,AE Morales-Garcia, and BC Carstens. 2015.<br />
-      Phylogeographic inference using model selection. BioRxiv. 025353.<br />
-      doi: <a href="http://dx.doi.org/10.1101/025353" class="uri">http://dx.doi.org/10.1101/025353</a> </font></p>
-</blockquote>
+<pre><code>O'Meara, BC, ND Jackson, AE Morales-Garcia, and BC Carstens. 2015. Phylogeographic inference
+     using model selection. BioRxiv. 025353. doi: http://dx.doi.org/10.1101/025353  </code></pre>
 <p>This tutorial assumes you are working in a Mac/Linux environment. We have yet to properly test the method using a PC, although we suspect a few (surmountable) issues will arise when the sufficiently adventurous try this out. For more detailed information about any of the tasks discussed below, take a look at the help files within PHRAPL (for a list of these, type <code>library(help=phrapl)</code> once the package is installed).</p>
 <div id="i.-installing-phrapl" class="section level2">
 <h2>I. Installing PHRAPL</h2>
 <p>PHRAPL can currently be found on Github (<code>https://github.com/bomeara/phrapl</code>), although you don’t actually need to navigate Github to install the program. You can simply install PHRAPL in R using the R package <code>devtools</code>. To do this, first install <code>devtools</code> from CRAN by typing</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> install.packages(“devtools”) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  install.packages(&quot;devtools&quot;)</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>Then load the <code>devtools</code> library (i.e., <code>library(devtools)</code>) and type</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> devtools::install_github(“bomeara/phrapl”) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  devtools::install_github(&quot;bomeara/phrapl&quot;)</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>which grabs PHRAPL from Github and installs it.</p>
 <hr />
 <p>Note that most of PHRAPL is written in R. However, the part of the code that matches observed trees to trees expected under a given model is currently written in Perl in order to speed up the method. If you are running PHRAPL on a Mac or Linux machine, Perl has most likely already been installed (to make sure, within R, you can type <code>system(&quot;perl -v&quot;)</code>, which will give you the version installed, if it exists). If Perl is not installed on your machine, you can download it from the Perl website (<code>http://www.perl.org/get.html</code>).</p>
@@ -80,49 +77,39 @@ Setting Up and Running PHRAPL
 <h3><em>1. Importing trees</em></h3>
 <p>If you are beginning with sequence data, note that PHRAPL includes a function for inferring gene trees from sequence data by calling up RAxML (type <code>?RunRaxml</code> for more information on using this function). If your sequence data is in nexus format, there is also a function for converting your data to phylip format, which is the required format for running RAxML (type <code>?RunSeqConverter</code>). This function calls up a Perl script written by Olaf R.P. Bininda-Emonds.</p>
 <p>For the purposes of this tutorial, I will assume that you already have a set of trees in newick format sitting in a text file called “trees.tre”. To bring these trees into R, first load the <code>ape</code> library:</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> library(ape) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  library(ape)</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>Then read the trees into R and create a multiPhylo tree object called <code>trees</code>:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> trees&lt;-read.tree(“trees.tre”) </font></p>
-</blockquote>
+<pre><code>  trees&lt;-read.tree(&quot;trees.tre&quot;)</code></pre>
 <p>PHRAPL comes packaged with a toy dataset that we will use during this tutorial. This dataset consists of 10 trees, each with 61 tips: 20 tips from each of three populations (“A”, “B”, and “C”), plus one outgroup individual. To bring this dataset into R, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> trees&lt;-read.tree(paste(path.package(“phrapl”),“/extdata/trees.tre”,sep=“”)) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  trees&lt;-read.tree(paste(path.package(&quot;phrapl&quot;),&quot;/extdata/trees.tre&quot;,sep=&quot;&quot;))</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>Note that multiPhylo objects behave as R lists. Thus to access the first tree within the object, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> trees[[1]] </font></p>
-</blockquote>
+<pre><code>  trees[[1]]</code></pre>
 <p>To plot this tree, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> plot.phylo(trees[[1]]) </font></p>
-</blockquote>
+<pre><code>  plot.phylo(trees[[1]])</code></pre>
 </div>
 <div id="importing-an-assignment-table" class="section level3">
 <h3><em>2. Importing an assignment table</em></h3>
 <p>PHRAPL assumes that the assignment of tips to populations or species is known. Thus these assignments must be specified upfront in the form of a table. This population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., “A”, “B”, “C”). If there is an outgroup taxon, it MUST be listed as the last population in the table. A header row of some sort must also be included.</p>
 <p>You can of course create this table directly in R as a data.frame. If you’ve created the assignment table as a tab-delimited text file (e.g., “cladeAssignments.txt”), you can import it into R as a data.frame by typing</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> assignFile&lt;-read.table(“cladeAssignments.txt”,header=TRUE,<br />
-      stringsAsFactors=FALSE) </font></p>
-</blockquote>
+<pre><code>  assignFile&lt;-read.table(&quot;cladeAssignments.txt&quot;,header=TRUE,stringsAsFactors=FALSE)</code></pre>
 <p>To import an assignment table for our toy dataset, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> assignFile&lt;-read.table(paste(path.package(“phrapl”),<br />
-      “/extdata/cladeAssignments.txt”,sep=“”),header=TRUE,<br />
-      stringsAsFactors=FALSE) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  assignFile&lt;-read.table(paste(path.package(&quot;phrapl&quot;),&quot;/extdata/cladeAssignments.txt&quot;,sep=&quot;&quot;),
+     header=TRUE,stringsAsFactors=FALSE) </code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 </div>
 <div id="specifying-the-number-of-tips-to-subsample-popassignments" class="section level3">
 <h3><em>3. Specifying the number of tips to subsample (popAssignments)</em></h3>
 <p>Rather than fitting datasets to models using all the tree tips simultaneously, PHRAPL uses iterative subsamples of tips, allowing for the method to work in a manageable tree space. Thus, the number of tips to subsample per population must be specified by the user.</p>
 <p>A <code>popVector</code> is a vector, whose length is equal to the number of populations in the dataset and whose values are equal to the number of subsampled tips. So, for example, if you are subsampling 3 tips from a dataset that contains 3 populations, then <code>popVector = c(3,3,3)</code>. If subsampling 4 tips from 2 populations, <code>popVector = c(4,4)</code>.</p>
 <p>Because PHRAPL possesses the ability to analyze a dataset under a series of different subsampling regimes, <code>popAssignments</code>, which is simply a list of <code>popVectors</code>, is the object that users actually specify (although <code>popAssignments</code> will typically be a list of one <code>popVector</code>). So, if the desired <code>popVector = c(3,3,3)</code>, then <code>popAssignments</code> should be defined by typing</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> popAssignments&lt;-list(c(3,3,3)) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  popAssignments&lt;-list(c(3,3,3))</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>which is the value we will use for our toy dataset.</p>
 <p>We recommend generally subsampling 3 or 4 tips per population. However, subsampling 2 tips may be necessary with more than 5 populations while subsampling 5 tips may work fine with 3 or fewer populations. As a rule of thumb, we recommend subsampling in a way that keeps the sum of <code>popAssignments</code> at 16 or less. With greater than 16 tips, the number of possible trees becomes so large that PHRAPL has a difficult time simulating enough trees under a given model to find any matches to the empirical trees, rendering log-likelihood (lnL) estimation challenging.</p>
 </div>
@@ -139,38 +126,35 @@ Setting Up and Running PHRAPL
 <li><code>outgroupPrune</code> (whether an outgroup, if present, should be excluded from the subsampled trees).</li>
 </ol>
 <p>To subsample our toy dataset using 10 replicates and 3 tips per population, do the following:</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> assignmentsGlobal&lt;-assignFile<br />
- observedTrees&lt;-trees<br />
- popAssignments&lt;-list(c(3,3,3))<br />
- subsamplesPerGene&lt;-10<br />
- outgroup=TRUE<br />
- outgroupPrune=TRUE<br />
- <br> observedTrees&lt;-PrepSubsampling(assignmentsGlobal=assignmentsGlobal,<br />
-      observedTrees=observedTrees,popAssignments=popAssignments,<br />
-      subsamplesPerGene=subsamplesPerGene,outgroup=outgroup,<br />
-      outgroupPrune=outgroupPrune) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  assignmentsGlobal&lt;-assignFile  
+  observedTrees&lt;-trees  
+  popAssignments&lt;-list(c(3,3,3))  
+  subsamplesPerGene&lt;-10  
+  outgroup=TRUE  
+  outgroupPrune=TRUE  
+  
+  observedTrees&lt;-PrepSubsampling(assignmentsGlobal=assignmentsGlobal,observedTrees=observedTrees,
+      popAssignments=popAssignments,subsamplesPerGene=subsamplesPerGene,outgroup=outgroup,
+      outgroupPrune=outgroupPrune)</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <hr />
 <p>Note that this function produces a list of subsampled tree sets to match the format of <code>popAssignments</code> (i.e., one set per <code>popVector</code>). Thus, if you have a single <code>popVector</code>, the <code>PrepSubsampling</code> function will output a list with a single set of trees. This set of subsampled trees first contains all the subsample iterations for the first locus, then all the iterations for the second locus, and so forth. Thus, for example, for our <code>observedTrees</code> we just generated, we can access the first subsample iteration of the second locus by typing <code>observedTrees[[1]][[11]]</code>.</p>
 <p>Note also that the more tips that exist in the original tree, the larger the number of subsample iterations that must be taken in order to capture a representative sample of the tree. One rule of thumb is to take AT LEAST as many subsample iterations that would be required to sample each tip once if subsampling were being done without replacement. So, for our current dataset, with three tips being taken per population, this would require that <code>subsamplesPerGene</code> be at least 7 (3 subsampled tips x 7 iterations &gt; 20 total tips for a given population in the toy tree). However, increasing the number of subsamples to 2, 3, or more times this number will likely reduce the error in the likelihood estimate for a given tree. We suggest taking as many subsample iterations as is logistically feasible, although keeping in mind that there will be a point of diminishing returns that should be weighed against other specifications of the analysis (e.g., the number of models to run, the number of parameters to specify, the number of trees to simulate, etc.).</p>
 <p>Finally, keep in mind that PHRAPL requires that trees be rooted, but not that the outgroup be included in the analysis. The purpose of including an outgroup taxon is merely to ensure that the subsampled trees are properly rooted. Thus, typically if an outgroup is present, <code>outgroupPrune</code> should be set to TRUE. If an outgroup is not available, one could midpoint root the subsampled trees. One way to do this in R is to use the <code>midpoint</code> function within the <code>phangorn</code> package. For example,</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> library(phangorn)<br />
- observedTreesMidpoint&lt;-lapply(observedTrees[[1]],midpoint)<br />
- class(observedTreesMidpoint)&lt;-“multiPhylo”<br />
- observedTreesMidpoint&lt;-list(observedTreesMidpoint)<br />
-</font></p>
-</blockquote>
+<pre><code>  library(phangorn)  
+  observedTreesMidpoint&lt;-lapply(observedTrees[[1]],midpoint)  
+  class(observedTreesMidpoint)&lt;-&quot;multiPhylo&quot;  
+  observedTreesMidpoint&lt;-list(observedTreesMidpoint)  </code></pre>
 <hr />
 </div>
 <div id="iv.-calculating-degeneracy-weights-for-subsampled-trees" class="section level2">
 <h2>IV. Calculating degeneracy weights for subsampled trees</h2>
 <p>As a way of reducing the tree space that PHRAPL faces when calculating the probability of a gene topology, all tip labels <em>within</em> populations are essentially ignored when assessing matches between simulated and observed trees. If the only differences between two trees consist of intra-population discrepancies, then these trees are considered to be “matches”. To adjust lnLs in a way that accounts for this degeneracy of intra-population tip labels, topological weights are calculated based on the proportion of times that the intra-population permuting of labels across a tree results in the same topology. These weights can be calculated during the PHRAPL search analysis - to do this, when running <code>GridSearch</code> (described below), set <code>subsampleWeights.df = NULL</code> and <code>doWeights = TRUE</code>. However, when there are more than a few tips in the subsampled trees, this can be time consuming, and thus it is helpful to calculate these upfront. To get these weights beforehand, you can use the function <code>GetPermutationWeightsAcrossSubsamples</code>, which takes as input <code>popAssignments</code> and the set of subsampled trees. For our toy dataset, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> subsampleWeights.df&lt;-GetPermutationWeightsAcrossSubsamples(popAssignments=<br />
-      popAssignments,observedTrees=observedTrees) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  subsampleWeights.df&lt;-GetPermutationWeightsAcrossSubsamples(popAssignments=popAssignments,
+      observedTrees=observedTrees)</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>As with <code>PrepSubsampling</code>, this function produces a list of weights tables with the same length as <code>popAssignments</code>. Within a weights table, each weight corresponds to a subsampled tree.</p>
 </div>
 <div id="v.-generating-models" class="section level2">
@@ -230,117 +214,82 @@ Setting Up and Running PHRAPL
 <li>Migration set to be symmetrical between populations (<code>forceSymmetricalMigration = TRUE</code>)</li>
 </ol>
 <p>can be generated for use with our toy dataset as follows:</p>
-<p>First, define the arguments within <code>GenerateMigrationIndividuals</code> as specified above:</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> popVector&lt;-popAssignments[[1]]<br />
- maxK&lt;-3<br />
- maxMigrationK=1<br />
- maxN0K=1<br />
- maxGrowthK=0<br />
- forceTree=TRUE<br />
- forceSymmetricalMigration=TRUE<br />
-</font></p>
-</blockquote>
-<p>Then, create the <code>migrationArray</code>:</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> migrationArray&lt;-GenerateMigrationIndividuals(popVector=popVector,maxK=maxK,<br />
-      maxMigrationK=maxMigrationK,maxN0K=maxN0K,maxGrowthK=maxGrowthK,      forceTree=forceTree,forceSymmetricalMigration=forceSymmetricalMigration) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  popVector&lt;-popAssignments[[1]]  
+  maxK&lt;-3  
+  maxMigrationK=1  
+  maxN0K=1  
+  maxGrowthK=0  
+  forceTree=TRUE  
+  forceSymmetricalMigration=TRUE  
+
+  migrationArray&lt;-GenerateMigrationIndividuals(popVector=popVector,maxK=maxK,  
+      maxMigrationK=maxMigrationK,maxN0K=maxN0K,maxGrowthK=maxGrowthK,
+      forceTree=forceTree,forceSymmetricalMigration=forceSymmetricalMigration)</code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>This yields a <code>migrationArray</code> containing 48 models. If desired, one can also specify a particular set of fixed parameter indices (using the <code>collapseList</code>, <code>n0multiplierList</code>, <code>growthList</code>, and <code>migrationList</code> arguments) such that only a subset of parameters will be varied in the outputted <code>migrationArray</code>. For more on this, see the R documentation (<code>?GenerateMigrationIndividuals</code>).</p>
 <hr />
 <p>A word of warning: if significant constraints are not placed on the number of parameters and populations specified when using <code>GenerateMigrationIndividuals</code>, then you can easily generate a list of models that will overwhelm your hard disk space, let alone your ability to analyze them. For example, with just four populations, assuming you are only considering fully resolved topologies (<code>forceTree=TRUE</code>), there are 18 possible coalescence histories. Taking just one of these histories and adding a single migration rate parameter yields a list of 1,024 models. Multiply this by 18 and you have over 18,000 models to analyze, with just <code>maxMigrationK=1</code> (and with <code>maxGrowthK</code> and <code>maxN0K = 0</code>). By just adding in two different possible population sizes (setting <code>maxN0K = 2</code>), this number of models jumps up to &gt; 82,944,000, which would be difficult to analyze to say the least.</p>
 <p>Given that <code>migrationArray</code>s can take a while to generate when they are large, we have pre-generated some that come packaged with PHRAPL. To view the <code>migrationArray</code>s available, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> unlist(strsplit(grep(“MigrationArray”,list.files(paste(path.package(“phrapl”),<br />
-      “/data/”,sep=“”)),value=TRUE),“.rda”)) </font></p>
-</blockquote>
+<pre><code>  unlist(strsplit(grep(&quot;MigrationArray&quot;,list.files(paste(path.package(&quot;phrapl&quot;),  
+      &quot;/data/&quot;,sep=&quot;&quot;)),value=TRUE),&quot;.rda&quot;))</code></pre>
 <p>Then to load one of these <code>migrationArray</code>s into your current environment, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> data(“Name_of_migrationArray”) </font></p>
-</blockquote>
+<pre><code>  data(&quot;Name_of_migrationArray&quot;)</code></pre>
 <p>You can type <code>?CachedMigrationArrays</code> to get more information about the specifications for each <code>migrationArray</code>.</p>
 <p>Note that the imported object will always be called <code>migrationArray</code> and will thus override any previous <code>migrationArray</code> that exists in your current R session.</p>
 <p>If you have a <code>migrationArray</code> produced under a previous version of PHRAPL that did not model population growth, you will need to add growth matrices to these models prior to running them with the current version. To add a null growth statement (i.e., zero growth) to each model, use the function <code>AddGrowthToAMigrationArray</code>, e.g.:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migrationArray&lt;-AddGrowthToAMigrationArray(migrationArray)<br />
-</font></p>
-</blockquote>
+<pre><code>  migrationArray&lt;-AddGrowthToAMigrationArray(migrationArray)  </code></pre>
 <hr />
 </div>
 <div id="generating-a-single-a-priori-model" class="section level3">
 <h3><em>3. Generating a single</em> a priori <em>model</em></h3>
 <p>What if, instead of or in addition to generating a list of possible models, you would like to create a specific model for which you have some <em>a priori</em> reason to consider alone, or to add to a larger <code>migrationArray</code> as generated above? To do this, you can use the function <code>MakingMigrationIndividualsOneAtATime</code>, whose purpose is to create a single <em>a priori</em> <code>migrationIndividual</code> for a specified coalescence, n0multiplier, growth, and migration history. The four corresponding arguments for this function are <code>collapseList</code>, <code>n0multiplierMapList</code>, <code>growthList</code> and <code>migrationList</code>.</p>
 <p><code>collapseList</code> is a list of coalescence history vectors, one vector for each coalescent event in the tree (i.e., for each column in the <code>collapseMatrix</code>. So,</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> collapseList = list(c(1,1,0),c(2,NA,2))<br />
-</font></p>
-</blockquote>
+<pre><code>  collapseList = list(c(1,1,0),c(2,NA,2))  </code></pre>
 <p>means that there are two coalescence events: in the first event, populations 1 and 2 coalesce while population 3 does not; in the second event, ancestral population 1-2 coalesces with population 3.</p>
 <p><code>n0multiplierList</code> and <code>growthList</code> are given in the same format as <code>collapseList</code>, and the available parameters for this must match the splitting history depicted in the <code>collapseList</code>. Remember that the <code>n0multiplier</code> parameter is not a parameter for population size, but is rather a population size scalar. So, a model in which population sizes are equal across populations (contemporary and ancestral) would be given as</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> n0multiplierList = list(c(1,1,1),c(1,NA,1))<br />
-</font></p>
-</blockquote>
+<pre><code>  n0multiplierList = list(c(1,1,1),c(1,NA,1))  </code></pre>
 <p>If you would like to model one growth rate for tip populations and another growth rate for ancestral populations, this would be given as</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> growthList = list(c(1,1,1),c(2,NA,2))<br />
-</font></p>
-</blockquote>
+<pre><code>  growthList = list(c(1,1,1),c(2,NA,2))  </code></pre>
 <p>Finally, <code>migrationList</code> is a list of migration matrices for the model. There will be one migration matrix for the present generation, plus any historical matrices that apply (there will be as many matrices as there are collapse events). So, in the three population scenario, if there is symmetrical migration between populations 1 and 2 and no historical migration, migrationList will be:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migrationList&lt;-list(<br />
- t(array(c(<br />
- NA, 1, 0,<br />
- 1, NA, 0,<br />
- 0, 0, NA),<br />
- dim=c(3,3))),<br />
- <br> t(array(c(<br />
- NA, NA, 0,<br />
- NA, NA, NA,<br />
- 0, NA, NA),<br />
- dim=c(3,3))))<br />
-</font></p>
-</blockquote>
+<pre><code>  migrationList&lt;-list(  
+  t(array(c(  
+  NA, 1, 0,  
+  1, NA, 0,  
+  0, 0, NA),  
+  dim=c(3,3))),  
+
+  t(array(c(  
+  NA, NA, 0,  
+  NA, NA, NA,  
+  0,  NA, NA),  
+  dim=c(3,3))))  </code></pre>
 <p>Note that in R, arrays are constructed by reading in values from column 1 first then from column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e., first listing values for row 1, then row 2, etc.). Thus, here, arrays are typed in by rows and then transposed (using <code>t</code>). Also, spacing and hard returns can be used to visualize these values in the form of matrices.</p>
 <p>So, let’s say you want to add one more model to our 48-model <code>migrationArray</code>. Assume that this desired model is the same as model #1 (i.e., <code>migrationArray[[1]]</code>, where ((pop1, pop2) pop3))), but where asymmetrical migration rates between sister populations are established at the tips: one rate for pop1 –&gt; pop2 and another rate for pop2 –&gt; pop1. This <code>migrationList</code> would be given as</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migration_1&lt;-t(array(c(<br />
- NA, 1, 0,<br />
- 2, NA, 0,<br />
- 0, 0, NA),<br />
- dim=c(3,3)))<br />
- <br><br />
- migration_2&lt;-t(array(c(<br />
- NA, NA, 0,<br />
- NA, NA, NA,<br />
- 0, NA, NA),<br />
- dim=c(3,3)))<br />
- <br> migrationList&lt;-list(migration_1,migration_2)<br />
-</font></p>
-</blockquote>
+<pre><code>  migration_1&lt;-t(array(c(  
+  NA, 1, 0,  
+  2, NA, 0,  
+  0, 0, NA),  
+  dim=c(3,3)))  
+  
+  migration_2&lt;-t(array(c(  
+  NA, NA, 0,  
+  NA, NA, NA,  
+  0,  NA, NA),  
+  dim=c(3,3)))  
+
+  migrationList&lt;-list(migration_1,migration_2)  </code></pre>
 <p>So, to produce our desired model, we use the function <code>GenerateMigrationIndividualsOneAtATime</code>:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migrationIndividual&lt;-GenerateMigrationIndividualsOneAtATime(collapseList=<br />
-      collapseList,n0multiplierList=n0multiplierList,<br />
-      growthList=growthList,migrationList=migrationList)<br />
-</font></p>
-</blockquote>
+<pre><code>  migrationIndividual&lt;-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,
+      n0multiplierList=n0multiplierList,growthList=growthList,migrationList=migrationList)</code></pre>
 <p>Then, we can add this model to the <code>migrationArray</code>:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migrationArray&lt;-c(migrationArray,list(migrationIndividual))<br />
-</font></p>
-</blockquote>
+<pre><code>  migrationArray&lt;-c(migrationArray,list(migrationIndividual))  </code></pre>
 <p>and view it:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migrationArray[[49]] </font></p>
-</blockquote>
+<pre><code>  migrationArray[[49]]</code></pre>
 <p>Note that a <code>collapseList</code> must always be specified. However, the remaining three parameter matrices are optional, and if they are not specified, null matrices will be automatically produced in which all n0multipliers are set to one, and all growth and migration parameters are set to zero.</p>
 <p>Thus, the same <code>migrationIndividual</code> as above can be produced by simply typing</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> migrationIndividual&lt;-GenerateMigrationIndividualsOneAtATime(collapseList=<br />
-      collapseList,migrationList=migrationList)<br />
-</font></p>
-</blockquote>
+<pre><code>  migrationIndividual&lt;-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,
+      migrationList=migrationList)  </code></pre>
 </div>
 <div id="adding-demographic-events-to-a-model-that-are-not-tied-to-a-coalescence-event" class="section level3">
 <h3><em>4. Adding demographic events to a model that are not tied to a coalescence event</em></h3>
@@ -370,12 +319,14 @@ Setting Up and Running PHRAPL
 <p>If the dataset being analyzed contains loci that differ in their prevalence in a population (e.g., mix of diploid/haploid or organellar/nuclear loci), the relative scaling of effective population size should be inputted using <code>popScaling</code>. This argument takes a vector of scaling values, one value for each locus in the dataset (e.g., where a diploid nuclear locus = 1, X-linked locus = 0.75, mtDNA/chloroplast locus = 0.25, etc.).</p>
 <hr />
 <p>To run a grid search on our toy dataset, let’s just analyze the first three models using <code>nTrees = 1000</code> (so it runs quickly):</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> modelRange&lt;-1:3<br />
- nTrees&lt;-1000<br />
- <br> result&lt;-GridSearch(migrationArray=migrationArray,modelRange=modelRange,      popAssignments=popAssignments,observedTrees=observedTrees,      subsampleWeights.df=subsampleWeights.df,<br />
-      subsamplesPerGene=subsamplesPerGene,nTrees=nTrees) </font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  modelRange&lt;-1:3  
+  nTrees&lt;-1000  
+
+  result&lt;-GridSearch(migrationArray=migrationArray,modelRange=modelRange,popAssignments=popAssignments,
+      observedTrees=observedTrees,subsampleWeights.df=subsampleWeights.df,  
+      subsamplesPerGene=subsamplesPerGene,nTrees=nTrees) </code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p><code>GridSearch</code> outputs a list containing</p>
 <ol style="list-style-type: decimal">
 <li>Parameter grids (with AICs) for each model (itself a list)</li>
@@ -386,33 +337,24 @@ Setting Up and Running PHRAPL
 <div id="vii.-saving-compiling-summarizing-and-visualizing-results" class="section level2">
 <h2>VII. Saving, compiling, summarizing, and visualizing results</h2>
 <p>The <code>ConcatenateResults</code> function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want save <code>GridSearch</code> results in a file to access later, e.g.:</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> save(list=“result”,file=“phraplOutput_models1-3.rda”)<br />
-</font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  save(list=&quot;result&quot;,file=&quot;phraplOutput_models1-3.rda&quot;)  </code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>Then, when concatenating results, you can either specify the names of the files containing the results to be concatenated (by giving a vector of names to the argument <code>rdaFiles</code>) or the directory in which these files are stored (using <code>rdaFilesPath</code>). So, for our toy dataset, type</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> totalResults&lt;-ConcatenateResults(rdaFiles=“phraplOutput_models1-3.rda”,<br />
- migrationArray=migrationArray)<br />
-</font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  totalResults&lt;-ConcatenateResults(rdaFiles=&quot;phraplOutput_models1-3.rda&quot;,  
+      migrationArray=migrationArray)  </code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>This table can be outputted to a file by specifying an output filename using the <code>outFile</code> argument.</p>
 <p>You can calculate model averaged parameter values across all models using the <code>modelAverages</code> function, e.g.:</p>
-<blockquote>
-<p><font size="2" face="courier" color="FA1704"> modelAverages&lt;-CalculateModelAverages(totalResults)<br />
-</font></p>
-</blockquote>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
+<pre><code>  modelAverages&lt;-CalculateModelAverages(totalResults)  </code></pre>
+<p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <p>The default is to model average parameters across all models (assuming that the parameter = 0 when it is not specified in a model). Alternatively, one can model average across only those models in which a given parameter is explicitly incorporated by setting <code>averageAcrossAllModels = FALSE</code>.</p>
 <p>Upon inspecting the results, you may feel inclined to create a 3-D image of the best model, e.g.:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> PlotModel(migrationIndividual=migrationArray[[1]],taxonNames=c(“A”,“B”,“C”))<br />
-</font></p>
-</blockquote>
+<pre><code>  PlotModel(migrationIndividual=migrationArray[[1]],taxonNames=c(&quot;A&quot;,&quot;B&quot;,&quot;C&quot;))  </code></pre>
 <p>A statuette of this model can then be printed using 14 carat gold, which could be useful as a project souvenir/retirement nest egg, e.g.:</p>
-<blockquote>
-<p><font size="2" face="courier" color="black"> <a href="http://www.shapeways.com/product/BHPZB3WUC/phrapl-four-populations?optionId=40165805" class="uri">http://www.shapeways.com/product/BHPZB3WUC/phrapl-four-populations?optionId=40165805</a><br />
-</font></p>
-</blockquote>
+<pre><code>  http://www.shapeways.com/product/BHPZB3WUC/phrapl-four-populations?optionId=40165805  </code></pre>
 </div>
 
 
