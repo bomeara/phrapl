@@ -2996,9 +2996,17 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 		#Add time if desired		
 		if(addTime.elapsed==TRUE){
 			load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #make sure current model is loaded again
-			current.results<-cbind(current.results[,1:nonparmColsOriginal],elapsedHrs=time.elapsed[,2],
-				current.results[,(nonparmColsOriginal + 1):ncol(current.results)])
-			nonparmCols<-nonparmColsWithTime
+			
+			if(length(current.results[,(nonparmColsOriginal + 1):ncol(current.results)]) == 1){
+				singleParmName<-names(current.results[ncol(current.results)])
+				current.results<-cbind(current.results[,1:nonparmColsOriginal],elapsedHrs=time.elapsed[,2],
+					current.results[,(nonparmColsOriginal + 1):ncol(current.results)])
+				colnames(current.results)[ncol(current.results)]<-singleParmName
+			}else{
+				current.results<-cbind(current.results[,1:nonparmColsOriginal],elapsedHrs=time.elapsed[,2],
+					current.results[,(nonparmColsOriginal + 1):ncol(current.results)])
+				nonparmCols<-nonparmColsWithTime
+			}
 		}
 
 		#Add current.results to totalData
@@ -3058,7 +3066,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	
 	return(totalData)
 
-}		
+}			
 
 #This function concatenates together results from separate phrapl runs.
 #This differs from ConcatenateResults in that it can be used on phrapl results produced prior to adding
