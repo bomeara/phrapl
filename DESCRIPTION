@@ -1,6 +1,6 @@
 Package: phrapl
-Version: 0.55
-Date: 2015-01-27
+Version: 0.56
+Date: 2016-12-01
 Title: Phylogeography using Approximate Likelihood
 Author: Brian O'Meara <bomeara@utk.edu>, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
 Maintainer: Brian O'Meara <bomeara@utk.edu>
