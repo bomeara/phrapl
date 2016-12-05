@@ -1,9 +1,5 @@
 \name{PlotModel2D}
 \alias{PlotModel2D}
-\alias{plotmodel2d}
-\alias{Plotmodel2d}
-\alias{plot.model2d}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Create a 2D plot for a given model
 }
@@ -11,23 +7,23 @@ Create a 2D plot for a given model
 This creates a two-dimensional model
 }
 \usage{
-PlotModel2D(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
-	pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1, 
+PlotModel2D(migrationIndividual, parameterVector=NULL, taxonNames=NULL,
+	pad.for.input=FALSE, tree.lwd=30, tree.col="black", arrow.lwd=1,
 	arrow.col="red", arrow.lty="solid", tip.cex = 1, tip.col = "black")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{migrationIndividual}{
-This is the chosen model. If you want model 17 from migrationArray, you could 
+This is the chosen model. If you want model 17 from migrationArray, you could
 pass this in as migrationIndividual=migrationArray[[17]]
 }
   \item{parameterVector}{
 If you have numeric parameter estimates, you can pass them in here. This affects
-things like node height, migration rate arrow width, etc. Otherwise, it will 
+things like node height, migration rate arrow width, etc. Otherwise, it will
 plot a generic model.
 }
   \item{taxonNames}{
-If instead of population A, B, ... you want Oahu, Hawaii, ... you can pass them 
+If instead of population A, B, ... you want Oahu, Hawaii, ... you can pass them
 in as a vector.
 }
   \item{pad.for.input}{
@@ -64,7 +60,7 @@ Creates a stunning image.
 \examples{
 data(MigrationArray_3pops_maxMigrationK1)
 pretty.model <- migrationArray[[1]]
-PlotModel2D(pretty.model)	
+PlotModel2D(pretty.model)
 }
 \author{
 Brian O'Meara
