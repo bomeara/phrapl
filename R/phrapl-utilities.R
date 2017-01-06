@@ -3036,8 +3036,8 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	#Sort parameter columns into desired order
 	totalData<-sortParameterTable(totalData,(nonparmCols + 2),longNames=longNames)
 
-	#Make sure totalData is all sorted by model
-	totalData<-totalData[order(totalData$models),] 
+	#Make sure totalData is all sorted by model, then by AIC
+	totalData<-totalData[order(totalData$models,totalData$AIC),] 
 
 	#Remove row counter column
 	totalData<-totalData[,-1]
