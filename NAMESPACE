@@ -1,4 +1,4 @@
-#exportPattern("^[^\\.]")
+exportPattern("^[^\\.]")
 export(AddEventToMigrationArray)
 export(AddGrowthToAMigrationArray)
 export(CalculateGdi)
