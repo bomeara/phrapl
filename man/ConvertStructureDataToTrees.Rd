@@ -1,6 +1,5 @@
 \name{ConvertStructureDataToTrees}
 \alias{ConvertStructureDataToTrees}
-\alias{ReadStructureData}
 \title{
 Use Structure data
 }
