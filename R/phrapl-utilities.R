@@ -5,14 +5,14 @@ TruncateToCells<-function(x, numCells, minVal, maxVal) {
 		if(x<=numCells && min(maxVal, minVal+x)>=minVal) {
 			return(seq(from=minVal, to=min(maxVal, minVal+x), by=1))
 		} else {
-			return(NA)	
+			return(NA)
 		}
 }
 
 RowComplete<-function(x, allowableMaxInitial) {
 	if(length(unique(x))==length(seq(from=min(x, allowableMaxInitial), to=max(x), by=1))) {
-		return(TRUE)	
-	}	
+		return(TRUE)
+	}
 	return(FALSE)
 }
 
@@ -21,7 +21,7 @@ AllParamCombinations<-function(numCells, minVal=0, maxVal=3, allowableMaxInitial
 	#so values can be 00, 01, [but not 02], 10, 11, 12
 	#each row is a possible combination
 	#allowableMaxInitial allows you to have a min value of zero but let the first index be 1 if you want
-	initial.grid<-expand.grid(TruncateToCells(1, numCells, minVal, maxVal), 
+	initial.grid<-expand.grid(TruncateToCells(1, numCells, minVal, maxVal),
 		TruncateToCells(2, numCells, minVal, maxVal),
 		TruncateToCells(3, numCells, minVal, maxVal),
 		TruncateToCells(4, numCells, minVal, maxVal),
@@ -66,7 +66,7 @@ AllParamCombinations<-function(numCells, minVal=0, maxVal=3, allowableMaxInitial
 		TruncateToCells(44, numCells, minVal, maxVal)
 	)[,sequence(numCells)]
 	if(sum(is.na(initial.grid))>0) {
-		return(matrix(nrow=0, ncol=numCells))	
+		return(matrix(nrow=0, ncol=numCells))
 	}
 	initial.grid<-initial.grid[which(RowMin(initial.grid)>=minVal),]
 	initial.grid<-initial.grid[which(RowMax(initial.grid)<=maxVal),]
@@ -179,13 +179,13 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 	migrationParameters<-parameterVector[grep("migration",names(parameterVector))]
 	collapseParameters<-parameterVector[grep("collapse",names(parameterVector))]
 	collapseCount<-1
-	
+
 	if(1>2 ){
 	# stop(paste("Incorrect parameterVector: you passed ",length(parameterVector),"entries but it needs",
 	#	length(parameterList),"entries:",paste(parameterList,sep=" ",collapse="")))
 	}else{
 		msString<-paste("-T -I",nPop,paste(popVector,sep=" ", collapse=" "),sep=" ")
-		
+
 		#do values at present
 		initialN0multipler<-""
 		initialGrowth<-""
@@ -197,12 +197,12 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 				initialGrowth<-paste(initialGrowth,"-g",i,sprintf("%f",0),sep=" ")
 			}
 		}
-		
+
 		initialMigration<-" -ma"
 		for (i in 1:nPop) {
 			for (j in 1:nPop) {
 				if (i==j) {
-					initialMigration<-paste(initialMigration, "x", sep=" ") 
+					initialMigration<-paste(initialMigration, "x", sep=" ")
 				}
 				else {
 					if (migrationArray[i,j,1] > 0) {
@@ -215,14 +215,14 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 			}
 		}
 		msString<-paste(msString,initialN0multipler,initialGrowth,initialMigration,sep="")
-		
+
 		#is there a collapse in the first gen?
 		if(sum(!is.na(collapseMatrix[,1])) > 0){ #If this is not an added non-coalescence event
 			if(max(collapseMatrix[,1],na.rm=TRUE) > 0) { #If there is a collapse
 				initialCollapse<-""
 				popsToCollapse<-which(collapseMatrix[,1]==1)
 				for (i in 2:length(popsToCollapse)) {
-					initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[1]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+					initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[1]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")
 				}
 				msString<-paste(msString,initialCollapse,sep="")
 			}
@@ -232,7 +232,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 		if (numSteps>1){
 			eventCount<-1
 			for (generation in 2:numSteps) {
-			
+
 				#If the previous generation was an added non-coalescence event with a hard-coded time period
 				if(sum(!is.na(collapseMatrix[,generation - 1])) == 0){
 					if(is.null(addedEventTime)){
@@ -248,9 +248,9 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 						collapseTime<-addedEventTime[eventCount]
 					}
 					eventCount<-eventCount + 1
-				
-				#Else use the values within the collapseParameter vector	
-				}else{ 
+
+				#Else use the values within the collapseParameter vector
+				}else{
 					collapseTime<-collapseParameters[collapseCount]
 				}
 				n0multiplierPositions<-which(!is.na(n0multiplierMap[,generation]))
@@ -267,21 +267,21 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 						msString<-paste(msString,"-eg",sprintf("%f",collapseTime),sprintf("%f",growthPos),sprintf("%f",0),sep=" ")
 					}
 				}
-				
+
 				for (fromPos in 1:nPop) {
 					for (toPos in 1:nPop) {
 						migrationArrayValue<-migrationArray[fromPos,toPos,generation]
 						if (!is.na(migrationArrayValue) ) {
 							if (migrationArrayValue>0) {
-								msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",migrationParameters[migrationArrayValue]),sep=" ")     
+								msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",migrationParameters[migrationArrayValue]),sep=" ")
 							}
 							else {
-								msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",0),sep=" ")     
+								msString<-paste(msString,"-em",sprintf("%f",collapseTime),fromPos,toPos,sprintf("%f",0),sep=" ")
 							}
 						}
 					}
 				}
-				
+
 				#is there a collapse in this gen?
 				if(sum(!is.na(collapseMatrix[,generation])) > 0){ #If the current generation is NOT an added non-coalescence event
 					if(max(collapseMatrix[,generation],na.rm=TRUE) > 0){ #If the current generation contains a collapse event
@@ -291,18 +291,18 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 						initialCollapse<-""
 						popsToCollapse<-which(collapseMatrix[,generation]>=1)
 						for (i in 2:length(popsToCollapse)) {
-							initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[collapseCount]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")       
+							initialCollapse<-paste(initialCollapse, "-ej", sprintf("%f",collapseParameters[collapseCount]), popsToCollapse[i], popsToCollapse[1]  ,sep=" ")
 						}
 						msString<-paste(msString,initialCollapse,sep="")
 					}
 				}
-				
+
 			}
 		}
 		if (createSeed==TRUE){
 			seed<-round(runif(3,1,10000000000))
 			msString<-paste(msString,"-seed",seed[1],seed[2],seed[3],sep=" ")
-		}	
+		}
 		nsam<-sum(popVector)
 		nreps<-nTrees
 		opts<-msString
@@ -312,7 +312,7 @@ CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,a
 }
 
 CreateMSstringGeneric<-function(popVector,migrationIndividual,parameterVector,nTrees=1) {
-	return(CreateMSstringSpecific(popVector,migrationIndividual,MsIndividualParameters(migrationIndividual),nTrees)) 
+	return(CreateMSstringSpecific(popVector,migrationIndividual,MsIndividualParameters(migrationIndividual),nTrees))
 }
 
 ReturnIncompletes<-function(popIntervalsList) {
@@ -334,7 +334,7 @@ UpdateCompletes<-function(popIntervalsList) {
 			popIntervalsList[[i]]$complete<-TRUE #end up as one population
 		}
 	}
-	return(popIntervalsList)	
+	return(popIntervalsList)
 }
 
 CompleteIntervals<-function(popIntervalsList) {
@@ -380,11 +380,11 @@ CompleteIntervals<-function(popIntervalsList) {
 CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalRegime=TRUE) {
 	g <- graph.empty() + vertices(sequence(dim(migrationIndividual$collapseMatrix)[1]))
 	for (interval in sequence(dim(migrationIndividual$collapseMatrix)[2])) {
-		merges<-which(migrationIndividual$collapseMatrix[,interval]>0) 
+		merges<-which(migrationIndividual$collapseMatrix[,interval]>0)
 		if(length(merges)>1) {
 			for (i in c(2:length(merges))) {
-				g[merges[1], merges[i]] <- 1 #create an edge	
-			}				
+				g[merges[1], merges[i]] <- 1 #create an edge
+			}
 		}
 	}
 	for (i in sequence(dim(migrationIndividual$migrationArray)[1])) {
@@ -392,10 +392,10 @@ CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalReg
 			for (k in sequence(dim(migrationIndividual$migrationArray)[3])) {
 				if(!is.na(migrationIndividual$migrationArray[i, j, k])) {
 					if(migrationIndividual$migrationArray[i, j, k]>0) {
-						g[i, j]<-1	
+						g[i, j]<-1
 					}
 				}
-			}	
+			}
 		}
 	}
 	numberWithoutConnection <- sum(!is.finite(RowMax(shortest.paths(g, mode="all"))))
@@ -408,11 +408,11 @@ CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalReg
 		last.populations <- which(apply(!apply(migrationIndividual$migrationArray[,, last.regime], 1, is.na), 1, sum)>0)
 		g.last<- graph.empty() + vertices(sequence(length(last.populations)))
 		relevant.collapseMatrix <- migrationIndividual$collapseMatrix[last.populations, last.regime]
-		merges<-which(relevant.collapseMatrix>0) 
+		merges<-which(relevant.collapseMatrix>0)
 		if(length(merges)>1) {
 			for (i in c(2:length(merges))) {
-				g.last[merges[1], merges[i]] <- 1 #create an edge	
-			}				
+				g.last[merges[1], merges[i]] <- 1 #create an edge
+			}
 		}
 		relevant.migrationArray <- migrationIndividual$migrationArray[last.populations, last.populations, last.regime]
 		for (i in sequence(dim(relevant.migrationArray)[1])) {
@@ -423,7 +423,7 @@ CheckFiniteCoalescence <- function(migrationIndividual, forceCoalescenceBasalReg
 					}
 				}
 			}
-			
+
 		}
 		numberWithoutConnection <- sum(!is.finite(RowMax(shortest.paths(g.last, mode="all"))))
 		if(numberWithoutConnection>0) {
@@ -508,19 +508,19 @@ GenerateIntervals<-function(popVector) {
 # }
 
 
-#The basic idea here is that at each population in each time interval there is a n0multiplier. These can all be set to the same value, 
-#allowed to vary, or assigned in clumps (i.e., pops 1, 3, and 6 have the same n0multiplier value). This generates all such mappings, 
+#The basic idea here is that at each population in each time interval there is a n0multiplier. These can all be set to the same value,
+#allowed to vary, or assigned in clumps (i.e., pops 1, 3, and 6 have the same n0multiplier value). This generates all such mappings,
 #subject to staying within the maximum number of free parameters.
 #Note that unlike for migration or growth, the minimum maximum number of n0multiplier parameters is one (instead of zero).
 #This function now also adds in all possible growth models, which are generated using GenerateGrowthIndividuals
-#The option has also been added to fix the n0muliplierMap or growthMap (or both) to be a particular matrix. These can be 
+#The option has also been added to fix the n0muliplierMap or growthMap (or both) to be a particular matrix. These can be
 #specified in the form of lists as n0multiplierList and growthList. Note that this must only be done when a single popInterval
 #is specified (i.e., the collapse topology must also be fixed).
 GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateIntervals(popVector),maxK=SetMaxK(popVector),maxN0K=Inf,
 	maxGrowthK=Inf,n0multiplierList=NULL,growthList=NULL){
 	n0multiplierIndividualsList<-list()
 	for (i in sequence(length(popIntervalsList))){
-		
+
 		#If a particular n0multiplierMap is specified (in addition to a specified collapseMatrix), then just append this to each popInterval
 		if(!is.null(n0multiplierList)){
 			n0multiplierVec<-c()
@@ -528,8 +528,8 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 				n0multiplierVec<-append(n0multiplierVec,n0multiplierList[[j]])
 			}
 			n0multiplierMap<-array(n0multiplierVec,dim=c(length(n0multiplierList[[1]]),length(n0multiplierList)))
-			
-			#Add in all possible growth models to each n0multiplierIndividual		
+
+			#Add in all possible growth models to each n0multiplierIndividual
 			#If a particular growthMap is specified (in addition to a specified collapseMatrix), append it to each popInterval
 			if(!is.null(growthList)){
 				growthVec<-c()
@@ -539,9 +539,9 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 				growthMap<-array(growthVec,dim=c(length(growthList[[1]]),length(growthList)))
 				n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierGrowthindividual(popIntervalsList[[i]]$collapseMatrix,
 					popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
-			
+
 			}else{
-			
+
 				#Else, do all possible growth maps
 				growthMapList<-GenerateGrowthIndividuals(popVector=popVector,popInterval=popIntervalsList[[i]],maxK=maxK,maxGrowthK=maxGrowthK)
 				for(k in sequence(length(growthMapList))){
@@ -550,9 +550,9 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 						popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
 				}
 			}
-			
+
 		#Else, do all possible n0multiplier maps
-		}else{	
+		}else{
 			n0multiplierMapTemplate<-1+0*popIntervalsList[[i]]$collapseMatrix  #will have all the populations, all with either NA or 1
 			numLineages=sum(n0multiplierMapTemplate,na.rm=TRUE)
 			possibleMappings<-AllParamCombinations(numCells=numLineages,minVal=1,maxVal=max(1,min(maxN0K,maxK-KPopInterval(popIntervalsList[[i]]))),
@@ -562,7 +562,7 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 				n0multiplierMap<-n0multiplierMapTemplate
 				whichPositions <- which(n0multiplierMap==1)
 				n0multiplierMap[whichPositions]<-thisMapping
-				
+
 				#Add in all possible growth models to each n0multiplierIndividual
 				#If a particular growthMap is specified (in addition to a specified collapseMatrix), append it to each popInterval
 				if(!is.null(growthList)){
@@ -573,9 +573,9 @@ GenerateN0multiplierIndividuals<-function(popVector,popIntervalsList=GenerateInt
 					growthMap<-array(growthVec,dim=c(length(growthList[[1]]),length(growthList)))
 					n0multiplierIndividualsList[[length(n0multiplierIndividualsList)+1]]<-N0multiplierGrowthindividual(popIntervalsList[[i]]$collapseMatrix,
 						popIntervalsList[[i]]$complete,n0multiplierMap,growthMap)
-			
+
 				}else{
-			
+
 					#Else, do all possible growth maps
 					growthMapList<-GenerateGrowthIndividuals(popVector=popVector,popInterval=popIntervalsList[[i]],maxK=maxK,maxGrowthK=maxGrowthK)
 					for(k in sequence(length(growthMapList))){
@@ -608,7 +608,7 @@ GenerateGrowthIndividuals<-function(popVector,popInterval,maxK=SetMaxK(popVector
 			whichPositions <- which(growthMap==1)
 			growthMap[whichPositions]<-thisMapping
 			growthIndividualsList[[length(growthIndividualsList)+1]]<-growthMap
-		}		
+		}
 		return(growthIndividualsList)
 	}
 }
@@ -620,17 +620,17 @@ GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
 	return(length(n0multiplierIndividualsList))
 }
 
-#Now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters 
+#Now we will generate all possible assignments of pairwise migration. Again, we want to keep the total number of free parameters
 #(times, n0multipliers, growth parameters, and migration rates) under our chosen max.
-#Do we allow a model where migrations change anywhere along branch, or only at coalescent nodes? 
-#The problem with the latter is that you cannot fit some reasonable models: i.e., two populations persisting through time. 
+#Do we allow a model where migrations change anywhere along branch, or only at coalescent nodes?
+#The problem with the latter is that you cannot fit some reasonable models: i.e., two populations persisting through time.
 #Problem with the former is parameter space.
 
-#In general, this function produces a list of all possible demographic models given a number of populations (specified by popVector), 
+#In general, this function produces a list of all possible demographic models given a number of populations (specified by popVector),
 #specified numbers of free parameters, and other optional filtering criteria. The list of models is call a migrationArray (a name which,
-#confusingly, is also given to migration matrices within a model) and each model is referred to as a migrationIndividual. 
+#confusingly, is also given to migration matrices within a model) and each model is referred to as a migrationIndividual.
 
-#Each migrationIndividual is composed of four major demographic components: 
+#Each migrationIndividual is composed of four major demographic components:
 #1. The coalescence history (the collapseMatrix, in which rows correspond to populations and columns correspond to temporal events)
 #2. Population size scalar parameters (the n0multiplierMap, with the same dimensions as CollapseMatrix)
 #3. Growth (alpha) parameters (the growthMap, also with the same dimensions as CollapseMatrix)
@@ -643,15 +643,15 @@ GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
 
 #Specific demographic components can also be fixed, such that the migrationArray generated only varies subsets of parameters. Fixed
 #components are specified by collapseList, n0multiplierList, growthList, and migrationList. Note that a collapseList must always be
-#specified in order to specify any other demographic component. The format for specifying collapseList, n0multiplierList, and 
+#specified in order to specify any other demographic component. The format for specifying collapseList, n0multiplierList, and
 #growthList are the same: a list of vectors. A vector contains parameter values for each population (e.g., becoming the rows in
 #collapseMatrix), and each vector in the list represents a different temporal event (e.g., becoming the columns in collapseMatrix).
-#For example, collapseList = list(c(1,1,0),c(2,NA,2)) means that there are two coalescent events: in the first event, population 1 and 2 
-#coalesce while population 3 does not; in the second event, ancestral population 1-2 coalesces with population 3. 
+#For example, collapseList = list(c(1,1,0),c(2,NA,2)) means that there are two coalescent events: in the first event, population 1 and 2
+#coalesce while population 3 does not; in the second event, ancestral population 1-2 coalesces with population 3.
 
-#MigrationLists differ in that a list of matrices, rather than vectors, must be specified. There will be one migration matrix 
+#MigrationLists differ in that a list of matrices, rather than vectors, must be specified. There will be one migration matrix
 #for the present generation, plus any historical matrices that apply (there will be as many matrices as there are collapse events).
-#So, in the three population scenario, if there is symmetrical migration between populations 1 and 2 and no historical migration, 
+#So, in the three population scenario, if there is symmetrical migration between populations 1 and 2 and no historical migration,
 #migrationList will be:
 
 # migrationList<-list(
@@ -660,32 +660,32 @@ GetNumTreeHistories<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1){
 # 1, NA, 0,
 # 0, 0, NA),
 # dim=c(3,3))),
-# 
+#
 # t(array(c(
 # NA, NA, 0,
 # NA, NA, NA,
 # 0,  NA, NA),
 # dim=c(3,3))))
 
-#Note that in R, arrays are constructed by reading in values from column 1 first then from column 2, etc. However, it is more intuitive 
-#to construct migration matrices by rows (i.e., first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the 
-#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard returns can be used to visualize these values 
+#Note that in R, arrays are constructed by reading in values from column 1 first then from column 2, etc. However, it is more intuitive
+#to construct migration matrices by rows (i.e., first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the
+#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard returns can be used to visualize these values
 #in the form of matrices.
 
 #Other methods of model filtering (using forceSymmetricalMigration or forceTree) can also be implemented.
 GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=1,maxGrowthK=0,maxMigrationK=1,
 	collapseList=NULL,n0multiplierList=NULL,growthList=NULL,migrationList=NULL,forceSymmetricalMigration=TRUE,
 	forceTree=FALSE,verbose=FALSE,parallelRep=NULL){
-	
+
 	#Check for compatibilities among inputs
 	if((!is.null(n0multiplierList) || !is.null(growthList) || !is.null(migrationList)) && is.null(collapseList)){
 		return(message("Error: when specifying n0multiplierList, growthList, or migrationLists, a collapseList must also be specified."))
 	}
-	
+
 	#Some preliminaries
 	maxK<-maxK + 1 #to account for fact that first n0 multiplier is not free
 	migrationIndividualsList<-list()
-		
+
 	#If a fixed collapse scenario is specified, use that
 	if(!is.null(collapseList)){
 		collapseVec<-c()
@@ -695,11 +695,11 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 		collapseMatrix<-array(collapseVec,dim=c(length(collapseList[[1]]),length(collapseList)))
 		popIntervalsList<-list(Popinterval(collapseMatrix,complete=TRUE))
 	}else{
-	
+
 	#Else, do all possible collapse scenarios
 		popIntervalsList<-GenerateIntervals(popVector)
 	}
-	
+
 	#Copy these models across various possible n0multiplier and growth parameter scenarios
 	n0multiplierIndividualsList<-GenerateN0multiplierIndividuals(popVector=popVector,popIntervalsList=popIntervalsList,
 		maxK=maxK,maxN0K=maxN0K,maxGrowthK=maxGrowthK,n0multiplierList=n0multiplierList,growthList=growthList)
@@ -719,14 +719,14 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 		growthMap<-n0multiplierIndividualsList[[i]]$growthMap
 		numFinalPops<-dim(collapseMatrix)[1]
 		numSteps<-dim(collapseMatrix)[2]
-		
+
 		#Check for input compatibilities
-		if((paste(dim(collapseMatrix),collapse="") != paste(dim(n0multiplierMap),collapse="")) || 
+		if((paste(dim(collapseMatrix),collapse="") != paste(dim(n0multiplierMap),collapse="")) ||
 		(paste(dim(collapseMatrix),collapse="") != paste(dim(growthMap),collapse="")) ||
 		(paste(dim(growthMap),collapse="") != paste(dim(n0multiplierMap),collapse=""))){
 			return(message("Error: specified collapseLists, n0multiplierLists, and growthLists must have the same dimensions"))
 		}
-		
+
 		if((KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) + KGrowthMap(growthMap) ) <= maxK){
 
 			#If a specific migrationArray is specified, just use that one
@@ -742,10 +742,10 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 				if(dim(collapseMatrix)[1] != dim(migrationArray)[1] || dim(collapseMatrix)[2] != dim(migrationArray)[3]){
 					return(message("Error: specified collapseLists and migrationLists must have the same dimensions"))
 				}
-				
+
 				newIndividual<-Migrationindividual(collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
-					n0multiplierMap,growthMap,migrationArray)	
-				#Toss models in which genes cannot coalesce or which exceed the max number of parameters	
+					n0multiplierMap,growthMap,migrationArray)
+				#Toss models in which genes cannot coalesce or which exceed the max number of parameters
 				if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual) < maxK){
 					migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
 				}
@@ -764,22 +764,22 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 										migrationArray[fromPop,toPop,interval]<-0
 									}
 								}else{
-									if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && 
+									if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) &&
 										toPop>fromPop) { #so only fill top diagonal
-										migrationArray[fromPop,toPop,interval]<-0							
+										migrationArray[fromPop,toPop,interval]<-0
 									}
 								}
 							}
 						}
 					}
 					newIndividual<-Migrationindividual(collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
-						n0multiplierMap,growthMap,migrationArray)	
-					#Toss models in which genes cannot coalesce or which exceed the max number of parameters	
+						n0multiplierMap,growthMap,migrationArray)
+					#Toss models in which genes cannot coalesce or which exceed the max number of parameters
 					if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual) < maxK){
 						migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
 					}
 				}else{
-		
+
 					#Else, produce all possible matrices
 					migrationTemplate<-array(data=NA,dim=c(numFinalPops,numFinalPops,numSteps)) #dimnames=c("from","to","generation")
 					for (interval in 1:numSteps) {
@@ -793,7 +793,7 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 									} else {
 										if (!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && toPop>fromPop) { #so only fill top diagonal
 											migrationTemplate[fromPop,toPop,interval]<-1
-										}								
+										}
 									}
 								}
 							}
@@ -801,14 +801,14 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 					}
 					numPairs=sum(migrationTemplate,na.rm=TRUE)
 					mappingMaxKAllowed <- min(maxK - ( KCollapseMatrix(collapseMatrix) + KN0multiplierMap(n0multiplierMap) ),maxMigrationK)
-			
+
 					evaluateMapping<-TRUE
 					if (mappingMaxKAllowed<=0) {
 						evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
 					}
 					allMappings<-AllParamCombinations(numPairs, 0, mappingMaxKAllowed, 1)
 					if(verbose==TRUE) {
-						print(paste("  there are ", dim(allMappings)[1], " migration mappings to try", sep=""))	
+						print(paste("  there are ", dim(allMappings)[1], " migration mappings to try", sep=""))
 					}
 					thisMapping<-allMappings[1,]
 					numevaluations=1
@@ -828,7 +828,7 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 							}
 						}
 						newIndividual<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix,n0multiplierIndividualsList[[i]]$complete,
-							n0multiplierMap,growthMap,migrationArray)	
+							n0multiplierMap,growthMap,migrationArray)
 						if(CheckFiniteCoalescence(newIndividual) && KAll(newIndividual)<maxK){
 							migrationIndividualsList[[length(migrationIndividualsList)+1]]<-newIndividual
 						}
@@ -842,16 +842,16 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 		#						x[[length(get(paste("migrationIndividualsList_",i,sep=""))) + 1]]<-4
 		#						x})
 		#					}
-		#				}			
+		#				}
 						numevaluations<-numevaluations+1
 						if(numevaluations<=dim(allMappings)[1]) {
-							thisMapping<-allMappings[numevaluations,]	
+							thisMapping<-allMappings[numevaluations,]
 						} else {
-							evaluateMapping<-FALSE	
+							evaluateMapping<-FALSE
 						}
 					}#end while
 				}#end else (zero versus non-zero parameters)
-			}#end else (specified matrix versus non-specified matrix)		
+			}#end else (specified matrix versus non-specified matrix)
 		}#end if
 	}#end for
 	if(forceTree) {
@@ -861,10 +861,10 @@ GenerateMigrationIndividuals<-function(popVector,maxK=SetMaxK(popVector),maxN0K=
 }
 
 # Previous versions of PHRAPL produced model lists (migrationArrays) that lack growth
-# matrices (growthMaps). However, growthMaps must now be present to analyze models in PHRAPL, 
-# even if growth parameters are not incorporated in the model. Thus, to facilitate the analysis 
+# matrices (growthMaps). However, growthMaps must now be present to analyze models in PHRAPL,
+# even if growth parameters are not incorporated in the model. Thus, to facilitate the analysis
 # of old migrationArrays, this function takes as input a  migrationArray lacking growthMaps
-# and adds an empty growthMap to each model (i.e., a growthMap filled with zeros) within the 
+# and adds an empty growthMap to each model (i.e., a growthMap filled with zeros) within the
 # migrationArray.
 AddGrowthToAMigrationArray<-function(migrationArray){
 	if(class(migrationArray) == "migrationindividual"){
@@ -872,7 +872,7 @@ AddGrowthToAMigrationArray<-function(migrationArray){
 	}
 	for(i in 1:length(migrationArray)){
 		growthMap<-migrationArray[[i]]$collapseMatrix
-		growthMap[!is.na(growthMap)]<-0	
+		growthMap[!is.na(growthMap)]<-0
 		migrationArray[[i]]<-Migrationindividual(migrationArray[[i]]$collapseMatrix,
 			migrationArray[[i]]$complete,migrationArray[[i]]$n0multiplierMap,
 			growthMap,migrationArray[[i]]$migrationArray)
@@ -882,49 +882,49 @@ AddGrowthToAMigrationArray<-function(migrationArray){
 
 # This function integrates a non-coalescence demographic event within a model
 # or set of models. This can be useful if one wants to posit shifts in a parameter that
-# do not correspond to a splitting event (e.g., one would like migration to only occur 
+# do not correspond to a splitting event (e.g., one would like migration to only occur
 # for a given length of time after a split, but then to cease).
-# 
+#
 # To use this function, one must specify a model (migrationIndividual) or set of models
-# (migrationArray). If a set of models is specified, these models must all contain the 
+# (migrationArray). If a set of models is specified, these models must all contain the
 # same number of populations and the same number of collapse events (i.e., the collapseMatrix
-# compenent within each migrationIndividual must have the same dimensions). 
-# 
-# The relative timing of the desired new event must be specified as a single number using 
-# eventTime. An eventTime of 1 will place a new event (i.e., column) in the first column 
-# position within the collapseMatrix (and the other columns will be shifted to the right). 
+# compenent within each migrationIndividual must have the same dimensions).
+#
+# The relative timing of the desired new event must be specified as a single number using
+# eventTime. An eventTime of 1 will place a new event (i.e., column) in the first column
+# position within the collapseMatrix (and the other columns will be shifted to the right).
 # An eventTime of 2 will place the new column in the second position, etc. The eventTime
 # cannot exceed the number of events (i.e., columns) within the original collapseMatrix.
-# The added column will consist entierly of NAs, indicating that no population coalescence 
+# The added column will consist entierly of NAs, indicating that no population coalescence
 # can occur at this time.
-# 
+#
 # Finally, one can specify a new set of n0multiplier, growth, and/or migration parameter
 # indexes to be invoked at the new specified time period using n0muliplierVec, growthVec, or
-# migrationMat, respectively. When the default value for these is used (which is NULL), 
-# n0multiplier, growth, and migration matrices within each model are automatically expanded 
+# migrationMat, respectively. When the default value for these is used (which is NULL),
+# n0multiplier, growth, and migration matrices within each model are automatically expanded
 # by simply copying over parameter indexes from the adjacent time period to the new time
-# period (i.e., no change is invoked). For n0multiplier and growth, a new column is added; 
-# for migration, a new matrix is added. 
-# 
+# period (i.e., no change is invoked). For n0multiplier and growth, a new column is added;
+# for migration, a new matrix is added.
+#
 # However, one can also specify the parameter indexes to be used at this new time, allowing
 # a shift in that parameter, without a correponding coalescence event. These can either be
 # specified as a single value, which will be applied to all populations, or as vectors
 # (for n0multiplier, growth, or migration) or matrices (for migration only) containing the
-# relevant parameter indexes for each population (NAs can be included or excluded). 
+# relevant parameter indexes for each population (NAs can be included or excluded).
 AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL,growthVec=NULL,migrationMat=NULL){
 	if(class(migrationArray) == "migrationindividual"){
 		migrationArray<-list(migrationArray)
 	}
-	for(i in 1:length(migrationArray)){	
+	for(i in 1:length(migrationArray)){
 		collapseMatrixOld<-migrationArray[[i]]$collapseMatrix
 		n0multiplierMapOld<-migrationArray[[i]]$n0multiplierMap
 		growthMapOld<-migrationArray[[i]]$growthMap
 		migrationArrayOld<-migrationArray[[i]]$migrationArray
-				
+
 		if(eventTime > dim(collapseMatrixOld)[2]){
 			return(warning("Error: The specified eventTime exceeds the current number of collapse events"))
 		}
-		
+
 		#Insert new time event
 		collapseMatrix<-matrix(NA,nrow=dim(collapseMatrixOld)[1],ncol=(dim(collapseMatrixOld)[2] + 1))
 		adjust<-0
@@ -935,7 +935,7 @@ AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL
 				adjust<-1
 			}
 		}
-		
+
 		#Insert new n0multiplier
 		n0multiplierMap<-matrix(NA,nrow=dim(n0multiplierMapOld)[1],ncol=(dim(n0multiplierMapOld)[2] + 1))
 		n0multiplierMapOldReset<-n0multiplierMapOld
@@ -957,8 +957,8 @@ AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL
 						}
 						n0multiplierMapOld[,n0Time][!is.na(n0multiplierMapOld[,n0Time])]<-
 							n0multiplierVec[!is.na(n0multiplierVec)]
-						n0multiplierMap[,n0Time]<-n0multiplierMapOld[,n0Time]				
-					}				
+						n0multiplierMap[,n0Time]<-n0multiplierMapOld[,n0Time]
+					}
 				}else{
 					n0multiplierMap[,n0Time]<-n0multiplierMapOld[,n0Time]
 				}
@@ -987,8 +987,8 @@ AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL
 						}
 						growthMapOld[,gTime][!is.na(growthMapOld[,gTime])]<-
 							growthVec[!is.na(growthVec)]
-						growthMap[,gTime]<-growthMapOld[,gTime]				
-					}				
+						growthMap[,gTime]<-growthMapOld[,gTime]
+					}
 				}else{
 					growthMap[,gTime]<-growthMapOld[,gTime]
 				}
@@ -1002,7 +1002,7 @@ AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL
 			dim=c(sqrt(numberOfValuesPerMatrix),sqrt(numberOfValuesPerMatrix),(dim(migrationArrayOld)[3] + 1)))
 		migrationArrayOldReset<-migrationArrayOld
 		adjust<-0
-		
+
 		for(migTime in 1:(dim(migrationArrayOld)[3] + 1)){
 			migrationArrayOld<-migrationArrayOldReset
 			if(eventTime != migTime){
@@ -1019,9 +1019,9 @@ AddEventToMigrationArray<-function(migrationArray,eventTime,n0multiplierVec=NULL
 							return(warning("Error: The number of migration values specified does not match the desired history"))
 						}
 						migrationArrayOld[,,migTime][!is.na(migrationArrayOld[,,migTime])]<-migrationMat[!is.na(migrationMat)]
-						migrationArrayNew[,,migTime]<-migrationArrayOld[,,migTime]				
-					}	
-		
+						migrationArrayNew[,,migTime]<-migrationArrayOld[,,migTime]
+					}
+
 				}else{
 					migrationArrayNew[,,migTime]<-migrationArrayOld[,,migTime]
 				}
@@ -1113,7 +1113,7 @@ FilterForFullyResolved <- function(migrationArray) {
 			# if (mappingMaxKAllowed<0) {
 				# evaluateMapping<-FALSE #since there's no way to do this and not have too many parameters
 			# }
-			# thisMapping<-firstcomposition(numPairs)		
+			# thisMapping<-firstcomposition(numPairs)
 			# while(evaluateMapping) {
 				# thisMapping<-c(thisMapping,rep(0,numPairs-length(thisMapping))) #adds trailing zeros
 				# thisMappingOrig<-thisMapping
@@ -1127,7 +1127,7 @@ FilterForFullyResolved <- function(migrationArray) {
 						# thisMapping[paramPosition]=thisMapping[paramPosition]-1 #now we have used up one of those parameters. If there are no more intervals assigned that parameter, it will drop to 0
 					# }
 					# if (is.na(max(migrationArray,na.rm=TRUE))) {
-						# migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)				
+						# migrationIndividualsList[[length(migrationIndividualsList)+1]]<-Migrationindividual(n0multiplierIndividualsList[[i]]$collapseMatrix, n0multiplierIndividualsList[[i]]$complete, n0multiplierMap, migrationArray)
 						# #print(paste("Just created migration individual ",length(migrationIndividualsList)))
 					# }
 					# else {
@@ -1183,28 +1183,28 @@ FilterForFullyResolved <- function(migrationArray) {
 GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=NULL,growthList=NULL,migrationList=NULL){
 	#The purpose of this function is create a single a priori migrationIndividual
 	#for a given collapse, n0multiplier, growth, and migration history.
-	#The four inputs for this function are "collapseList", "n0multiplierMap", 
-	#"growthMap", and "migrationList". 
+	#The four inputs for this function are "collapseList", "n0multiplierMap",
+	#"growthMap", and "migrationList".
 
 	#CollapseList is the only set of parameters that must be specified. This gives a
-	#list of collapse history vectors, one vector for each 
-	#coalescent event in the tree. So, collapseList = list(c(1,1,0),c(2,NA,2)) means 
-	#that there are two coalescent events: in the first event, population 1 and 2 
-	#coalesce while population 3 does not; in the second event, ancestral population 
-	#1-2 coalesces with population 3. 
+	#list of collapse history vectors, one vector for each
+	#coalescent event in the tree. So, collapseList = list(c(1,1,0),c(2,NA,2)) means
+	#that there are two coalescent events: in the first event, population 1 and 2
+	#coalesce while population 3 does not; in the second event, ancestral population
+	#1-2 coalesces with population 3.
 
 	#The remaining three parameters may be specified or not specified. If not specified,
-	#(i.e., set to NULL),then null matrices will be automatically constructed in which 
+	#(i.e., set to NULL),then null matrices will be automatically constructed in which
 	#all n0multipliers are set to one, and all growth and migration parameters are set to zero.
 
 	#If specifying n0multiplierList and/or growthList, the format for these is the same as for
-	#collapseList, and the available parameters for these must match the splitting history 
+	#collapseList, and the available parameters for these must match the splitting history
 	#depicted in the collapseList.
 
-	#MigrationList is a list of migration matrices. There will be one migration matrix 
-	#for the present generation, plus any historical matrices that apply 
+	#MigrationList is a list of migration matrices. There will be one migration matrix
+	#for the present generation, plus any historical matrices that apply
 	#(there will be as many matrices as there are collapse events).
-	#So, in the three population scenario, if there is symmetrical migration between 
+	#So, in the three population scenario, if there is symmetrical migration between
 	#populations 1 and 2 and no historical migration, migrationList will be:
 
 	# migrationList<-list(
@@ -1213,19 +1213,19 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 	# 1, NA, 0,
 	# 0, 0, NA),
 	# dim=c(3,3))),
-	# 
+	#
 	# t(array(c(
 	# NA, NA, 0,
 	# NA, NA, NA,
 	# 0,  NA, NA),
 	# dim=c(3,3))))
 
-	#Note that in R, arrays are constructed by reading in values from column 1 first then from 
-	#column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e., 
-	#first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the 
-	#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard 
+	#Note that in R, arrays are constructed by reading in values from column 1 first then from
+	#column 2, etc. However, it is more intuitive to construct migration matrices by rows (i.e.,
+	#first listing values for row 1, then row 2, etc). Thus, I think it is easier to type in the
+	#arrays by rows (as done above), and then transpose them (using "t"). Also, spacing and hard
 	#returns can be used to visualize these values in the form of matrices.
-	
+
 	#Create collapase matrix from list
 	collapseVec<-c()
 	for(i in 1:length(collapseList)){
@@ -1244,7 +1244,7 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 		}
 		n0multiplierMap<-array(n0multiplierVec,dim=c(length(n0multiplierList[[1]]),length(n0multiplierList)))
 	}
-	
+
 	#Make growthMap
 	if(is.null(growthList)){
 		collapseVec[!is.na(collapseVec)]<-0
@@ -1256,7 +1256,7 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 		}
 		growthMap<-array(growthVec,dim=c(length(growthList[[1]]),length(growthList)))
 	}
-		
+
 	#Make migrationArray
 	if(is.null(migrationList)){
 		migrationArray<-array(data=NA,dim=c(nrow(collapseMatrix),nrow(collapseMatrix),ncol(collapseMatrix)))
@@ -1268,9 +1268,9 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 							migrationArray[fromPop,toPop,interval]<-0
 						}
 					}else{
-						if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) && 
+						if(!is.na(collapseMatrix[fromPop,interval]) && !is.na(collapseMatrix[toPop,interval]) &&
 							toPop>fromPop) { #so only fill top diagonal
-							migrationArray[fromPop,toPop,interval]<-0							
+							migrationArray[fromPop,toPop,interval]<-0
 						}
 					}
 				}
@@ -1284,7 +1284,7 @@ GenerateMigrationIndividualsOneAtATime<-function(collapseList,n0multiplierList=N
 		migrationArray<-array(migrationVec,dim=c(nrow(migrationList[[1]]),ncol(migrationList[[1]]),
 			length(migrationList)))
 	}
-	
+
 	migrationIndividual<-Migrationindividual(collapseMatrix=collapseMatrix,complete=TRUE,
 		n0multiplierMap=n0multiplierMap,growthMap=growthMap,migrationArray=migrationArray)
 	return(migrationIndividual)
@@ -1302,9 +1302,9 @@ SaveMS<-function(popVector,migrationIndividual,parameterVector,nTrees=1,msLocati
 	return(returnCode)
 }
 
-#if "popAssignments" has not been specified, then iteratively randomly sample "nIndividualsDesired" from the 
-#entire dataset "attemptsCutoff" times until at least "minPerPop" individuals are represented per population 
-#within "toRetain"	
+#if "popAssignments" has not been specified, then iteratively randomly sample "nIndividualsDesired" from the
+#entire dataset "attemptsCutoff" times until at least "minPerPop" individuals are represented per population
+#within "toRetain"
 TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutoff=100000,popAssignments=NULL) {
 	if(is.null(popAssignments)) {
 		samplesGood<-FALSE
@@ -1313,7 +1313,7 @@ TaxaToRetain<-function(assignFrame,nIndividualsDesired,minPerPop=1,attemptsCutof
 		while (samplesGood!=TRUE) {
 			if (attempts>attemptsCutoff) {
 				stop(paste("No random sample met the criteria after",attempts,"attempts"))
-			}		
+			}
 			attempts<-attempts+1
 			toRetain<-sample(dim(assignFrame)[1],nIndividualsDesired,replace=FALSE)
 			retainedPops<-(assignFrame[,1])[toRetain]
@@ -1384,12 +1384,12 @@ outgroup=TRUE,outgroupPrune=TRUE){
 		phyList[[i]]<-rmtree(N=length(phyOriginal) * subsamplesPerGene,n=3)
 		counters<-append(counters,1)
 	}
-	
+
 	for (tree in 1:length(phyOriginal)){ #for each locus (i.e., tree)
 		phy<-phyOriginal #renew phy for each locus
-		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus	
+		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus
 		tips.vec <- phy[[tree]]$tip.label #make an array of the included individuals
-		phy[[tree]]$tip.label <- as.character(c(1:length(phy[[tree]]$tip.label))) #change tip labels to consecutive numbers			
+		phy[[tree]]$tip.label <- as.character(c(1:length(phy[[tree]]$tip.label))) #change tip labels to consecutive numbers
 		assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
 		match.vec <- data.frame()
 		for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
@@ -1406,15 +1406,15 @@ outgroup=TRUE,outgroupPrune=TRUE){
 			if(!is.null(match.temp)){
 				match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
 			} else { #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
-				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match)) 
+				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match))
 				warning(paste("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
 					"These tips will not be subsampled.", sep=" "))
 			}
 		}
 		assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy[[tree]]$tip.label)))) #convert this locus-specific one into assignFrame
-		colnames(assignFrame) <- c("popLabel","indivTotal")	
+		colnames(assignFrame) <- c("popLabel","indivTotal")
 		assignFrame <- assignFrame[order(assignFrame$popLabel),] #order new assignFrame by population
-	
+
 		#Re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
 		for(changetips in 1:length(phy[[tree]]$tip.label))
 		{
@@ -1423,8 +1423,8 @@ outgroup=TRUE,outgroupPrune=TRUE){
 
 		#Make new assignFrame with the new tip labels listed in order
 		assignFrame <- data.frame(as.factor(assignFrame[,1]),c(1:length(phy[[tree]]$tip.label)))
-		colnames(assignFrame) <- c("popLabel","indivTotal")	
-		
+		colnames(assignFrame) <- c("popLabel","indivTotal")
+
 		#Begin the subsampling
 		retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
 		newphyVector<-list()
@@ -1443,7 +1443,7 @@ outgroup=TRUE,outgroupPrune=TRUE){
 			if(outgroupPrune==TRUE){
 				notFound=FALSE
 				tipIndex=0
-				
+
 				#Toss out that tip which has the highest tip label
 				while(notFound==FALSE){
 					tipIndex=tipIndex + 1
@@ -1452,12 +1452,12 @@ outgroup=TRUE,outgroupPrune=TRUE){
 						notFound=TRUE
 					}
 				}
-			}		
+			}
 			prunedAF[,2]<-as.character(c(1:length(prunedAF[,2]))) #rename tips in assignFrame to be consecutive
 			if(outgroupPrune==TRUE){
 				prunedAF<-prunedAF[-length(prunedAF[,2]),] #prune outgroup from assignFrame
 			}
-			
+
 			#Save current subsample
 			phyList[[1]][[counters[1]]]<-newphy
 			counters[1]<-counters[1] + 1
@@ -1466,13 +1466,13 @@ outgroup=TRUE,outgroupPrune=TRUE){
 			#Save current subsample in master list
 			newphyVector[[length(newphyVector) + 1]]<-newphy
 		}
-		
+
 		#Subsample further if specified by popAssignments, printing to the tree file each time
 		if(length(popAssignments) > 1){
 			assignFrame<-prunedAF
 			for(i in 2:(length(popAssignments))){
 				currentSampleSize=sum(popAssignments[[i]])
-				retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=sum(popAssignments[[i]])) #matrix storing subsamples from each iteration	
+				retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=sum(popAssignments[[i]])) #matrix storing subsamples from each iteration
 				for(j in 1:subsamplesPerGene){
 					keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired=currentSampleSize,
 						minPerPop,attemptsCutoff=100000,popAssignments=popAssignments[[i]]) #subsample assignFrame
@@ -1489,7 +1489,7 @@ outgroup=TRUE,outgroupPrune=TRUE){
 					#Save current subsample
 					phyList[[i]][[counters[i]]]<-newphy
 					counters[i]<-counters[i] + 1
-					
+
 #					write.tree(newphy,file=paste(subsamplePath,"observed",i,".tre",sep=""),append=TRUE)
 					newphyVector[[j]]<-newphy
 				}
@@ -1500,15 +1500,15 @@ outgroup=TRUE,outgroupPrune=TRUE){
 	return(phyList)
 }
 
-#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file 
-#containing a tree for each locus. For each locus, subsampling can be done either by iteratively sampling 
-#nIndividualsDesired from the entire dataset (with a minimum sample per population specified by minPerPop), 
+#This function inputs 1) an assignment file that includes all samples pooled from across loci and 2) a tree file
+#containing a tree for each locus. For each locus, subsampling can be done either by iteratively sampling
+#nIndividualsDesired from the entire dataset (with a minimum sample per population specified by minPerPop),
 #or, if popAssignments is specified, can be done by sampling a specified number of individuals per population.
-#A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is 
-#placed in a specified subsamplePath and includes 1) a subsamplesPerGene number of tree files with subsampled trees 
-#from each locus and 2) a single assignment file (if popAssignments is specified) or an assignment file for each locus 
+#A single outgroup can also be included in each subsample, and then pruned from the tree. Input and output is
+#placed in a specified subsamplePath and includes 1) a subsamplesPerGene number of tree files with subsampled trees
+#from each locus and 2) a single assignment file (if popAssignments is specified) or an assignment file for each locus
 #and replicate (if popAssignments=NULL). If more than one subsampling vector is included in popAssignments, subsampling
-#is done for each subsampling size class.  
+#is done for each subsampling size class.
 PrepSubsamplingFiles<-function(subsamplePath="./",assignFile="cladeAssignments.txt",treesFile="trees.tre",
 outputFile="observed.tre",popAssignments,subsamplesPerGene,nIndividualsDesired=NULL,minPerPop=1,
 outgroup=TRUE,outgroupPrune=TRUE){
@@ -1542,12 +1542,12 @@ outgroup=TRUE,outgroupPrune=TRUE){
 		phyList[[i]]<-rmtree(N=length(phyOriginal) * subsamplesPerGene,n=3)
 		counters<-append(counters,1)
 	}
-	
+
 	for (tree in 1:length(phyOriginal)){ #for each locus (i.e., tree)
 		phy<-phyOriginal #renew phy for each locus
-		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus	
+		assignFrame<-assignFrameOriginal	#renew assignFrame for each locus
 		tips.vec <- phy[[tree]]$tip.label #make an array of the included individuals
-		phy[[tree]]$tip.label <- as.character(c(1:length(phy[[tree]]$tip.label))) #change tip labels to consecutive numbers			
+		phy[[tree]]$tip.label <- as.character(c(1:length(phy[[tree]]$tip.label))) #change tip labels to consecutive numbers
 		assign.vec <- as.character(assignFrame[,1]) #make an array of all individuals in the dataset
 		match.vec <- data.frame()
 		for(match in 1:length(tips.vec)) #for each tip in the tree, in order (so that tip labels can be changed to numbers and keep the same order)
@@ -1564,15 +1564,15 @@ outgroup=TRUE,outgroupPrune=TRUE){
 			if(!is.null(match.temp)){
 				match.vec <- rbind(match.vec,match.temp) #add this assignment to a locus-specific assignment spreadsheet
 			} else { #unless there was no matching sample in the assingment file, in which case, drop this tip from the tree
-				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match)) 
+				phy[[tree]]<-drop.tip(phy[[tree]],as.character(match))
 				cat("Warning: Tree number ",tree,"contains tip names not included in the inputted assignment file.",
 					"These tips will not be subsampled.\n",file=paste(subsamplePath,"WARNINGS.txt",sep=""),append=TRUE)
 			}
 		}
 		assignFrame<-rbind(data.frame(match.vec$popLabel,c(1:length(phy[[tree]]$tip.label)))) #convert this locus-specific one into assignFrame
-		colnames(assignFrame) <- c("popLabel","indivTotal")	
+		colnames(assignFrame) <- c("popLabel","indivTotal")
 		assignFrame <- assignFrame[order(assignFrame$popLabel),] #order new assignFrame by population
-	
+
 		#Re-name the tree tips so they match the assignment file order (tips belonging to population A are numbered first, B second, C third, etc)
 		for(changetips in 1:length(phy[[tree]]$tip.label))
 		{
@@ -1581,8 +1581,8 @@ outgroup=TRUE,outgroupPrune=TRUE){
 
 		#Make new assignFrame with the new tip labels listed in order
 		assignFrame <- data.frame(as.factor(assignFrame[,1]),c(1:length(phy[[tree]]$tip.label)))
-		colnames(assignFrame) <- c("popLabel","indivTotal")	
-		
+		colnames(assignFrame) <- c("popLabel","indivTotal")
+
 		#Begin the subsampling
 		retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=nIndividualsDesired) #matrix storing subsamples from each iteration
 		newphyVector<-list()
@@ -1601,7 +1601,7 @@ outgroup=TRUE,outgroupPrune=TRUE){
 			if(outgroupPrune==TRUE){
 				notFound=FALSE
 				tipIndex=0
-				
+
 				#Toss out that tip which has the highest tip label
 				while(notFound==FALSE){
 					tipIndex=tipIndex + 1
@@ -1610,12 +1610,12 @@ outgroup=TRUE,outgroupPrune=TRUE){
 						notFound=TRUE
 					}
 				}
-			}		
+			}
 			prunedAF[,2]<-as.character(c(1:length(prunedAF[,2]))) #rename tips in assignFrame to be consecutive
 			if(outgroupPrune==TRUE){
 				prunedAF<-prunedAF[-length(prunedAF[,2]),] #prune outgroup from assignFrame
 			}
-			
+
 			#Save current subsample
 			phyList[[1]][[counters[1]]]<-newphy
 			counters[1]<-counters[1] + 1
@@ -1623,7 +1623,7 @@ outgroup=TRUE,outgroupPrune=TRUE){
 #			write.tree(newphy,file=paste(subsamplePath,"observed1.tre",sep=""),append=TRUE)
 			#Save current subsample in master list
 			newphyVector[[length(newphyVector) + 1]]<-newphy
-			
+
 			if(is.null(popAssignments)){
 				if (!file.exists(paste(subsamplePath,"assignments",sep=""))){
 					dir.create(paste(subsamplePath,"assignments",sep=""))
@@ -1632,13 +1632,13 @@ outgroup=TRUE,outgroupPrune=TRUE){
 				row.names=FALSE,col.names=FALSE,append=FALSE)
 			}
 		}
-		
+
 		#Subsample further if specified by popAssignments, printing to the tree file each time
 		if(length(popAssignments) > 1){
 			assignFrame<-prunedAF
 			for(i in 2:(length(popAssignments))){
 				currentSampleSize=sum(popAssignments[[i]])
-				retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=sum(popAssignments[[i]])) #matrix storing subsamples from each iteration	
+				retainedTaxaMatrix<-matrix(NA,nrow=subsamplesPerGene,ncol=sum(popAssignments[[i]])) #matrix storing subsamples from each iteration
 				for(j in 1:subsamplesPerGene){
 					keepTaxa<-TaxaToRetain(assignFrame,nIndividualsDesired=currentSampleSize,
 						minPerPop,attemptsCutoff=100000,popAssignments=popAssignments[[i]]) #subsample assignFrame
@@ -1655,7 +1655,7 @@ outgroup=TRUE,outgroupPrune=TRUE){
 					#Save current subsample
 					phyList[[i]][[counters[i]]]<-newphy
 					counters[i]<-counters[i] + 1
-					
+
 #					write.tree(newphy,file=paste(subsamplePath,"observed",i,".tre",sep=""),append=TRUE)
 					newphyVector[[j]]<-newphy
 				}
@@ -1663,12 +1663,12 @@ outgroup=TRUE,outgroupPrune=TRUE){
 			}
 		}
 	}
-	
+
 	#Print subsampled trees
 	for(m in 1:length(phyList)){
 		write.tree(phyList[[m]],file=paste(subsamplePath,outputFile,sep=""),append=TRUE)
 	}
-	
+
 	#Print assign frames
 #	for(k in 1:length(popAssignments)){
 #		if(outgroup==TRUE){
@@ -1684,7 +1684,7 @@ PrunedPopVector<-function(assignFrame,taxaRetained) {
 	assignFrameLabels<-assignFrame[taxaRetained,1]
 	popVector<-rep(NA,nlevels(assignFrameLabels))
 	for (i in 1:nlevels(assignFrameLabels)) {
-		popVector[i]<-length(which(assignFrameLabels==levels(assignFrameLabels)[i])) 
+		popVector[i]<-length(which(assignFrameLabels==levels(assignFrameLabels)[i]))
 	}
 	return(popVector)
 }
@@ -1726,7 +1726,7 @@ GetPermutationWeights<-function(phy,popVector){
 	tips.permute<-list()
 	try.label <- c()
 	for(i in 1:length(popLabels)){
-		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] == 
+		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] ==
 			popLabels[i])])))
 		tips.permute[[i]]<-tips.permute[[i]] + (((assignFrame[,2][which(assignFrame[,1] == popLabels[i])])[1]) - 1)
 	}
@@ -1746,70 +1746,70 @@ GetPermutationWeights<-function(phy,popVector){
 		phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
 		#Rename according to the current permutation
 		phy$tip.label[pop.tips]<-try.label
-					
-		if(length(popLabels) > 1){	
+
+		if(length(popLabels) > 1){
 			for(k in 1:ncol(tips.permute[[2]])){
 				try.label<-tips.permute[[2]][,k]
 				pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[2])]))
 				phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-				phy$tip.label[pop.tips]<-try.label				
+				phy$tip.label[pop.tips]<-try.label
 
-				if(length(popLabels) > 2){	
+				if(length(popLabels) > 2){
 					for(l in 1:ncol(tips.permute[[3]])){
 						try.label<-tips.permute[[3]][,l]
 						pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[3])]))
 						phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-						phy$tip.label[pop.tips]<-try.label	
+						phy$tip.label[pop.tips]<-try.label
 
 						if(length(popLabels) > 3){
 							for(m in 1:ncol(tips.permute[[4]])){
 								try.label<-tips.permute[[4]][,m]
 								pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[4])]))
 								phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-								phy$tip.label[pop.tips]<-try.label	
-							
-								if(length(popLabels) > 4){	
+								phy$tip.label[pop.tips]<-try.label
+
+								if(length(popLabels) > 4){
 									for(n in 1:ncol(tips.permute[[5]])){
 										try.label<-tips.permute[[5]][,n]
 										pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[5])]))
 										phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-										phy$tip.label[pop.tips]<-try.label	
-									
-										if(length(popLabels) > 5){	
+										phy$tip.label[pop.tips]<-try.label
+
+										if(length(popLabels) > 5){
 											for(o in 1:ncol(tips.permute[[6]])){
 												try.label<-tips.permute[[6]][,o]
 												pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[6])]))
 												phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-												phy$tip.label[pop.tips]<-try.label	
-											
-												if(length(popLabels) > 6){	
+												phy$tip.label[pop.tips]<-try.label
+
+												if(length(popLabels) > 6){
 													for(p in 1:ncol(tips.permute[[7]])){
 														try.label<-tips.permute[[7]][,p]
 														pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[7])]))
 														phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-														phy$tip.label[pop.tips]<-try.label	
-																	
-														if(length(popLabels) > 7){	
+														phy$tip.label[pop.tips]<-try.label
+
+														if(length(popLabels) > 7){
 															for(q in 1:ncol(tips.permute[[8]])){
 																try.label<-tips.permute[[8]][,q]
 																pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[8])]))
 																phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-																phy$tip.label[pop.tips]<-try.label																	
-														
+																phy$tip.label[pop.tips]<-try.label
+
 																if(length(popLabels) > 8){
 																	for(r in 1:ncol(tips.permute[[9]])){
 																		try.label<-tips.permute[[9]][,r]
 																		pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[9])]))
 																		phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-																		phy$tip.label[pop.tips]<-try.label																			
-													
-																		if(length(popLabels) > 9){	
+																		phy$tip.label[pop.tips]<-try.label
+
+																		if(length(popLabels) > 9){
 																			for(s in 1:ncol(tips.permute[[10]])){
 																				try.label<-tips.permute[[10]][,s]
 																				pop.tips<-which(phy$tip.label %in% as.character(assignFrame[,2][which(assignFrame[,1] == popLabels[10])]))
 																				phy$tip.label[pop.tips]<-phy$tip.label[pop.tips][order(as.numeric(phy$tip.label[pop.tips]))]
-																				phy$tip.label[pop.tips]<-try.label				
-																			
+																				phy$tip.label[pop.tips]<-try.label
+
 																				if(length(popLabels) == 10){
 																					cladesGene<-GetCladesQuickly(phy)
 																					matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
@@ -1882,9 +1882,9 @@ GetPermutationWeights<-function(phy,popVector){
 	weight<-matches / numberOfPermutations
 
 	return(weight)
-}						
+}
 
-##Much faster way to get a vector of clades in a tree than "GetClades (doesn't use ape's slow 
+##Much faster way to get a vector of clades in a tree than "GetClades (doesn't use ape's slow
 ##"subtrees" function).This is currently being used with GetPermutationWeights
 GetCladesQuickly <- function(phy, do.reorder=TRUE) {
 	if(do.reorder) {
@@ -1906,21 +1906,21 @@ SplitAndSort <- function(x) {
 
 
 #Because these permutations take a long time, this function attempts to speed up the process
-#of caluculating tree weights by randomly sampling from the possible permutations until a particular 
-#level of confidence is obtained in the estimated proportion of matches. Because the number of matching 
-#permutations is generally low however, this function did not end up speeding up the process. 
+#of caluculating tree weights by randomly sampling from the possible permutations until a particular
+#level of confidence is obtained in the estimated proportion of matches. Because the number of matching
+#permutations is generally low however, this function did not end up speeding up the process.
 #On the contrary...
 GetPermutationWeightsBasedOnSampling<-function(phy,popVector, desiredConfidence = 0.05, minSamples = 100){
 	assignFrame<-CreateAssignment.df(popVector)
 	popLabels<-unique(assignFrame[,1])
-	
+
 	#Make list of label permutations for each population
 	tips.permute<-list()
 	tips.permutation.order <- list()
 	total.number.permutations <- 1
 	seen.samples <- c()
 	for(i in 1:length(popLabels)){
-		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] == 
+		tips.permute[[length(tips.permute) + 1]]<-as.matrix(perms(length(assignFrame[,2][which(assignFrame[,1] ==
 			popLabels[i])])))
 		tips.permute[[i]]<-tips.permute[[i]] + (((assignFrame[,2][which(assignFrame[,1] == popLabels[i])])[1]) - 1)
 		tips.permutation.order[[i]] <- sample.int(dim(tips.permute[[i]])[2])
@@ -1942,7 +1942,7 @@ GetPermutationWeightsBasedOnSampling<-function(phy,popVector, desiredConfidence 
 		while(is.na(sample.try[1])) { #we are trying to sample without replacement
 			sample.try <- rep(NA, length(tips.permute))
 			for (population in sequence(length(tips.permute))) {
-				sample.try[population] <- sample.int(dim(tips.permute[[population]])[2],1)	
+				sample.try[population] <- sample.int(dim(tips.permute[[population]])[2],1)
 			}
 			if(paste(sample.try,collapse="_") %in% seen.samples) {
 				sample.try <- rep(NA, length(tips.permute))
@@ -1950,26 +1950,26 @@ GetPermutationWeightsBasedOnSampling<-function(phy,popVector, desiredConfidence 
 			}
 		}
 		seen.samples<-rbind(seen.samples,paste(sample.try,collapse="_"))
-		
+
 		#Create new set of tip labels
 		phy <- phyOriginal
 		for (population in sequence(length(tips.permute))) {
 			try.label<-tips.permute[[population]][,sample.try[population]]
 			phy$tip.label[order(as.numeric(phy$tip.label))][which(assignFrame[,1] == popLabels[population])] <- try.label
 		}
-		cat(paste(paste(as.character(phy$tip.label),collapse="_"),"\n",sep=""))	
+		cat(paste(paste(as.character(phy$tip.label),collapse="_"),"\n",sep=""))
 		cladesGene<-GetCladesQuickly(phy)
 		matches<-matches + GetScoreOfSingleTree(cladesMS,phyOriginal,cladesGene,phy)
 		numberOfPermutations<-numberOfPermutations + 1
 		proportion<-matches/numberOfPermutations
-		
+
 		#The original idea was to pose a sampling precision (e.g., 0.01) and then keep sampling until
 		#the error around the estimated proportion was decreased to this point
 #		minRequired<-((desiredSamplePrecision)^2) * proportion / (1-proportion)
-#		minRequired<-((desiredSamplePrecision)^2) / (proportion * (1 - proportion)) 		
+#		minRequired<-((desiredSamplePrecision)^2) / (proportion * (1 - proportion))
 		weight<-matches / numberOfPermutations
 	}
-	
+
 	return(weight)
 }
 
@@ -1978,7 +1978,7 @@ GetKishESS<-function(popVector, nsamples) {
 	group.weights<-nsamples/popVector
 	actual.weights<-c()
 	for (i in sequence(length(group.weights))) {
-		actual.weights<-c(actual.weights, rep(group.weights[i], popVector[i]))	
+		actual.weights<-c(actual.weights, rep(group.weights[i], popVector[i]))
 	}
 	return(((sum(actual.weights))^2)/sum(actual.weights ^2))
 }
@@ -2019,7 +2019,7 @@ GenerateMigrationArrayMap<-function(migrationArray) {
      		if(identical(migrationArray[[comparisonRow[9] ]]$migrationArray, migrationArray[[model]]$migrationArray)) {
        			newRow[6:7]<-comparisonRow[8:9]
      		}
-    	}	
+    	}
     	if(is.na(newRow[2])) {
       		newRow[2:3]<-c(1+max(migrationArrayMap[,2]),model)
     	}
@@ -2037,7 +2037,7 @@ GenerateMigrationArrayMap<-function(migrationArray) {
   names(migrationArrayMap)<-c("model","collapseMatrix.number","collapseMatrix.parent","n0multiplierMap.number","n0multiplierMap.parent",
   	"growthMap.number","growthMap.parent","migrationArray.number","migrationArray.parent")
   return(migrationArrayMap)
-}	
+}
 
 
 #only works on island models (no collapse)
@@ -2047,13 +2047,13 @@ ReturnSymmetricMigrationOnly<-function(migrationArray) {
   for (i in sequence(length(migrationArray))) {
     migrationIndividual<-migrationArray[[i]]
     if(max(migrationIndividual$collapseMatrix,na.rm=TRUE)==0) {
-      migration.main<-migrationIndividual$migrationArray[ , , 1] 
+      migration.main<-migrationIndividual$migrationArray[ , , 1]
       migration.upper<-migration.main[upper.tri(migration.main)]
       if(length(c(min(migration.upper):max(migration.upper)))==length(unique(migration.upper))) { #that is, we don't skip any parameters: no 0, 1, 3
         for (row.index in 2:dim(migration.main)[1]) {
           for (col.index in 1:(dim(migration.main)[2]-1)) {
             if (row.index>col.index) {
-              migration.main[row.index,col.index]=migration.main[col.index,row.index] 
+              migration.main[row.index,col.index]=migration.main[col.index,row.index]
             }
           }
         }
@@ -2145,7 +2145,7 @@ RunRaxml <- function(raxmlPath=paste(getwd(),"/",sep=""),raxmlVersion="raxmlHPC"
 }
 
 #This takes a path to .tre files and merges all trees into a single file called trees.tre
-MergeTrees <- function(treesPath){	
+MergeTrees <- function(treesPath){
 	filenames <- list.files(treesPath,pattern="*.tre",full.names=FALSE)
 	vecotr <- lapply(paste(treesPath,filenames,sep=""),read.table)
 	for (treeRep in 1:length(vecotr)){
@@ -2167,7 +2167,7 @@ GenerateMigrationArrayMapTrunc<-function(migrationArrayMap,modelRange){
 #that subsamples are, and the more that each subsample should contribute
 #to the information value in a dataset (and thus to the lnL). Inputs are popAssignments (the number
 #of individuals subsampled per population), totalPopVector (the number of samples per
-#locus from which subsamples are taken), and subsamplesPerGene. 
+#locus from which subsamples are taken), and subsamplesPerGene.
 #The minumum possible scaled nreps = subsamplesPerGene,
 #which results when the total sample size is equal to popAssignments[[1]] (in this case, matches among
 #subsamples are simply averaged).
@@ -2187,7 +2187,7 @@ GetScaledNreps<-function(popAssignments,subsamplesPerGene=1,totalPopVector){
 		eSamplesPerSubsample<- 1
 	}
 
-	#Calculate scaled nreps by taking the reciprocal of the effective 
+	#Calculate scaled nreps by taking the reciprocal of the effective
 	#sample scalar. This is the number by which you divide matches summed
 	#across subsamples for each locus
 	eNreps<- 1 / eSamplesPerSubsample
@@ -2201,7 +2201,7 @@ GetScaledNreps<-function(popAssignments,subsamplesPerGene=1,totalPopVector){
 SumDivScaledNreps<-function(localVector,popAssignments,subsamplesPerGene=1,totalPopVector){
 	eNreps<-GetScaledNreps(popAssignments=popAssignments,subsamplesPerGene=subsamplesPerGene,
 		totalPopVector=totalPopVector)
-	summaryFn<-sum(localVector) / eNreps 
+	summaryFn<-sum(localVector) / eNreps
 	return(summaryFn)
 }
 
@@ -2221,7 +2221,7 @@ ExtractOptimizationAICs<-function(result=result,migrationArray=migrationArray,mo
 		AIC<-gsub(".+value = ","",AIC)
 		AIC<-gsub(", par.+","",AIC)
 	}
-	
+
 	#Construct dataframe consisting of AICs and model descriptions for each model
   	overall.results<-data.frame
 	params.K<-rep(NA, length(AIC))
@@ -2235,17 +2235,17 @@ ExtractOptimizationAICs<-function(result=result,migrationArray=migrationArray,mo
 		}
 		#Remove first n0multiplier
         if(length(grep("n0multiplier_1",params.vector[i])) > 0){
-        	params.vector[i] <- paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier", 
+        	params.vector[i] <- paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier",
         		strsplit(params.vector[i]," ")[[1]])[1])], seo = " ", collapse = "")
         }
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
-	
+
 	#Back-transform AICs to get Likelihoods
 	options(digits=12)
 	lnL<- as.character(round((as.numeric(AIC) / -2) + as.numeric(params.K),12))
-	
+
 	#Combine data
 	overall.results<-data.frame(models, AIC, lnL, params.K, params.vector,stringsAsFactors=FALSE)
 	overall.results[,1]<-as.numeric(overall.results[,1])
@@ -2261,12 +2261,12 @@ ExtractOptimizationAICs<-function(result=result,migrationArray=migrationArray,mo
 ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange=c(1:length(migrationArray)),
 	setCollapseZero=NULL){
 
-	#Pull out best AIC for each model 
+	#Pull out best AIC for each model
 	AIC<-c()
 	for(rep in 1:length(result)){
 		AIC<-append(AIC,result[[rep]]$AIC[1])
 	}
-	
+
 	#Construct dataframe consisting of AICs and model descriptions for each model
   	overall.results<-data.frame
 	params.K<-rep(NA, length(AIC))
@@ -2284,17 +2284,17 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 		}
 		#Remove first n0multiplier
         if(length(grep("n0multiplier_1",params.vector[i])) > 0){
-        	params.vector[i] <- paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier", 
+        	params.vector[i] <- paste(strsplit(params.vector[i]," ")[[1]][-(grep("n0multiplier",
         		strsplit(params.vector[i]," ")[[1]])[1])], seo = " ", collapse = "")
         }
 	}
 	models<-as.character(modelRange)
 	params.K<-as.character(params.K)
-	
+
 	#Back-transform AICs to get Likelihoods
 	options(digits=12)
 	lnL<- as.character(round((as.numeric(AIC) / -2) + as.numeric(params.K),12))
-	
+
 	#Combine data
 	overall.results<-data.frame(models, AIC, lnL, params.K, params.vector,stringsAsFactors=FALSE)
 	overall.results[,1]<-as.numeric(overall.results[,1])
@@ -2314,19 +2314,19 @@ ExtractGridAICs<-function(result=result,migrationArray=migrationArray,modelRange
 ###############################Post-analysis Functions####################
 
 
-#This function takes output from an exhaustive search (using nLoptr optimization), and assembles parameter 
-#indexes and estimates based on a set of models. A list containing two tables is outputted: one containing 
+#This function takes output from an exhaustive search (using nLoptr optimization), and assembles parameter
+#indexes and estimates based on a set of models. A list containing two tables is outputted: one containing
 #parameter indexesand one containing parameter estimates
 #Note that this function produces some parameters that entail ambiguous names (for example, for ancestral
 #migration rates, it can't distinguish different topologies). Thus, this method of calculating parameters
-#has been abandoned (December 2015) in favor of an unambiguous naming method, implemented using the 
+#has been abandoned (December 2015) in favor of an unambiguous naming method, implemented using the
 #function ExtractUnambiguousNLoptrParameters. However, this old method can be implemented in a GridSearch
 #by setting parameter_ambiguous=FALSE.
 ExtractParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE){
 
-	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
+	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
-	
+
 	npop<-length(popVector)
 	#Establish column names for these parameters (keep square matrices method)
 	allMigs<-list()
@@ -2345,13 +2345,13 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 				}
 			}
 		}
-	}	
-	
-	
+	}
+
+
 	############MAKE COLUMN HEADERS FOR COLLAPSE AND N0MULTI BASED ON FULLY RESOLVED TREE
-	#First, make rectangular matrix to match fully resolved case 
+	#First, make rectangular matrix to match fully resolved case
 	allCollapses<-array(NA,dim=c(npop,npop - 1))
-	
+
 	#Fill in arrays with parameter headers
 	collapseColnames=c()
 	n0multiColnames=c()
@@ -2360,75 +2360,75 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 			collapseColnames<-append(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
 			n0multiColnames<-append(n0multiColnames,paste("n_t",cols,".",rows,sep=""))
 		}
-	}	
-	
-	
+	}
+
+
 	#############FILL IN A MATRIX WITH THE MIGRATION PARAMETER INDEXES
 	#First establish the total number of columns required to fit the migration parameters
 	migParmsNcol<-(npop^2 - npop) * (npop - 1)
-	
+
 	#Create empty matrix to fill
 	migParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
-	
+
 	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
-		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
-			#migration matrix in the model. Note that the first two numbers give rows and columns of a 
+		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each
+			#migration matrix in the model. Note that the first two numbers give rows and columns of a
 			#matrix, the last number gives the number of matrices (current and historical)
 		currentMatrix<-migrationArray[[currentModel]]$migrationArray[,,thisMatrix] #rename current matrix
-			for(migFrom in 1:length(currentMatrix[,1])){ #for each row	
-				for(migTo in 1:length(currentMatrix[1,])){ #for each column		
-					if(migFrom != migTo){ #skip migrations into same population	
-						counter<-counter+1 #keep track of column to deposit values	
+			for(migFrom in 1:length(currentMatrix[,1])){ #for each row
+				for(migTo in 1:length(currentMatrix[1,])){ #for each column
+					if(migFrom != migTo){ #skip migrations into same population
+						counter<-counter+1 #keep track of column to deposit values
 						migParms[currentModelCount,counter]<-currentMatrix[migFrom,migTo] #pull out the migration indexes
 					}
 				}
 			}
 		}
-	}			
+	}
 	colnames(migParms)<-migColnames
-			
+
 
 	#############FILL IN A MATRIX WITH THE COLLAPSE AND N0MULTI PARAMETER INDEXES
-	
+
 	#Create empty matrices to fill
-	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1)))) 
+	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1))))
 	n0multiParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1))))
 	currentModelCount=0
-	
+
 	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(cols in 1:length(collapseCurrentMatrix[1,])){ #for each column
-			for(rows in 1:length(collapseCurrentMatrix[,1])){ #for each row	
-				counter<-counter+1 #keep track of column to deposit values	
+			for(rows in 1:length(collapseCurrentMatrix[,1])){ #for each row
+				counter<-counter+1 #keep track of column to deposit values
 				collapseParms[currentModelCount,counter]<-collapseCurrentMatrix[rows,cols] #pull out indexes
 				n0multiParms[currentModelCount,counter]<-n0multiCurrentMatrix[rows,cols] #pull out indexes
 			}
 		}
-	}			
+	}
 	colnames(collapseParms)<-collapseColnames
 	colnames(n0multiParms)<-n0multiColnames
-	
 
-	
+
+
 	##########################MAKE MATRICES FILLED WITH THE PARAMETER VALUES, BASED ON THE INDEXES
 	#Create data.frames to substitute in with the parameter values
 	collapseParmsValues<-collapseParms
 	n0multiParmsValues<-n0multiParms
 	migParmsValues<-migParms
-	
+
 	#Now loop through each  (i.e., each row in Parms matrices)
-	for(eachCol in 1:nrow(collapseParms)){ 
-	
+	for(eachCol in 1:nrow(collapseParms)){
+
 		#First, make matrix of the collapse estimates
 		currentSol<-exp(result[[eachCol]]$solution) #back-transform the logged parameter estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
-				
+
 			#Because different collapse parameters are denoted by different columns rather than by different index values,
 			#for each new time period (i.e., column), if there is a collapse, create a new index number so that a distinct
 			#tau is assigned to each coalescent event.
@@ -2464,12 +2464,12 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 
 		#Now take away from the parameters vector the used up parameter values
 		currentSol<-tail(currentSol,length(currentSol) - uniqueCollapse)
-			
-	
+
+
 		#Second, make matrix of the n0multiplier estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 			#Calulate the number of unique parameters
-			uniqueN0multi<-as.numeric(n0multiParms[eachCol,]) 
+			uniqueN0multi<-as.numeric(n0multiParms[eachCol,])
 			uniqueN0multi<-uniqueN0multi[!is.na(uniqueN0multi)]
 			uniqueN0multi<-uniqueN0multi[which(uniqueN0multi > 0)]
 			uniqueN0multi<-length(unique(uniqueN0multi))
@@ -2487,14 +2487,14 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 			#Now take away from the parameters vector the used up parameter values
 			currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
 		}
-		
 
-	
-	
+
+
+
 		#Third, make matrix of the migration estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 			#Calulate the number of unique parameters
-			uniqueMig<-as.numeric(migParms[eachCol,]) 
+			uniqueMig<-as.numeric(migParms[eachCol,])
 			uniqueMig<-uniqueMig[!is.na(uniqueMig)]
 			uniqueMig<-uniqueMig[which(uniqueMig > 0)]
 			uniqueMig<-length(unique(uniqueMig))
@@ -2511,8 +2511,8 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 			}
 		}
 	}
-	
-	
+
+
 	##########################CBIND ALL PARAMETER INDEX COLUMNS TOGETHER
 	if(rm.n0==TRUE){
 		parameterIndexes<-cbind(collapseParms,migParms)
@@ -2523,30 +2523,30 @@ ExtractParameters<-function(migrationArray=migrationArray,result=result,popVecto
 	for(rep in 1:ncol(parameterIndexes)){
 		colnames(parameterIndexes)[rep]<-paste(colnames(parameterIndexes)[rep],"_I",sep="")
 	}
-	
+
 	if(rm.n0==TRUE){
 		parameterValues<-cbind(collapseParmsValues,migParmsValues)
 	}else{
 		parameterValues<-cbind(collapseParmsValues,n0multiParmsValues,migParmsValues)
 	}
 	parameterAll<-cbind(parameterValues,parameterIndexes)
-	
+
 	return(list(parameterValues,parameterIndexes))
 }
 
-#This function takes output from a grid search and assembles parameter 
-#indexes and estimates based on a set of models. A list containing two tables is outputted: one containing 
+#This function takes output from a grid search and assembles parameter
+#indexes and estimates based on a set of models. A list containing two tables is outputted: one containing
 #parameter indexesand one containing parameter estimates
 #Note that this function produces some parameters that entail ambiguous names (for example, for ancestral
 #migration rates, it can't distinguish different topologies). Thus, this method of calculating parameters
-#has been abandoned (December 2015) in favor of an unambiguous naming method, implemented using the 
+#has been abandoned (December 2015) in favor of an unambiguous naming method, implemented using the
 #function ExtractUnambiguousGridParameters. However, this old method can be implemented in a GridSearch
 #by setting parameter_ambiguous=FALSE.
 ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popVector,rm.n0=TRUE,dAIC.cutoff=2){
 
-	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES 
+	############MAKE COLUMN HEADERS FOR MIGRATION BASED ON FULL SQUARE MATRICES
 	############(INCLUDING ALL BUT THE DIAGONAL NA's)
-	
+
 	npop<-length(popVector)
 	#Establish column names for these parameters (keep square matrices method)
 	allMigs<-list()
@@ -2565,13 +2565,13 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 				}
 			}
 		}
-	}	
-	
-	
+	}
+
+
 	############MAKE COLUMN HEADERS FOR COLLAPSE AND N0MULTI BASED ON FULLY RESOLVED TREE
-	#First, make rectangular matrix to match fully resolved case 
+	#First, make rectangular matrix to match fully resolved case
 	allCollapses<-array(NA,dim=c(npop,npop - 1))
-	
+
 	#Fill in arrays with parameter headers
 	collapseColnames=c()
 	n0multiColnames=c()
@@ -2580,70 +2580,70 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 			collapseColnames<-append(collapseColnames,paste("tau_t",cols,".",rows,sep=""))
 			n0multiColnames<-append(n0multiColnames,paste("n_t",cols,".",rows,sep=""))
 		}
-	}	
-	
-	
+	}
+
+
 	#############FILL IN A MATRIX WITH THE MIGRATION PARAMETER INDEXES
 	#First establish the total number of columns required to fit the migration parameters
 	migParmsNcol<-(npop^2 - npop) * (npop - 1)
-	
+
 	#Create empty matrix to fill
 	migParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=migParmsNcol)) #for parameter indexes
 	currentModelCount=0
-	
+
 	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		currentModelCount=currentModelCount+1
 		counter<-0
-		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each 
-			#migration matrix in the model. Note that the first two numbers give rows and columns of a 
+		for(thisMatrix in 1:length(migrationArray[[currentModel]]$migrationArray[1,1,])){ #loop through each
+			#migration matrix in the model. Note that the first two numbers give rows and columns of a
 			#matrix, the last number gives the number of matrices (current and historical)
 		currentMatrix<-migrationArray[[currentModel]]$migrationArray[,,thisMatrix] #rename current matrix
-			for(migFrom in 1:length(currentMatrix[,1])){ #for each row	
-				for(migTo in 1:length(currentMatrix[1,])){ #for each column		
-					if(migFrom != migTo){ #skip migrations into same population	
-						counter<-counter+1 #keep track of column to deposit values	
+			for(migFrom in 1:length(currentMatrix[,1])){ #for each row
+				for(migTo in 1:length(currentMatrix[1,])){ #for each column
+					if(migFrom != migTo){ #skip migrations into same population
+						counter<-counter+1 #keep track of column to deposit values
 						migParms[currentModelCount,counter]<-currentMatrix[migFrom,migTo] #pull out the migration indexes
 					}
 				}
 			}
 		}
-	}			
+	}
 	colnames(migParms)<-migColnames
-			
+
 
 	#############FILL IN A MATRIX WITH THE COLLAPSE  AND N0MULTI PARAMETER INDEXES
-	
+
 	#Create empty matrices to fill
 	collapseParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1))))
-	n0multiParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1)))) 
+	n0multiParms<-data.frame(matrix(NA,nrow=length(migrationArray),ncol=(npop * (npop - 1))))
 	currentModelCount=0
-	
+
 	for(currentModel in 1:length(migrationArray)){ #loop through each model
 		collapseCurrentMatrix<-migrationArray[[currentModel]]$collapse #current model collpases
 		n0multiCurrentMatrix<-migrationArray[[currentModel]]$n0multiplier #current model n0multis
 		currentModelCount=currentModelCount+1
 		counter<-0
 		for(cols in 1:length(collapseCurrentMatrix[1,])){ #for each column
-			for(rows in 1:length(collapseCurrentMatrix[,1])){ #for each row	
-				counter<-counter+1 #keep track of column to deposit values	
+			for(rows in 1:length(collapseCurrentMatrix[,1])){ #for each row
+				counter<-counter+1 #keep track of column to deposit values
 				collapseParms[currentModelCount,counter]<-collapseCurrentMatrix[rows,cols] #pull out indexes
 				n0multiParms[currentModelCount,counter]<-n0multiCurrentMatrix[rows,cols] #pull out indexes
 			}
 		}
-	}			
+	}
 	colnames(collapseParms)<-collapseColnames
 	colnames(n0multiParms)<-n0multiColnames
-	
 
-	
+
+
 	##########################MAKE MATRICES FILLED WITH THE PARAMETER VALUES, BASED ON THE INDEXES
 	#Create data.frames to substitute in with the parameter values
 	collapseParmsValues<-collapseParms
 	n0multiParmsValues<-n0multiParms
 	migParmsValues<-migParms
-	
+
 	#Now loop through each  (i.e., each row in Parms matrices)
-	for(eachCol in 1:nrow(collapseParms)){ 
+	for(eachCol in 1:nrow(collapseParms)){
 
 		#First, make matrix of the collapse estimates
 		#Make vector of top parameter estimates from the grid (based on the mean of the top five estimates for each parm)
@@ -2654,8 +2654,8 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 		}else{
 			currentResult<-result[[eachCol]][2:length(result[[eachCol]])] #if only 1 popAssignment used
 		}
-		
-		#For each column of parameters, get optimal parameter values according the define dAIC cutoff	
+
+		#For each column of parameters, get optimal parameter values according the define dAIC cutoff
 		for(rep in 1:ncol(currentResult)){
 			dAIC.temp<-c()
 			for(a in 1:nrow(result[[eachCol]][1])){
@@ -2665,7 +2665,7 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 		}
 
 		if(length(currentSol)> 0){ #if there are parameter estimates left
-				
+
 			#Because different collapse parameters are denoted by different columns rather than by different index values,
 			#for each new time period (i.e., column), if there is a collapse, create a new index number so that a distinct
 			#tau is assigned to each coalescent event.
@@ -2700,13 +2700,13 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 		}
 
 		#Now take away from the parameters vector the used up parameter values
-		currentSol<-tail(currentSol,length(currentSol) - uniqueCollapse)	
-	
-	
+		currentSol<-tail(currentSol,length(currentSol) - uniqueCollapse)
+
+
 		#Second, make matrix of the n0multiplier estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 			#Calulate the number of unique parameters
-			uniqueN0multi<-as.numeric(n0multiParms[eachCol,]) 
+			uniqueN0multi<-as.numeric(n0multiParms[eachCol,])
 			uniqueN0multi<-uniqueN0multi[!is.na(uniqueN0multi)]
 			uniqueN0multi<-uniqueN0multi[which(uniqueN0multi > 0)]
 			uniqueN0multi<-length(unique(uniqueN0multi))
@@ -2725,11 +2725,11 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 			currentSol<-tail(currentSol,length(currentSol) - uniqueN0multi)
 		}
 
-	
+
 		#Third, make matrix of the migration estimates
 		if(length(currentSol)> 0){ #if there are parameter estimates left
 			#Calulate the number of unique parameters
-			uniqueMig<-as.numeric(migParms[eachCol,]) 
+			uniqueMig<-as.numeric(migParms[eachCol,])
 			uniqueMig<-uniqueMig[!is.na(uniqueMig)]
 			uniqueMig<-uniqueMig[which(uniqueMig > 0)]
 			uniqueMig<-length(unique(uniqueMig))
@@ -2746,8 +2746,8 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 			}
 		}
 	}
-	
-	
+
+
 	##########################CBIND ALL PARAMETER INDEX COLUMNS TOGETHER
 	if(rm.n0==TRUE){
 		parameterIndexes<-cbind(collapseParms,migParms)
@@ -2758,14 +2758,14 @@ ExtractGridParameters<-function(migrationArray=migrationArray,result=result,popV
 	for(rep in 1:ncol(parameterIndexes)){
 		colnames(parameterIndexes)[rep]<-paste(colnames(parameterIndexes)[rep],"_I",sep="")
 	}
-	
+
 	if(rm.n0==TRUE){
 		parameterValues<-cbind(collapseParmsValues,migParmsValues)
 	}else{
 		parameterValues<-cbind(collapseParmsValues,n0multiParmsValues,migParmsValues)
 	}
 	parameterAll<-cbind(parameterValues,parameterIndexes)
-	
+
 	return(list(parameterValues,parameterIndexes))
 }
 
@@ -2778,17 +2778,17 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
 	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2){
 
 	#Add parameters
-	all.parameters <- unique(sort(sapply(migrationArray, 
+	all.parameters <- unique(sort(sapply(migrationArray,
 		MsIndividualParametersConversionToUnambiguous,unambiguous.only = TRUE)))
 	results.temp <- c()
 	row.count = 0
-	#Get models    
+	#Get models
 	whichGrid<-1
 	for (models in overall.results$models){ #Get current models
 		param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[whichGrid]],
 			longNames=longNames)
-		results.temp <- rbind(results.temp, t(apply(gridList[[whichGrid]], 
-			MARGIN = 1, DoSingleRowExtraction, param.mappings = param.mappings, 
+		results.temp <- rbind(results.temp, t(apply(gridList[[whichGrid]],
+			MARGIN = 1, DoSingleRowExtraction, param.mappings = param.mappings,
 			all.parameters = all.parameters, models = models)))
 	   whichGrid<-whichGrid + 1
 	}
@@ -2827,7 +2827,7 @@ ExtractUnambiguousGridParameters<-function(overall.results=NULL,gridList=NULL,mi
     if(sortModelsAIC == TRUE){
     	modelAveragedResults<-modelAveragedResults[order(modelAveragedResults$AIC),]
     }
-    return(modelAveragedResults)   
+    return(modelAveragedResults)
 }
 
 #For a given phrapl result object and migrationArray, this function makes a table of
@@ -2839,12 +2839,12 @@ ExtractUnambiguousOptimizationParameters<-function(overall.results=NULL,results.
 	rm.n0=TRUE,longNames=FALSE,sortParameters=TRUE,sortModelsAIC=TRUE,nonparmCols=2,optimization="grid"){
 
 	#Add parameters
-	all.parameters <- unique(sort(sapply(migrationArray, 
+	all.parameters <- unique(sort(sapply(migrationArray,
 		MsIndividualParametersConversionToUnambiguous,unambiguous.only = TRUE)))
 	results.all <- c()
 	row.count = 0
 
-	#Get models    
+	#Get models
 	whichRep<-1
 	for (models in overall.results$models){ #Get current models
 		param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[whichRep]],
@@ -2876,15 +2876,15 @@ ExtractUnambiguousOptimizationParameters<-function(overall.results=NULL,results.
 			matching.element <- which(param.mappings.temp[,1] == names(result.vector)[parameter.index])
 			if(length(matching.element)==1) {
 				if(param.mappings.temp[matching.element,2]=="0") {
-					result.vector[parameter.index] <- 0	
+					result.vector[parameter.index] <- 0
 				}
 				if(param.mappings.temp[matching.element,2]=="1") {
-					result.vector[parameter.index] <- 1	
+					result.vector[parameter.index] <- 1
 				}
 				if(param.mappings.temp[matching.element,2] != "0" && param.mappings.temp[matching.element,2] != "1") {
 					result.vector[parameter.index] <- as.numeric(nLoptr.parameters[param.mappings.temp[matching.element,2]])
 				}
-			} 	
+			}
 		}
 		result.vector[1]<-models
 		if(optimization == "nloptr"){
@@ -2916,40 +2916,40 @@ ExtractUnambiguousOptimizationParameters<-function(overall.results=NULL,results.
     		results.all<-results.all[,!grepl("n", colnames(results.all))]
     	}
 	}
-	
+
 	#Remove parameters that only contain NA's
 	results.all <- RemoveParameterNAs(results.all)
-			
+
 	#Sort parameter columns into desired order
 	if(sortParameters == TRUE){
 		results.all<-sortParameterTable(results.all,(nonparmCols + 1),longNames=longNames)
 	}
-	
+
     #Sort models
     if(sortModelsAIC == TRUE){
     	results.all<-results.all[order(results.all$AIC),]
     }
-    return(results.all)   
+    return(results.all)
 }
 
-#This function concatenates together results from separate phrapl runs using the merge function. 
-#It accommodates the new way that GridSearch calculates model averaged parameter values for unambiguous 
-#parameters (implemented in December 2015). These parameters are calculated in a GridSearch using the 
+#This function concatenates together results from separate phrapl runs using the merge function.
+#It accommodates the new way that GridSearch calculates model averaged parameter values for unambiguous
+#parameters (implemented in December 2015). These parameters are calculated in a GridSearch using the
 #function ExtractUnambiguousGridParameters for Grid runs or the ExtractUnambiguousNLoptrParameters function
-#for optimization runs. 
-#Just point to a directory of one or more rda files that can each contain phrapl results for one or more models. 
-#With older phrapl run output files, one can get the new unambiguous parameters using the function 
+#for optimization runs.
+#Just point to a directory of one or more rda files that can each contain phrapl results for one or more models.
+#With older phrapl run output files, one can get the new unambiguous parameters using the function
 #ConcatenateResults_unambiguousParametersForOldRuns.
 #Or, to get ambiguous parameters (the old way) from these older result files, use the function
 #ConcatenateResults_ambiguousParameters.
-ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm.n0=TRUE, 
+ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm.n0=TRUE,
 	longNames=FALSE, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL, nonparmCols=5){
-    
+
     #If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
 		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
 	}
-    
+
     #Stuff from ConcatenateResults
     totalData<-data.frame()
 	result <- c()
@@ -2960,19 +2960,19 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 		nonparmColsWithTime<-nonparmCols + 1
 	}
 	nonparmColsOriginal<-nonparmCols
-	
+
 	#Extract and combine results across models
 	for(rep in 1:length(rdaFiles)){
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
-		
+
 		#Combine results from the rda into dataframe
 		#If a result exists...
-		if(!is.null(result)){ 
+		if(!is.null(result)){
 			templateRep<-append(templateRep,rep) #Save those rep numbers that yield a result
 			current.results<-result$overall.results[order(result$overall.results$models),] #sort by model number (same order as parameters)
- 		
+
  		#If a result is null for this model...
- 		}else{ 
+ 		}else{
 			#Fill in null results for the null model (i.e., NAs)
 			current.results<-data.frame(matrix(NA,nrow=1,ncol=nonparmColsOriginal))
 			colnames(current.results)<-c("models","AIC","lnL","params.K","params.vector")
@@ -2992,11 +2992,11 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 			colnames(parametersNull)<-parametersNullNames
 			current.results<-cbind(current.results,parametersNull)
 		}
-		
-		#Add time if desired		
+
+		#Add time if desired
 		if(addTime.elapsed==TRUE){
 			load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #make sure current model is loaded again
-			
+
 			if(length(current.results[,(nonparmColsOriginal + 1):ncol(current.results)]) == 1){
 				singleParmName<-names(current.results[ncol(current.results)])
 				current.results<-cbind(current.results[,1:nonparmColsOriginal],elapsedHrs=time.elapsed[,2],
@@ -3018,7 +3018,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 
 		if(rep == 1){
 			totalData<-rbind(totalData,current.results)
-		}else{ 
+		}else{
 			totalData<-merge(totalData,current.results,all=TRUE)
 		}
 		row.counter<-nrow(totalData) + 1
@@ -3037,11 +3037,11 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	totalData<-sortParameterTable(totalData,(nonparmCols + 2),longNames=longNames)
 
 	#Make sure totalData is all sorted by model, then by AIC
-	totalData<-totalData[order(totalData$models,totalData$AIC),] 
+	totalData<-totalData[order(totalData$models,totalData$AIC),]
 
 	#Remove row counter column
 	totalData<-totalData[,-1]
-	row.names(totalData)<-1:nrow(totalData)    
+	row.names(totalData)<-1:nrow(totalData)
 
 	#Add model ranks, dAIC, and wAIC
 	if(addAICweights==TRUE){
@@ -3056,31 +3056,31 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 		}else{
 			totalData<-totalDataRank
 		}
-		totalData<-totalData[order(totalData$dAIC,totalData$models),]			
+		totalData<-totalData[order(totalData$dAIC,totalData$models),]
 	}
 
 	#Print table
 	if(!is.null(outFile)){
 		write.table(totalData,outFile,quote=FALSE,sep="\t",row.names=FALSE)
 	}
-	
+
 	return(totalData)
 
-}			
+}
 
 #This function concatenates together results from separate phrapl runs.
 #This differs from ConcatenateResults in that it can be used on phrapl results produced prior to adding
-#unambiguous parameter estimation (but only for a grid, not if optimization was used). 
+#unambiguous parameter estimation (but only for a grid, not if optimization was used).
 #Thus, for old phrapl result files (prior to ~December 2015), this can model
 #average parameter values directly from the AIC.Grid to produce unambiguous parameter estimates.
-ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray, 
+ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFiles/",rdaFiles=NULL, migrationArray,
 	rm.n0=TRUE, longNames=FALSE, nonparmCols=2, addTime.elapsed=FALSE, addAICweights=TRUE, outFile=NULL){
-    
+
     #If a vector of rda file names is not provided, then read them in from the given path
 	if(is.null(rdaFiles)){
 		rdaFiles<-grep(".rda",list.files(rdaFilesPath),value=TRUE)
 	}
-    
+
     #Stuff from ConcatenateResults
     totalData<-data.frame()
 	result <- c()
@@ -3094,12 +3094,12 @@ ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFi
 		if(addTime.elapsed==TRUE){
 			current.results<-cbind(current.results,elapsedHrs=time.elapsed[,2])
 		}
-	
+
 		#Get unambiguous, model-averaged parameters
 		modelAveragedResults<-ExtractUnambiguousGridParameters(overall.results=result$overall.results,
 			gridList=result$AIC.Grid,migrationArray=migrationArray[result$overall.results$models],
-			nonparmCols=nonparmCols,longNames=longNames,rm.n0=rm.n0,sortParameters=FALSE,sortModelsAIC=FALSE)    
-    	
+			nonparmCols=nonparmCols,longNames=longNames,rm.n0=rm.n0,sortParameters=FALSE,sortModelsAIC=FALSE)
+
     	#Add parameters estimates to current.results
     	current.results<-cbind(current.results,modelAveragedResults[-(0:nonparmCols)])
 
@@ -3112,41 +3112,41 @@ ConcatenateResults_unambiguousParametersForOldRuns<-function(rdaFilesPath="rdaFi
 
     	if(rep == 1){
 			totalData<-rbind(totalData,current.results)
-    	}else{ 
+    	}else{
     		totalData<-merge(totalData,current.results,all=TRUE)
     	}
     	row.counter<-nrow(totalData) + 1
-	}	
-	
+	}
+
 	#Sort parameter columns into desired order
 	beginParm<-ncol(result$overall.results)
 	if(addTime.elapsed == TRUE){
 		beginParm<-beginParm + 1
 	}
     totalData<-sortParameterTable(totalData,(beginParm + 1),longNames=longNames)
-	
+
 	#Make sure totalData is all sorted by model
-	totalData<-totalData[order(totalData$models),]    
-	
+	totalData<-totalData[order(totalData$models),]
+
 	#Remove row counter column
 	totalData<-totalData[,-1]
-	row.names(totalData)<-1:nrow(totalData)  
-	
+	row.names(totalData)<-1:nrow(totalData)
+
 	#Add model ranks, dAIC, and wAIC
 	if(addAICweights==TRUE){
 		dAICRankWeights<-GetAICweights(totalData)
-		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])		
-		totalData<-totalData[order(totalData$dAIC,totalData$models),]				
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])
+		totalData<-totalData[order(totalData$dAIC,totalData$models),]
 	}
-	
+
 	#Print table
 	if(!is.null(outFile)){
 		write.table(totalData,outFile,quote=FALSE,sep="\t",row.names=FALSE)
 	}
-	
+
     return(totalData)
 }
-    
+
 #This concatenates phrapl results, and also adds to these dAIC, wAIC, and model ranks for a set of models.
 #For phrapl results calculated prior to the switch-over to unambiguous parameter names (~December 2015),
 #this function summarizes parameters the "old way", using ambiguous parameter names. To get summaries using
@@ -3182,24 +3182,24 @@ ConcatenateResults_ambiguousParameters<-function(rdaFilesPath="./",rdaFiles=NULL
 		}
 		totalData<-rbind(totalData,current.results) #Add current.results to totalData
 		totalData<-totalData[order(totalData$models),] #Make sure totalData is all sorted by model
-	}		
+	}
 	#Add model ranks, dAIC, and wAIC
 	if(addAICweights==TRUE){
 		dAICRankWeights<-GetAICweights(totalData)
-		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])					
+		totalData<-cbind(totalData[,1:3],dAICRankWeights,totalData[,4:ncol(totalData)])
 	}
-		
+
 	#Remove Parameters that only have NAs for values
 	if(rmNaParameters==TRUE){
 		totalData<-RemoveParameterNAs(totalData)
 	}
-	
+
 	#Print table
 	if(!is.null(outFile)){
 		write.table(totalData[order(totalData$dAIC,totalData$models),],
 			outFile,quote=FALSE,sep="\t",row.names=FALSE)
 	}
-	
+
 	return(totalData[order(totalData$dAIC,totalData$models),])
 }
 
@@ -3211,13 +3211,13 @@ sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
     colnames(parmsOnly)<-colnames(overall.results)[parmStartCol:ncol(overall.results)]
     if(longNames==TRUE){
 	    overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
-    		parmsOnly[, grep("collapse",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    		parmsOnly[, grep("collapse",colnames(parmsOnly))][, order(colnames(parmsOnly[,
     			grep("collapse",colnames(parmsOnly))]))],
-    		parmsOnly[, grep("n0multiplier",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    		parmsOnly[, grep("n0multiplier",colnames(parmsOnly))][, order(colnames(parmsOnly[,
     			grep("n0multiplier",colnames(parmsOnly))]))],
-    		parmsOnly[, grep("growth",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    		parmsOnly[, grep("growth",colnames(parmsOnly))][, order(colnames(parmsOnly[,
     			grep("growth",colnames(parmsOnly))]))],
-    		parmsOnly[, grep("migration",colnames(parmsOnly))][, order(colnames(parmsOnly[, 
+    		parmsOnly[, grep("migration",colnames(parmsOnly))][, order(colnames(parmsOnly[,
     			grep("migration",colnames(parmsOnly))]))])
     }else{
     	#If there is only a single parameter, need to coerce back into a data.frame
@@ -3245,7 +3245,7 @@ sortParameterTable<-function(overall.results,parmStartCol,longNames=FALSE){
     	}else{
     		parms.m<-parmsOnly[, grep("m",colnames(parmsOnly))][, sort(colnames(parmsOnly)[grep("m",colnames(parmsOnly))])]
     	}
-    	
+
     	overall.results<-cbind(overall.results[,((parmStartCol - parmStartCol) + 1):(parmStartCol - 1)],
 			parms.t,parms.n,parms.g,parms.m)
     }
@@ -3265,78 +3265,78 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
     unambiguousParameterList <- c()
 
 	#First, assign population names for each generation
-    populationNamesAssignments <- matrix(nrow = dim(collapseMatrix)[1], 
+    populationNamesAssignments <- matrix(nrow = dim(collapseMatrix)[1],
         ncol = 1)
     populationNamesAssignments[, 1] <- sequence(dim(collapseMatrix)[1])
     if (max(collapseMatrix, na.rm = TRUE) > 0) {
         for (i in sequence(dim(collapseMatrix)[2])) {
-            populationNamesAssignments <- cbind(populationNamesAssignments, 
+            populationNamesAssignments <- cbind(populationNamesAssignments,
                 populationNamesAssignments[, dim(populationNamesAssignments)[2]])
             merged <- sort(which(collapseMatrix[, i] == 1))
             for (merged.index in sequence(length(merged))) {
-                populationNamesAssignments[merged[merged.index], 
-                  i + 1] <- populationNamesAssignments[merged[1], 
+                populationNamesAssignments[merged[merged.index],
+                  i + 1] <- populationNamesAssignments[merged[1],
                   i]
             }
-            populationNamesAssignments[, i + 1] <- RenumberWithoutGaps(populationNamesAssignments[, 
+            populationNamesAssignments[, i + 1] <- RenumberWithoutGaps(populationNamesAssignments[,
                 i + 1])
         }
     }
 
 	#Then define ancestral population names such that component tip population names are incorporated
-    populationNameMatrix <- matrix(nrow = dim(populationNamesAssignments)[1], 
+    populationNameMatrix <- matrix(nrow = dim(populationNamesAssignments)[1],
         ncol = dim(populationNamesAssignments)[2])
-    populationNameMatrix[, 1] <- as.character(populationNamesAssignments[, 
+    populationNameMatrix[, 1] <- as.character(populationNamesAssignments[,
         1])
     if (dim(populationNamesAssignments)[2] >= 2) {
         for (i in 2:dim(populationNamesAssignments)[2]) {
             for (j in sequence(dim(populationNamesAssignments)[1])) {
-                populationNameMatrix[j, i] <- paste(sort(populationNameMatrix[which(populationNamesAssignments[, 
-                  i] == populationNamesAssignments[j, i]), i - 
+                populationNameMatrix[j, i] <- paste(sort(populationNameMatrix[which(populationNamesAssignments[,
+                  i] == populationNamesAssignments[j, i]), i -
                   1]), collapse = "-")
-                populationNameMatrix[j, i] <- paste(sort(unique(strsplit(populationNameMatrix[j, 
+                populationNameMatrix[j, i] <- paste(sort(unique(strsplit(populationNameMatrix[j,
                   i], "-")[[1]])), collapse = "-")
             }
         }
     }
-    
+
     #Now with these new names, name collapse parameters
     if (max(collapseMatrix, na.rm = TRUE) > 0) {
         for (i in GetCollapseGenerationNamesWhenAddedEventsExist(collapseMatrix)) {
             parameterList <- paste("collapse_",GetCollapseGenerationNamesWhenAddedEventsExist(collapseMatrix),sep="")
             if(longNames == TRUE){
-            	unambiguousParameterList <- append(unambiguousParameterList, 
-             	   paste("collapse_pop_", paste(populationNameMatrix[which(collapseMatrix[, 
-                	  i] >= 1), i], collapse = "_with_"), "_at_time_interval_", 
+            	unambiguousParameterList <- append(unambiguousParameterList,
+             	   paste("collapse_pop_", paste(populationNameMatrix[which(collapseMatrix[,
+                	  i] >= 1), i], collapse = "_with_"), "_at_time_interval_",
                 	  i, sep = ""))
             }else{
-	           	unambiguousParameterList <- append(unambiguousParameterList, 
-             	   paste("t", i, "_", paste(populationNameMatrix[which(collapseMatrix[, 
+	           	unambiguousParameterList <- append(unambiguousParameterList,
+             	   paste("t", i, "_", paste(populationNameMatrix[which(collapseMatrix[,
                 	  i] >= 1), i], collapse = "."), sep = ""))
             }
         }
     }
-    
+
     #Name n0 parameters
     for (row.index in sequence(dim(n0multiplierMap)[1])) {
         for (col.index in sequence(dim(n0multiplierMap)[2])) {
             focaln0value <- n0multiplierMap[row.index, col.index]
             if (!is.na(focaln0value)) {
-                parameterList <- append(parameterList, paste("n0multiplier_", 
+                parameterList <- append(parameterList, paste("n0multiplier_",
                   focaln0value, sep = ""))
             	if(longNames == TRUE){
-					unambiguousParameterList <- append(unambiguousParameterList, 
-					paste("n0multiplier_pop_", populationNameMatrix[row.index, 
+					unambiguousParameterList <- append(unambiguousParameterList,
+					paste("n0multiplier_pop_", populationNameMatrix[row.index,
                     col.index], "_at_time_interval_", col.index,sep = ""))
             	}else{
-                	unambiguousParameterList <- append(unambiguousParameterList, 
-						paste("n", col.index, "_", populationNameMatrix[row.index, 
+                	unambiguousParameterList <- append(unambiguousParameterList,
+						paste("n", col.index, "_", populationNameMatrix[row.index,
                    	 	col.index], sep = ""))
                 }
             }
         }
     }
-    
+
     #Name growth parameters
     for (row.index in sequence(dim(growthMap)[1])) {
         for (col.index in sequence(dim(growthMap)[2])) {
@@ -3345,54 +3345,54 @@ MsIndividualParametersConversionToUnambiguous<-function(migrationIndividual, una
             	if (focal.growth == 0){
             		parameterList <- append(parameterList, 0)
             	}else{
-                	parameterList <- append(parameterList, paste("growth_", 
+                	parameterList <- append(parameterList, paste("growth_",
                   		focal.growth, sep = ""))
                 }
             	if(longNames == TRUE){
-					unambiguousParameterList <- append(unambiguousParameterList, 
-					paste("growth_pop_", populationNameMatrix[row.index, 
+					unambiguousParameterList <- append(unambiguousParameterList,
+					paste("growth_pop_", populationNameMatrix[row.index,
                     col.index], "_at_time_interval_", col.index,sep = ""))
             	}else{
-                	unambiguousParameterList <- append(unambiguousParameterList, 
-						paste("g", col.index, "_", populationNameMatrix[row.index, 
+                	unambiguousParameterList <- append(unambiguousParameterList,
+						paste("g", col.index, "_", populationNameMatrix[row.index,
                    	 	col.index], sep = ""))
                 }
             }
         }
     }
-    
+
     #Name migration parameters
     for (from.index in sequence(dim(migrationArray)[1])) {
         for (to.index in sequence(dim(migrationArray)[2])) {
             for (time.index in sequence(dim(migrationArray)[3])) {
-                focal.migration <- migrationArray[from.index, 
+                focal.migration <- migrationArray[from.index,
                   to.index, time.index]
                 if (!is.na(focal.migration)) {
 					if (focal.migration == 0) {
 						parameterList <- append(parameterList, 0)
 					}else{
-						parameterList <- append(parameterList, paste("migration_", 
+						parameterList <- append(parameterList, paste("migration_",
 						focal.migration, sep = ""))
  					}
-					if(longNames == TRUE){                  
-						unambiguousParameterList <- append(unambiguousParameterList, 
-                    		paste("migration_from_", populationNameMatrix[from.index, 
-							time.index], "_to_", populationNameMatrix[to.index, 
+					if(longNames == TRUE){
+						unambiguousParameterList <- append(unambiguousParameterList,
+                    		paste("migration_from_", populationNameMatrix[from.index,
+							time.index], "_to_", populationNameMatrix[to.index,
                       		time.index], "_at_time_interval_", time.index, sep = ""))
                     }else{
-                    	unambiguousParameterList <- append(unambiguousParameterList, 
-                    		paste("m", time.index, "_", populationNameMatrix[from.index, 
-							time.index], ".", populationNameMatrix[to.index, 
+                    	unambiguousParameterList <- append(unambiguousParameterList,
+                    		paste("m", time.index, "_", populationNameMatrix[from.index,
+							time.index], ".", populationNameMatrix[to.index,
                       		time.index], sep = ""))
                     }
                 }
             }
         }
     }
-    
+
     return.object <- unambiguousParameterList
     if (!unambiguous.only) {
-        return.object <- cbind(unambiguous = unambiguousParameterList, 
+        return.object <- cbind(unambiguous = unambiguousParameterList,
             default = parameterList)
     }
     return(return.object)
@@ -3407,11 +3407,11 @@ DoSingleRowExtraction <- function(x, param.mappings, all.parameters, models) {
 		matching.element <- which(param.mappings[,1] == names(result.vector)[parameter.index])
 		if(length(matching.element)==1) {
 			if(param.mappings[matching.element,2]=="0") {
-				result.vector[parameter.index] <- 0	
+				result.vector[parameter.index] <- 0
 			} else {
 				result.vector[parameter.index] <- as.numeric(x[param.mappings[matching.element,2]])
 			}
-		} 	
+		}
 	}
 	result.vector[1]<-models
 	result.vector[2]<-as.numeric(x["AIC"])
@@ -3419,12 +3419,12 @@ DoSingleRowExtraction <- function(x, param.mappings, all.parameters, models) {
 }
 
 #Utility function used in conjunction with MsIndividualParametersConversionToUnambiguous
-#Handles bookkeeping (stitches together missing entries: c(4, 1, 3, 1) becomes c(3, 1, 2, 1)) 
+#Handles bookkeeping (stitches together missing entries: c(4, 1, 3, 1) becomes c(3, 1, 2, 1))
 RenumberWithoutGaps<-function(x){
     return(as.numeric(as.factor(x)))
 }
 
-#This gets the generation times at which the collapses occur such that they match the 
+#This gets the generation times at which the collapses occur such that they match the
 #generation times of other parameters, even when added events have been inserted into
 #the collapseMatrix
 GetCollapseGenerationNamesWhenAddedEventsExist<-function(collapseMatrix){
@@ -3437,7 +3437,7 @@ GetCollapseGenerationNamesWhenAddedEventsExist<-function(collapseMatrix){
 				collapseGenerationNames<-append(collapseGenerationNames,i)
 			}
 		}
-	}	
+	}
 	return(collapseGenerationNames)
 }
 
@@ -3466,45 +3466,45 @@ ModelAverageEachModel<-function(totalData,parmStartCol){
 #Calculate model averaged parameter values across a set of models
 #The model averages can be calculated using one of two different methods, controlled by averageAcrossAllModels.
 #If TRUE, each parameter is model averaged across all models in the dataset, even if that model
-#does not include the given parameter. In these cases where a parameter is absent (i.e., the value 
-#is NA) this method simply assumes that the value for that parameter is zero. If FALSE, each 
+#does not include the given parameter. In these cases where a parameter is absent (i.e., the value
+#is NA) this method simply assumes that the value for that parameter is zero. If FALSE, each
 #parameter is model averaged by only considering those models that include the relevant parameter.
- 
-#The former method may be most appropriate for migration, as models that exclude this parameter 
+
+#The former method may be most appropriate for migration, as models that exclude this parameter
 #are effectively setting migration to zero. However, the latter method may be more appropriate
-#for the collapse time parameter (t) given that when a model excluding a particular coalescent 
+#for the collapse time parameter (t) given that when a model excluding a particular coalescent
 #event recieves high support, this can be subject to different interpretations. For example, this
 #could signal that these two populations are so similar that coalescence time between them is
-#effectively zero. However, it could also signal that these two populations are very distinct, 
+#effectively zero. However, it could also signal that these two populations are very distinct,
 #but that they coalesce with other populations prior to coalescing with each other.
 
-#parmStartCol gives the column number in totalData in which the parameter values begin. If using default 
+#parmStartCol gives the column number in totalData in which the parameter values begin. If using default
 #PHRAPL output, this should be column 9.
 CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStartCol=9,keep.na=FALSE){
     #Add model averaged parameter estimates to a dataframe
     totalData <- totalData[order(totalData$AIC, totalData$models),]#sort parameters by AIC to match totalData
     totalData <- totalData[, grep(".*_I", colnames(totalData), invert = TRUE)]#Remove parameter index columns
     totalData <- totalData[which(!is.na(totalData$AIC)),] #Toss columns for which AIC is an NA
-    
+
     #Remove parameter columns that contain only NAs
     if(keep.na == FALSE){
 	    totalData <- RemoveParameterNAs(totalData)
 	}
-   
+
    	#If there is only a single model in the input, just return the values
    	if(nrow(totalData) == 1){
    		modelAverages<-totalData[,(parmStartCol:ncol(totalData))]
    		return(modelAverages)
    	}
-   
+
    	#If model averaging across all models...
    	if(averageAcrossAllModels == TRUE){
-     
-	   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)	
-		modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
+
+	   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)
+		modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] *
 			totalData$wAIC))
 		colnames(modelAverages)<-colnames(totalData)[-c(0:(parmStartCol - 1))]
-		
+
 		#Get model averages
 		if(keep.na == TRUE){
 			#If keeping parameter columns that contain only NAs, convert these model averages to NA...
@@ -3515,16 +3515,16 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 		}else{
 			modelAverages<-apply(modelAverages, 2, sum, na.rm = TRUE)
 		}
-		
+
 		#Convert modelAverages into a dataframe
-		modelAveragesMat <- data.frame(matrix(modelAverages, nrow = 1, 
+		modelAveragesMat <- data.frame(matrix(modelAverages, nrow = 1,
 			ncol = length(names(modelAverages))))
 		colnames(modelAveragesMat) <- names(modelAverages)
 		modelAverages <- modelAveragesMat
-	
+
 	#Else, model average across only those models that contain the parameter
 	}else{
-  		
+
   		modelAveragesVec<-c()
 		for(j in parmStartCol:ncol(totalData)){
 			totalDataTemp<-totalData[which(!is.na(totalData[,j])),]
@@ -3534,10 +3534,10 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 			modelAverages<-sum(modelAverages)
 			modelAveragesVec<-append(modelAveragesVec,modelAverages)
 		}
-		
+
 		#If keeping parameter columns that contain only NAs, convert these model averages to NA...
 		if(keep.na == TRUE){
-			modelAveragesTemp<-data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] * 
+			modelAveragesTemp<-data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] *
 				totalData$wAIC))
 			na.rm.dataset <- RemoveParameterNAs(modelAveragesTemp)
 			NAcols<-which(colnames(modelAveragesTemp) %in% colnames(na.rm.dataset) == FALSE)
@@ -3547,7 +3547,7 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 
 		modelAverages<-data.frame(matrix(modelAveragesVec,nrow=1,ncol=length(modelAveragesVec)))
 		colnames(modelAverages)<-colnames(totalData)[parmStartCol:ncol(totalData)]
-  	}		
+  	}
     return(modelAverages)
 }
 
@@ -3560,8 +3560,8 @@ GetAICweights<-function(totalData=totalData){
 		for(rep4 in 2:nrow(totalData)){
 			dAIC<-c(dAIC,round((totalData$AIC[rep4] - totalData$AIC[1]),digits=3))
 		}
-	
-		#Add a model rank column				
+
+		#Add a model rank column
 		rank=array(1)
 		for(rep3 in 2:nrow(totalData)){
 			if(totalData$AIC[rep3]==totalData$AIC[rep3-1]){
@@ -3581,7 +3581,7 @@ GetAICweights<-function(totalData=totalData){
 		#If there's only one row, of course don't need to model average
 		dAICRankWeights<-data.frame("rank"=1,"dAIC"=0,"wAIC"=1)
 		return(dAICRankWeights)
-	}		
+	}
 }
 
 #Function used for calculating AIC weights
@@ -3602,18 +3602,18 @@ RemoveParameterNAs<-function(totalData){
 		NAlist<-is.na(totalData[,colnum])
 		proceed<-TRUE
 		if(length(NAlist[which(NAlist==TRUE)])==length(NAlist)){ #if there are only NAs in column
-			
+
 			totalData<-totalData[,-colnum] #prune column from dataset
 			columnsLeft<-ncol(totalData)
 			colnum<-colnum #don't proceed to increase current column (because just tossed one)
 			proceed=FALSE
-	
+
 		}
 
 		if(colnum >= columnsLeft){
 			continue=FALSE
 		}
-		
+
 		if(continue==FALSE){
 			NAlist<-is.na(totalData[,length(totalData)])
 			if(length(NAlist[which(NAlist==TRUE)])==length(NAlist)){
@@ -3621,14 +3621,14 @@ RemoveParameterNAs<-function(totalData){
 			}
 		}
 	}
-	
+
 	return(totalData)
 }
 
 #Get weights for three model types (Isolation only, migration only, isolation + migration)
 #based on AIC weights. Output can either be "indexes" or "weights" (where the indexes are logical
 #columns for the three model types).
-GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){	
+GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 	#Get datasets containing isolation AND migration parameters
 	currentIsoMig<-grepl(".*collapse.*migration.*",totalData$params.vector)
 
@@ -3643,7 +3643,7 @@ GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 		}else{
 			currentIso[rep]<-FALSE
 		}
-		
+
 		if(currentMigAll[rep]==TRUE && currentIsoAll[rep]==FALSE){
 			currentMig[rep]<-TRUE
 		}else{
@@ -3652,7 +3652,7 @@ GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 	}
 	modelIndexes<-data.frame(cbind(currentIso,currentMig,currentIsoMig))
 	colnames(modelIndexes)<-c("iso","mig","isoANDmig")
-	
+
 	#calculate model type weights by summing weights under the three types of weighted models
 	if(output=="weights"){
 		weightIso<-sum(totalData$wAIC[which(modelIndexes$iso==TRUE)])
@@ -3662,7 +3662,7 @@ GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 		return(plotWeights) #same as old currentPlotWeights
 	}else{
 		return(modelIndexes)
-	}	
+	}
 }
 
 
@@ -3677,10 +3677,10 @@ GetTrianglePlotWeights<-function(totalData=totalData,output="weights"){
 ################Functions summarizing across subsamples, models, and treatments
 
 #This function summarizes (mean, median, and standard deviation) triangle plot weights and model-averaged parameter
-#estimates across subsamples of the same treatment. treatmentVec gives a vector of treatments assigned to each model. 
+#estimates across subsamples of the same treatment. treatmentVec gives a vector of treatments assigned to each model.
 #paramColVec gives the column numbers that are to be summarized with mean, median, and standard deviation.
 SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramColVec=c(7:ncol(plotWeights)),treatmentVec=NULL){
-	
+
 	#Define all unique treatments (if any)
 	if(!is.null(treatmentVec)){
 		utreat=unique(treatmentVec)
@@ -3697,13 +3697,13 @@ SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramC
 	for(rep10 in 1:length(utreat)){
 		currentPlotWeights<-plotWeights[which(treatmentVec==utreat[rep10]),paramColVec]
 		currentDescriptors<-plotWeights[which(treatmentVec==utreat[rep10]),1:(paramColVec[1] - 1)]
-	
+
 		currentMedianWeights<-sapply(currentPlotWeights,median,na.rm=TRUE)
 		currentMedianWeightsDF<-data.frame(matrix(currentMedianWeights,nrow=1,ncol=length(names(currentMedianWeights))))
 		colnames(currentMedianWeightsDF)<-names(currentMedianWeights)
 		currentMedianWeights<-cbind(currentDescriptors[1,],currentMedianWeightsDF)
 		medianWeights<-rbind(medianWeights,currentMedianWeights)
-	
+
 		currentMeanWeights<-sapply(currentPlotWeights,mean,na.rm=TRUE)
 		currentMeanWeightsDF<-data.frame(matrix(currentMeanWeights,nrow=1,ncol=length(names(currentMeanWeights))))
 		colnames(currentMeanWeightsDF)<-names(currentMeanWeights)
@@ -3721,9 +3721,9 @@ SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramC
 
 #This function summarizes (e.g., mean, median, and standard deviation) parameter values for each model across subsamples
 #treatmentVec gives a vector of treatments assigned to each model. paramColVec gives the column numbers that are to be
-#summarized with mean, median, and standard deviation. timeColVec gives the column numbers that are to be summarized by 
+#summarized with mean, median, and standard deviation. timeColVec gives the column numbers that are to be summarized by
 #taking the sum across subsamples (e.g., for elapsed time per model). descriptionColVec gives the column numbers for
-#columns that should be included in the new table, but which aren't to be summarized. This function also adusts the model 
+#columns that should be included in the new table, but which aren't to be summarized. This function also adusts the model
 #rank column based on the mean and median AIC weight across subsamples. Output for this function is a list of three
 #dataframes for mean, median, and standard deviation values.
 SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramColVec=NULL,
@@ -3748,15 +3748,15 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 		currentData<-totalData[which(treatmentVec==utreat[rep11]),]
 		for(rep12 in 1:length(unique(currentData$models))){ #for each model
 			currentModel<-currentData[which(currentData$models==unique(currentData$models)[rep12]),]
-		
+
 			#isolate columns to average
-			currentModelAv<-currentModel[,paramColVec]		
+			currentModelAv<-currentModel[,paramColVec]
 
 			#sum up elapsed time for each model
 			elapsedTime<-sapply(currentModel[,timeColVec],sum,na.rm=TRUE)
 			elapsedTimeDF<-data.frame(matrix(elapsedTime,nrow=1,ncol=length(names(elapsedTime))))
-			colnames(elapsedTimeDF)<-names(elapsedTime)		
-		
+			colnames(elapsedTimeDF)<-names(elapsedTime)
+
 			#Get median
 			currentMedianModel<-sapply(currentModelAv,median,na.rm=TRUE)
 			currentMedianModelDF<-data.frame(matrix(currentMedianModel,nrow=1,ncol=length(names(currentMedianModel))))
@@ -3770,7 +3770,7 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 			colnames(currentMeanModelDF)<-names(currentMeanModel)
 			currentMeanModel<-cbind(currentModel[1,descriptionColVec],elapsedTimeDF,currentMeanModelDF)
 			meanModel<-rbind(meanModel,currentMeanModel)
-		
+
 			#Get sd
 			currentSdModel<-sapply(currentModelAv,sd,na.rm=TRUE)
 			currentSdModelDF<-data.frame(matrix(currentSdModel,nrow=1,ncol=length(names(currentSdModel))))
@@ -3779,7 +3779,7 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 			sdModel<-rbind(sdModel,currentSdModel)
 		}
 	}
-	
+
 	#########Add rank columns to median and mean weights (based on model Averaged AIC weights)########
 	#If treatmentVec=NULL, re-define utreat
 	if(length(utreat)==1){
@@ -3793,7 +3793,7 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 	for(rep13 in 1:length(utreat)){
 		currentMeanModelRank<-meanModel[which(treatmentVec==utreat[rep13]),]
 		currentMeanModelRankSort<-currentMeanModelRank[rev(order(currentMeanModelRank$wAIC)),]
-	
+
 		currentMedianModelRank<-medianModel[which(treatmentVec==utreat[rep13]),]
 		currentMedianModelRankSort<-currentMedianModelRank[rev(order(currentMedianModelRank$wAIC)),]
 
@@ -3806,10 +3806,10 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 			}else{
 				rank=rbind(rank,rank[rep14 - 1] + 1)
 			}
-		}	
+		}
 		currentMeanModelRankSort[,rankColNum]<-rank
 		meanModelRankSort<-rbind(meanModelRankSort,currentMeanModelRankSort)
-	
+
 		#Median
 		rank=array(1)
 		for(rep14 in 2:nrow(currentMedianModelRankSort)){
@@ -3818,20 +3818,20 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 			}else{
 				rank=rbind(rank,rank[rep14 - 1] + 1)
 			}
-		}	
+		}
 		currentMedianModelRankSort[,rankColNum]<-rank
 		medianModelRankSort<-rbind(medianModelRankSort,currentMedianModelRankSort)
 	}
 
 	meanModel<-meanModelRankSort
 	medianModel<-medianModelRankSort
-	
+
 	summaryModels<-list(medianModel,meanModel,sdModel)
 }
 
-#This function takes model AIC weights for three major model types (isolation only, migration only, 
+#This function takes model AIC weights for three major model types (isolation only, migration only,
 #and isolation + migration) and adjusts these weights based on the assumption that the null expected weights
-#(i.e., equal weights, scaled by the number of parameters in each model and the number of model types 
+#(i.e., equal weights, scaled by the number of parameters in each model and the number of model types
 #represented in the given model set) are in the center of the triangle plot.The plot is centered around this
 #null point and a correction is applied to the observed model type weights. Inputs are 1) the model weights file from phrapl, 2) the main results file from phrapl (which contains model K values), and 3) the column numbers in the model
 #weights file that contain the three model type weights. Outputted are the adjusted model weights (where null
@@ -3845,7 +3845,7 @@ CalculateNullWeights<-function(modelWeights=NULL,modelKs=NULL,weightsColVec=c(7:
 	#Calculate number of different models
 	nModels<-length(unique(modelKs$models))
 	sampleDataset<-modelKs[1:nModels,]
-	
+
 	#Make AICs based on 2 * number of parameters
 	nullkAIC<-(2 * sampleDataset$params.K)
 	nullkDiffAIC<-(nullkAIC - min(nullkAIC))
@@ -3853,7 +3853,7 @@ CalculateNullWeights<-function(modelWeights=NULL,modelKs=NULL,weightsColVec=c(7:
 	nullkWeights<-nullkExpCol / sum(nullkExpCol)
 	sampleDataset<-cbind(sampleDataset,nullkWeights)
 
-	#calculate triangle plot weights for the current dataset by summing weights under the 
+	#calculate triangle plot weights for the current dataset by summing weights under the
 	#three types of weighted models
 	modelIndexes<-GetTrianglePlotWeights(totalData=sampleDataset,output="indexes") #get model type indexes
 	sampleDataset<-cbind(sampleDataset,modelIndexes) #concatenate these to sample dataset
@@ -3868,9 +3868,9 @@ CalculateNullWeights<-function(modelWeights=NULL,modelKs=NULL,weightsColVec=c(7:
 	nullkPlotWeightsDF[,weightsColVec]<-nullkPlotWeights
 
 	#Add these null datapoints to the plotWeights dataframe
-	modelWeights<-rbind(modelWeights,nullkPlotWeightsDF) 
+	modelWeights<-rbind(modelWeights,nullkPlotWeightsDF)
 
-	
+
 	##Second, scale model weights to the centered null weights
 
 	#Now scale the triangle plot such that the nullkPlotWeights is in the center
@@ -3890,7 +3890,7 @@ return(modelWeightsScaled)
 #AICs and parameter estimates for different subsets of loci. This can either be done for independent
 #subsets of loci (cumulative=FALSE) or for accumulating subsets of loci (cumulative=TRUE, in which
 #the second subset is added to the first subset, and then the third subset is added to these, etc).
-#lociRange gives the number of loci in the original analysis and NintervalLoci gives the desired number 
+#lociRange gives the number of loci in the original analysis and NintervalLoci gives the desired number
 #of loci in each subset, which must be a multiple of the total number of loci. If the models in
 #the original analysis are only a subset of models in the migrationArray, this modelRange must be
 #specified as well. Output of this function is an rda file for each locus subset (numbered in order
@@ -3910,7 +3910,7 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 
 	#Load rda file to get grid
 	load(rdaFilename)
-	
+
 	##Sort GridList (sorted by AIC in rda, but want to be sorted by grid order)
 	for(i in 1:length(gridList)){
 		gridList[[i]]<-gridList[[i]][order(as.numeric(row.names(gridList[[1]]))),]
@@ -3924,10 +3924,10 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 
     ##Splits the matching vector into a list such that each model is an item in the list
     tableVectorByGridLength<-split(matches,sep_intervalsGrid)
-	
+
 
 	##################Print RDAs for each subset of loci
-	
+
 	#For each subset of loci...
 	treesVec<-sequence(max(lociRange) * subsamplesPerGene)
 	counterBegin<-1
@@ -3936,14 +3936,14 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 	for(locusSubset in 1:(max(lociRange)/NintervalLoci)){ #Get positions of each locus subset in the matching vector
 		gridList<-gridListOriginal
 		currentLociRange<-treesVec[counterBegin:counterEnd]
-		if(cumulative==FALSE){		
+		if(cumulative==FALSE){
 			counterBegin<-counterBegin + (NintervalLoci * subsamplesPerGene)
 		}
 		counterEnd<-counterEnd + (NintervalLoci * subsamplesPerGene)
-		
+
 		#For each model...
 		for(model in 1:length(migrationArray)){
-	
+
 			#For each parameter combination in the grid
             for(gridpoints in 1:length(tableVectorByGridLength[[model]])){
                 totalVector<-as.numeric(strsplit(tableVectorByGridLength[[model]][gridpoints]," ")[[1]])
@@ -3952,18 +3952,18 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
                 lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=totalVectorSubsampled,
                 	popAssignments=popAssignments,nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,
                 	summaryFn="mean",nEq=nEq)
-                
-                #Replace the old AIC value in the grid with the new value (note: subtract from K for n0multiplier and any 
-                #collapses set to be zero.	
+
+                #Replace the old AIC value in the grid with the new value (note: subtract from K for n0multiplier and any
+                #collapses set to be zero.
                 gridList[[model]][gridpoints,1]<-2*(-lnLValue + (KAll(migrationArray[[model]]) - length(setCollapseZero) - 1))
             }
         }
-		
+
 		#Re-sort gridList by AIC
 		for(i in 1:length(gridList)){
 			gridList[[i]]<-gridList[[i]][order(gridList[[i]]$AIC),]
 		}
-		
+
 		#Now recalculate overall results object and parameter values object
         overall.results<-ExtractGridAICs(result=gridList,migrationArray=migrationArray,
         	modelRange=modelRange,setCollapseZero=setCollapseZero)
@@ -3971,20 +3971,20 @@ GenerateSetLoci<-function(lociRange,NintervalLoci,RoutFilename,rdaFilename,migra
 			popVector=popAssignments[[1]],dAIC.cutoff=dAIC.cutoff)
 		result<-list("AIC.Grid"=gridList,"overall.results"=overall.results,
 			"parameters"=parameters[[1]],"parameterIndexes"=parameters[[2]])
-				
+
 		#Save all this to new rda - you get a new rda for each subset of loci
 		save(list=c("gridList","overall.results","parameters","result","nTrees"),
 			file=paste(rdaFilename,"_subset",locusSubset,".rda",sep=""))
 	}
 }
 
-#The purpose of this function is to filter out high migration rates from the 
+#The purpose of this function is to filter out high migration rates from the
 #parameter grid after a phrapl GridSearch has been completed. The function
 #inputs a gridList object, filters out migration in accordance with a specified
 #criterion, and outputs the new gridList. One can then re-calculate overall AIC
-#and parameter values for this gridList using ExtractGridAICs and 
+#and parameter values for this gridList using ExtractGridAICs and
 #ExtractGridParameters functions. If criterion = FilterMigrationGreaterThanCollapse,
-#this will filter out any migration rate value that is greater than 
+#this will filter out any migration rate value that is greater than
 #FilterMigrationGreaterThanCollapseMultiplier * the relevant collapse time. Thus, if
 #FilterMigrationGreaterThanCollapseMultiplier = 1, this will filter out any
 #parameter combination where migration is greater than tau.
@@ -3996,7 +3996,7 @@ FilterGridForMigration<-function(gridList,migrationArray,popAssignments,criterio
 		currentParamNames<-MsIndividualParameters(migrationArray[[whichModel]])
 
 		#Get vector the gives the migration matrix at which each migration parameter first occurs
-		numMatrices<-length(migrationArray[[whichModel]]$migrationArray) / 
+		numMatrices<-length(migrationArray[[whichModel]]$migrationArray) /
 			(length(popAssignments) * length(popAssignments))
 		whichMigMatrixVec<-c() #to store the matrix at which each migration parameter first occurs
 		for(j in 1:length(grep("migration",currentParamNames))){ #for each migration parameter
@@ -4008,7 +4008,7 @@ FilterGridForMigration<-function(gridList,migrationArray,popAssignments,criterio
 			}
 		}
 
-		#Now filter the grid according to desired criterion 
+		#Now filter the grid according to desired criterion
 		gridList[[whichModel]]<-FilterMigrationByCriterion(gridListCurrent=gridList[[whichModel]],
 			migrationIndividual=migrationArray[[whichModel]],whichMigMatrixVec=whichMigMatrixVec,
 			criterion=criterion,FilterMigrationGreaterThanCollapseMultiplier=
@@ -4023,12 +4023,12 @@ FilterMigrationByCriterion<-function(gridListCurrent,migrationIndividual,whichMi
 	paramNames<-MsIndividualParameters(migrationIndividual)
 	for(i in 1:length(grep("migration",paramNames))){ #For each migration parameter
 		currentCollapseColNum<-grep(paste("collapse_",whichMigMatrixVec[i],sep=""),colnames(gridListCurrent))
-		currentMigrationColNum<-grep(paste("migration_",i,sep=""),colnames(gridListCurrent))							
-		
+		currentMigrationColNum<-grep(paste("migration_",i,sep=""),colnames(gridListCurrent))
+
 		#Criterion1: migration can't be larger than collapse
 		if(criterion=="FilterMigrationGreaterThanCollapse"){
-			gridListCurrent<-gridListCurrent[which((gridListCurrent[,currentCollapseColNum] * 
-				FilterMigrationGreaterThanCollapseMultiplier) >= 
+			gridListCurrent<-gridListCurrent[which((gridListCurrent[,currentCollapseColNum] *
+				FilterMigrationGreaterThanCollapseMultiplier) >=
 			gridListCurrent[currentMigrationColNum]),]
 		}
 	}
@@ -4036,21 +4036,21 @@ FilterMigrationByCriterion<-function(gridListCurrent,migrationIndividual,whichMi
 }
 
 #This function calculates the genealogical divergence index using a given tau and migration rate
-#from ms. To obtain this index, trees are iteratively simulated in ms with two species 
-#and three individuals under the given tau and migration rate (which can be asymmetrical). 
-#Then, the proportion of times that the given parameter values yield the true 
-#topology is calculated. This index gives something similar to the genealogical sorting index, 
+#from ms. To obtain this index, trees are iteratively simulated in ms with two species
+#and three individuals under the given tau and migration rate (which can be asymmetrical).
+#Then, the proportion of times that the given parameter values yield the true
+#topology is calculated. This index gives something similar to the genealogical sorting index,
 #except for a given set of migration and tau values instead of for groups on a tree (and for two
-#focal taxa rather than for one focal taxon in relation to the rest of the tree): to what 
+#focal taxa rather than for one focal taxon in relation to the rest of the tree): to what
 #degree does the resulting location of alleles align with underlying species boundaries?
-#We've scaled the index to be between 0 and 1, such that 0 = panmixia and 1 = strong support 
-#for divergence between whatever lineages are defined by the given tau and migration rate. 
-#Except when gdi is close to 1, there is a fairly high variance for the index, such that 
+#We've scaled the index to be between 0 and 1, such that 0 = panmixia and 1 = strong support
+#for divergence between whatever lineages are defined by the given tau and migration rate.
+#Except when gdi is close to 1, there is a fairly high variance for the index, such that
 #it should be calculated using a large number of replicates (10,000 at a minimum).
 #It is possible to calculate a confidence interval. We have incorporated the binom.confint function
 #from the binom package to do this, which can calculate a binomial confidence interval using
 #eight different methods ("exact","asymptotic","agresti-coull","wilson","prop.test","bayes",
-#"logit","cloglog","probit",or "profile"). Any of these can be specified using ciMethod, or "all" 
+#"logit","cloglog","probit",or "profile"). Any of these can be specified using ciMethod, or "all"
 #will result in all eight being calculated. If ciMethod=NULL, only the gdi will be outputted.
 CalculateGdi<-function(tau,migration.in,migration.out=NULL,nreps=10000,ciMethod="exact") {
 	if(is.null(migration.out)) {
@@ -4078,18 +4078,18 @@ CalculateGdi<-function(tau,migration.in,migration.out=NULL,nreps=10000,ciMethod=
 
 #Called within GetIntraspeciesCoalescentFraction
 ConvertTreeString <- function(x) {
-	return(read.tree(text=x))	
+	return(read.tree(text=x))
 }
 
 #Called within GetIntraspeciesCoalescentFraction
 TestForWithinPopCoalescenceThreeSamplesOnly <- function(x) {
-	return(2==sum(grepl("1_2",GetClades(ConvertTreeString(x)))))	
+	return(2==sum(grepl("1_2",GetClades(ConvertTreeString(x)))))
 }
 
-#The raw code as well as a binary executable for the program ms (Hudson 2002) comes pre-packaged with P2C2PM, 
-#a PHRAPL dependency. The purpose of \code{CheckMS} is to check whether the compiled binary file is compatible 
-#with one's operating system. If running this function returns a message that ms is working, then there is no 
-#need to compile ms prior to running PHRAPL. If the function returns an error or a message that there is 
+#The raw code as well as a binary executable for the program ms (Hudson 2002) comes pre-packaged with P2C2PM,
+#a PHRAPL dependency. The purpose of \code{CheckMS} is to check whether the compiled binary file is compatible
+#with one's operating system. If running this function returns a message that ms is working, then there is no
+#need to compile ms prior to running PHRAPL. If the function returns an error or a message that there is
 #something wrong, then you will need to compile ms using the \code{CompileMS} function. Once
 #you have compiled ms, this check can again be run to ensure that the compilation was sucessful.
 CheckMS<-function(){
@@ -4103,8 +4103,8 @@ CheckMS<-function(){
 }
 
 #If for whatever reason, the pre-packaged ms binary file doesn't work, you can compile the program
-#on the fly using this function. ms can use one of two different random number generators. 
-#If compilation using the default \code{rand = 1} does not work, try \code{rand = 2}. 
+#on the fly using this function. ms can use one of two different random number generators.
+#If compilation using the default \code{rand = 1} does not work, try \code{rand = 2}.
 CompileMS<-function(rand=1){
 	currentdir<-getwd()
 	setwd(system.file("msdir",package="P2C2M"))
@@ -4114,4 +4114,34 @@ CompileMS<-function(rand=1){
 		system("gcc -o ms ms.c streec.c rand2.c -lm")
 	}
 	setwd(currentdir)
+}
+
+ReadStructureData <- function(file) {
+	data <- read.delim(file=file, header=FALSE)
+	sample.names <- as.character(data[,1])
+	populations <- as.character(data[,2])
+	data <- data[,c(-1, -2)]
+	data[data==-9] <- NA
+	rownames(data) <- sample.names
+	return(snps=data, sample.names=sample.names, populations=populations)
+}
+
+ConvertStructureDataToTrees <- function(snps) {
+	tree.vector <- c()
+	for (i in sequence(dim(snps)[2])) {
+		relevant.vector <- snps[,i]
+		names(relevant.vector) <- rownames(snps)
+		relevant.vector <- relevant.vector[!is.na(relevant.vector)]
+		if (length(table(relevant.vector)) > 1 && min(table(relevant.vector))>1) { #need variation for a SNP
+			left.side <- paste(names(relevant.vector)[which(relevant.vector==1)], collapse=",")
+			right.side <- paste(names(relevant.vector)[which(relevant.vector==2)], collapse=",")
+			tree.final <- ape::read.tree(text=paste('((', left.side, '),(', right.side, '));', sep=""))
+			if(length(tree.vector)==0) {
+				tree.vector <- c(tree.final)
+			} else {
+				tree.vector <- c(tree.vector, tree.final)
+			}
+		}
+	}
+	return(tree.vector)
 }
