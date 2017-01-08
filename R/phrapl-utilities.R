@@ -4123,7 +4123,7 @@ ReadStructureData <- function(file) {
 	data <- data[,c(-1, -2)]
 	data[data==-9] <- NA
 	rownames(data) <- sample.names
-	return(snps=data, sample.names=sample.names, populations=populations)
+	return(list(snps=data, sample.names=sample.names, populations=populations))
 }
 
 ConvertStructureDataToTrees <- function(snps) {
