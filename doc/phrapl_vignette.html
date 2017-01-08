@@ -36,7 +36,7 @@ Setting Up and Running PHRAPL
 </center>
 <p></font></p></em></h4>
 <h4 class="date"><em><center>
-<font size="2"><em>Last updated on September 14, 2016</em>
+<font size="2"><em>Last updated on January 08, 2017</em>
 </center>
 <p></font></p></em></h4>
 
@@ -62,6 +62,7 @@ Setting Up and Running PHRAPL
 <hr />
 <p>Note that most of PHRAPL is written in R. However, the part of the code that matches observed trees to trees expected under a given model is currently written in Perl in order to speed up the method. If you are running PHRAPL on a Mac or Linux machine, Perl has most likely already been installed (to make sure, within R, you can type <code>system(&quot;perl -v&quot;)</code>, which will give you the version installed, if it exists). If Perl is not installed on your machine, you can download it from the Perl website (<code>http://www.perl.org/get.html</code>).</p>
 <p>One final note. It has come to our attention that one of the R packages that PHRAPL imports, <code>diagram</code>, includes an error in it’s DESCRPTION file such that <code>devtools</code> can’t install it. Thus, if you are thrown an error upon trying to install PHRAPL using <code>devtools</code> (something along the lines of <code>Invalid comparison operator in dependency: &gt;=</code>, try installing <code>diagram</code> first without <code>devtools</code>, by typing <code>install.packages(&quot;diagram&quot;)</code>. Then, try installing PHRAPL again using the <code>devtools</code> command.</p>
+<p>Also, for Mac users, if you experience issues with <code>rgl</code> properly installing, another PHRAPL dependency, you should try updating your version of XQuartz (<code>https://www.xquartz.org/</code>), then reinstalling <code>rgl</code> separately in R (<code>install.packages(&quot;rgl&quot;)</code>). Then install PHRAPL.</p>
 <hr />
 <p>Now PHRAPL is ready to run. Type <code>library(help=phrapl)</code> to get a list of functions with documentation. To open a help file for a particular function, type <code>?function_name</code>.</p>
 </div>
@@ -295,10 +296,6 @@ Setting Up and Running PHRAPL
 <h3><em>4. Adding demographic events to a model that are not tied to a coalescence event</em></h3>
 <p>One can add additional complexity to generated models using the function <code>AddEventToMigrationArray</code>. This function can add additional demographic shifts over time that do not correspond to a splitting event. For example, if one would like to posit a divergence event that occurs when populations are in allopatry, followed by the resumption of migration at a latter time upon secondary contact, using <code>AddEventToMigrationArray</code>, one can add a new migration matrix to an existing model that is applied prior to the coalescence event. For details about how to add such demographic events that are not tied to a coalescence events to a model, see the R documentation (<code>?AddEventToMigrationArray</code>).</p>
 </div>
-<div id="setting-up-models-that-can-test-delimitation-hypotheses" class="section level3">
-<h3><em>5. Setting up models that can test delimitation hypotheses</em></h3>
-<p>Finally, if the question of interest pertains to the delimitation of putative species that are specified in the dataset, then for a given hypothesized tree, you will want to compare the fit of a “full tree” model for which all coalescence times are estimated (i.e., are non-zero) to “collapsed” models for which one ore more coalescence times are set to be zero. To do this, rather than adding additional models to a <code>migrationArray</code>, these collapsed models should be specified when running a <code>GridSearch</code> (a function that we discuss below). Thus, for a given set of models in a <code>migrationArray</code> that specify fully resolved trees, the collapsing of specific nodes can be specified using <code>GridSearch</code>s <code>setCollapseZero</code> argument. This argument inputs a vector that defines which coalescence time parameters in a model one would like to be set to zero. So, for our toy dataset, setting <code>setCollapseZero = 1</code> when fitting an ((A,B),C) isolation-only model will effectively collapse populations A and B into a single population; setting <code>setCollapseZero = 1:2</code> will simulate a single panmictic population.</p>
-</div>
 </div>
 <div id="vi.-running-a-phrapl-grid-search" class="section level2">
 <h2>VI. Running a PHRAPL grid search</h2>
@@ -355,6 +352,38 @@ Setting Up and Running PHRAPL
 <pre><code>  PlotModel(migrationIndividual=migrationArray[[1]],taxonNames=c(&quot;A&quot;,&quot;B&quot;,&quot;C&quot;))  </code></pre>
 <p>A statuette of this model can then be printed using 14 carat gold, which could be useful as a project souvenir/retirement nest egg, e.g.:</p>
 <pre><code>  http://www.shapeways.com/product/BHPZB3WUC/phrapl-four-populations?optionId=40165805  </code></pre>
+</div>
+<div id="viii.-testing-species-delimitation-hypotheses" class="section level2">
+<h2>VIII. Testing species delimitation hypotheses</h2>
+<p>Finally, if the question of interest pertains to the delimitation of putative species that are specified in the dataset, then for a given hypothesized tree, you will want to compare the fit of a “full tree” model for which all coalescence times are estimated (i.e., are non-zero) to “collapsed” models for which one or more coalescence times are set to be zero. To do this, rather than adding additional models to a <code>migrationArray</code>, these collapsed models should be specified when running a <code>GridSearch</code>. Thus, for a given set of models in a <code>migrationArray</code> that specify fully resolved trees, the collapsing of specific nodes can be specified using <code>GridSearch</code>s <code>setCollapseZero</code> argument. This argument inputs a vector that defines which coalescence time parameters in a model one would like to be set to zero. So, for our toy dataset, setting <code>setCollapseZero = 1</code> when fitting an ((A,B),C) isolation-only model will effectively collapse populations A and B into a single population; setting <code>setCollapseZero = 1:2</code> will simulate a single panmictic population.</p>
+<p>Below is an example for how to test the existance of 1, 2, or 3 species using the first three models run above using the toy dataset. I have increased the number of nTrees to 10000 such there are enough simulated trees to calculate the log-likelihood for all the models. These runs will take a few minutes.</p>
+<p>First, set relevant parameters:</p>
+<pre><code>modelRange&lt;-1:3  
+nTrees&lt;-10000  </code></pre>
+<p>Then run and save analyses for three species models:</p>
+<pre><code>result&lt;-GridSearch(migrationArray=migrationArray,modelRange=modelRange,
+    popAssignments=popAssignments,observedTrees=observedTrees,
+    subsampleWeights.df=subsampleWeights.df,subsamplesPerGene=subsamplesPerGene,
+    nTrees=nTrees) 
+save(list=&quot;result&quot;,file=&quot;phraplOutput_models1-3_3species.rda&quot;)  </code></pre>
+<p>Run and save analyses for two species models:</p>
+<pre><code>result&lt;-GridSearch(migrationArray=migrationArray,modelRange=modelRange,
+    popAssignments=popAssignments,observedTrees=observedTrees,
+    subsampleWeights.df=subsampleWeights.df,subsamplesPerGene=subsamplesPerGene,
+    nTrees=nTrees,setCollapseZero=1) 
+save(list=&quot;result&quot;,file=&quot;phraplOutput_models1-3_2species.rda&quot;) </code></pre>
+<p>And then run and save analyses for single species models:</p>
+<pre><code>result&lt;-GridSearch(migrationArray=migrationArray,modelRange=modelRange,
+    popAssignments=popAssignments,observedTrees=observedTrees,
+    subsampleWeights.df=subsampleWeights.df,subsamplesPerGene=subsamplesPerGene,
+    nTrees=nTrees,setCollapseZero=1:2) 
+save(list=&quot;result&quot;,file=&quot;phraplOutput_models1-3_1species.rda&quot;) </code></pre>
+<p>Concatenate results:</p>
+<pre><code>totalResults&lt;-ConcatenateResults(migrationArray=migrationArray)  </code></pre>
+<p>And model average parameters</p>
+<pre><code>modelAverages&lt;-CalculateModelAverages(totalResults)  </code></pre>
+<p>Finally, you can calculate the genealogical divergence index (gdi) between populations A and B using the model averaged parameter values of migration rate and divergence time. This index is a composite metric that estimates overall divergence (between 0 and 1) from the combined effects of genetic drift and gene flow (0 = panmixia; 1 = strong divergence).</p>
+<pre><code>gdi&lt;-CalculateGdi(modelAverages$t1_1.2,modelAverages$m1_1.2)</code></pre>
 </div>
 
 
