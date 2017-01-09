@@ -4,9 +4,10 @@
 Use Structure data
 }
 \description{
-This function takes the snps output of ReadStructureData() and creates a set of
-trees you can use in GridSearch or elsewhere with the doSNP=TRUE argument set.
-It returns a multiphylo object. Missing data (-9 in the original file) are removed.
+This function uses the $snps element of the list returned by ReadStructureData()
+and creates a set of trees you can use in GridSearch or elsewhere with the
+doSNP=TRUE argument set. It returns a multiphylo object. Missing data (-9 in
+ the original file) are removed.
 }
 \usage{
 ConvertStructureDataToTrees(snps)

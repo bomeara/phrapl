@@ -4116,13 +4116,33 @@ CompileMS<-function(rand=1){
 	setwd(currentdir)
 }
 
-ReadStructureData <- function(file) {
+ReadStructureData <- function(file, pairs=2) {
 	data <- read.delim(file=file, header=FALSE)
 	sample.names <- as.character(data[,1])
 	populations <- as.character(data[,2])
 	data <- data[,c(-1, -2)]
 	data[data==-9] <- NA
 	rownames(data) <- sample.names
+	if(pairs==2) {
+		data.pruned <- matrix(nrow=length(sample.names), ncol=floor(dim(snps)[2]/2))
+		for (i in sequence(dim(snps)[1])) {
+			for (j in sequence(floor(dim(snps)[2]/2))) {
+				data.pruned[i,j] <- data[i,sample(c(2*j, 2*j-1),1)]
+			}
+		}
+		rownames(data.pruned) <- rownames(data)
+		data <- data.pruned
+	}
+	if(pairs==1) {
+		data.pruned <- matrix(nrow=length(sample.names)/2, ncol=dim(snps)[2])
+		for (i in sequence(floor(dim(snps)[1]/2))) {
+			for (j in sequence(dim(snps)[2])) {
+				data.pruned[i,j] <- data[sample(c(2*i, 2*i-1),1),j]
+			}
+		}
+		rownames(data.pruned) <- rownames(data)[seq(from=1, to=dim(data)[1]-1, by=2)]
+		data <- data.pruned
+	}
 	return(list(snps=data, sample.names=sample.names, populations=populations))
 }
 
