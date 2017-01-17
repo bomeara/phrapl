@@ -10,7 +10,7 @@ devtools::install_github("bomeara/phrapl")
 
 #Note that most of PHRAPL is written in R. However, the part of the code that matches observed trees to trees expected under a given model is currently written in Perl in order to speed up the method. If you are running PHRAPL on a Mac or Linux machine, Perl has most likely already been installed (to make sure, within R, you can type `system("perl -v")`, which will give you the version installed, if it exists). If Perl is not installed on your machine, you can download it from the Perl website (`http://www.perl.org/get.html`).
 
-#One final note. It has come to our attention that one of the R packages that PHRAPL imports, `diagram`, includes an error in it's DESCRPTION file such that `devtools` can't install it. Thus, if you are thrown an error upon trying to install PHRAPL using `devtools` (something along the lines of `Invalid comparison operator in dependency: >=`, try installing `diagram` first without `devtools`, by typing `install.packages("diagram")`. Then, try installing PHRAPL again using the `devtools` command.
+#One final note. It has come to our attention that one of the R packages that PHRAPL imports, `diagram`, includes an error in it's DESCRPTION file such that `devtools` can't install it. Thus, if you are thrown an error upon trying to install PHRAPL using `devtools` (something along the lines of `Invalid comparison operator in dependency: >=`, try installing `diagram` first without `devtools`, by typing `install.packages("diagram")`. Then, try installing PHRAPL again using the `devtools` command. Also, for Mac users, if you experience issues with `rgl` properly installing, another PHRAPL dependency, you should try updating your version of XQuartz (`https://www.xquartz.org/`), then reinstalling `rgl` separately in R (`install.packages("rgl")`). Then install PHRAPL.
 
 #Now PHRAPL is ready to run. Type `library(help=phrapl)` to get a list of functions with documentation. To open a help file for a particular function, type `?function_name`.
 
@@ -57,7 +57,7 @@ plot.phylo(trees[[1]])
 
 ###2. Importing an assignment table
 
-#PHRAPL assumes that the assignment of tips to populations or species is known. Thus these assignments must be specified upfront in the form of a table. This population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., "A", "B", "C"). If there is an outgroup taxon, it MUST be listed as the last population in the table. A header row of some sort must also be included.
+#PHRAPL assumes that the assignment of tips to populations or species is known. Thus these assignments must be specified upfront in the form of a table. This population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., "A", "B", "C"). If there is an outgroup taxon, it MUST be listed as the last population in the table and the first letter in the population name should also come last alphanumerically (e.g., "Z.outgroup"). A header row of some sort must also be included.
 
 #You can of course create this table directly in R as a data.frame. If you've created the assignment table as a tab-delimited text file (e.g., "cladeAssignments.txt"), you can import it into R as a data.frame by typing  
 
@@ -326,10 +326,6 @@ migrationIndividual<-GenerateMigrationIndividualsOneAtATime(collapseList=collaps
 
 
 
-###5. Setting up models that can test delimitation hypotheses
-
-#Finally, if the question of interest pertains to the delimitation of putative species that are specified in the dataset, then for a given hypothesized tree, you will want to compare the fit of a "full tree" model for which all coalescence times are estimated (i.e., are non-zero) to "collapsed" models for which one ore more coalescence times are set to be zero. To do this, rather than adding additional models to a `migrationArray`, these collapsed models should be specified when running a `GridSearch` (a function that we discuss below). Thus, for a given set of models in a `migrationArray` that specify fully resolved trees, the collapsing of specific nodes can be specified using `GridSearch`s `setCollapseZero` argument. This argument inputs a vector that defines which coalescence time parameters in a model one would like to be set to zero. So, for our toy dataset, setting `setCollapseZero = 1` when fitting an ((A,B),C) isolation-only model will effectively collapse populations A and B into a single population; setting `setCollapseZero = 1:2` will simulate a single panmictic population.
-
 
 
 
@@ -405,46 +401,40 @@ PlotModel(migrationIndividual=migrationArray[[1]],taxonNames=c("A","B","C"))
 
 
 
-###############VIII. Species delimitation
+###############VIII. Testing species delimitation hypotheses
 
-#Repeat analysis of the first three models for different possible species delimitations 
+#Finally, if the question of interest pertains to the delimitation of putative species that are specified in the dataset, then for a given hypothesized tree, you will want to compare the fit of a "full tree" model for which all coalescence times are estimated (i.e., are non-zero) to "collapsed" models for which one or more coalescence times are set to be zero. To do this, rather than adding additional models to a `migrationArray`, these collapsed models should be specified when running a `GridSearch`. Thus, for a given set of models in a `migrationArray` that specify fully resolved trees, the collapsing of specific nodes can be specified using `GridSearch`s `setCollapseZero` argument. This argument inputs a vector that defines which coalescence time parameters in a model one would like to be set to zero. So, for our toy dataset, setting `setCollapseZero = 1` when fitting an ((A,B),C) isolation-only model will effectively collapse populations A and B into a single population; setting `setCollapseZero = 1:2` will simulate a single panmictic population.
+
+#Below is an example for how to test the existance of 1, 2, or 3 species using the first three models run above using the toy dataset. I have increased the number of nTrees to 10000 such there are enough simulated trees to calculate the log-likelihood for all the models. These runs will take a few minutes.
+
+#First, set relevant parameters:
 modelRange<-1:3  
 nTrees<-10000  
 
+#Then run and save analyses for three species models:
 result<-GridSearch(migrationArray=migrationArray,modelRange=modelRange,popAssignments=popAssignments,
    observedTrees=observedTrees,subsampleWeights.df=subsampleWeights.df,  
-    subsamplesPerGene=subsamplesPerGene,nTrees=nTrees) 
-    
+    subsamplesPerGene=subsamplesPerGene,nTrees=nTrees)     
 save(list="result",file="phraplOutput_models1-3_3species.rda")  
 
-
+#Run and save analyses for two species models:
 result<-GridSearch(migrationArray=migrationArray,modelRange=modelRange,popAssignments=popAssignments,
    observedTrees=observedTrees,subsampleWeights.df=subsampleWeights.df,  
-    subsamplesPerGene=subsamplesPerGene,nTrees=nTrees,setCollapseZero=1) 
-    
+    subsamplesPerGene=subsamplesPerGene,nTrees=nTrees,setCollapseZero=1)     
 save(list="result",file="phraplOutput_models1-3_2species.rda") 
 
-
+#And then run and save analyses for single species models:
 result<-GridSearch(migrationArray=migrationArray,modelRange=modelRange,popAssignments=popAssignments,
    observedTrees=observedTrees,subsampleWeights.df=subsampleWeights.df,  
-    subsamplesPerGene=subsamplesPerGene,nTrees=nTrees,setCollapseZero=1:2) 
-    
+    subsamplesPerGene=subsamplesPerGene,nTrees=nTrees,setCollapseZero=1:2)    
 save(list="result",file="phraplOutput_models1-3_1species.rda") 
-
 
 #Concatenate results
 totalResults<-ConcatenateResults(migrationArray=migrationArray)  
 	
-
 #Model average parameters
 modelAverages<-CalculateModelAverages(totalResults)  
 
-
-#Calculate the gdi
+#Finally, you can calculate the genealogical divergence index (gdi) between populations A and B using the model averaged parameter values of migration rate and divergence time. This index is a composite metric that estimates overall divergence (between 0 and 1) from the combined effects of genetic drift and gene flow (0 = panmixia; 1 = strong divergence).
 gdi<-CalculateGdi(modelAverages$t1_1.2,modelAverages$m1_1.2)
-
-
-
-
-
 
