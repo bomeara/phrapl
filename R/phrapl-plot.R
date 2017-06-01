@@ -1,7 +1,7 @@
 Arrow3d2 <- function(base, tip, rad=1, col="red",offset=TRUE) {
 	length.out=10
 	if(!offset) {
-		length.out=8	
+		length.out=8
 	}
 	new.pos<-cbind(seq(from=base[1], to=tip[1], length.out=length.out), seq(from=base[2], to=tip[2], length.out=length.out), seq(from=base[3], to=tip[3], length.out=length.out))
                    	#base<-new.pos[6,]
@@ -13,7 +13,7 @@ Arrow3d2 <- function(base, tip, rad=1, col="red",offset=TRUE) {
 }
 
 #suggestion from Zach Marion: allow placement on a landscape map, so you can see rivers and such as boundaries
-PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, time.axis=FALSE, time.axis.col="black", apply.base=FALSE, base.color='black', new.window=TRUE) {
+PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, time.axis=FALSE, time.axis.col="black", apply.base=FALSE, base.color='black', new.window=TRUE, base.bounds=2) {
     if (new.window) {
         open3d()
     }
@@ -23,9 +23,9 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
         parameterVector <- sequence(length(parameterVector.names))
         names(parameterVector) <- parameterVector.names
     }
-    n0multiplierParameters <- parameterVector[grep("n0multiplier", 
+    n0multiplierParameters <- parameterVector[grep("n0multiplier",
         names(parameterVector))]
-    migrationParameters <- parameterVector[grep("migration", 
+    migrationParameters <- parameterVector[grep("migration",
         names(parameterVector))]
     collapseParameters <- parameterVector[grep("collapse", names(parameterVector))]
     try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters))
@@ -44,25 +44,25 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
         taxonNames <- sequence(nPop)
     }
     for (i in sequence(nPop - 1)) {
-        current.terminal.pos <- rbind(current.terminal.pos, cbind(x = cos(2 * 
+        current.terminal.pos <- rbind(current.terminal.pos, cbind(x = cos(2 *
             pi * i/nPop), y = sin(2 * pi * i/nPop)))
     }
-    text3d(x = current.terminal.pos[, 1], y = current.terminal.pos[, 
+    text3d(x = current.terminal.pos[, 1], y = current.terminal.pos[,
         2], z = rep(1 - 0.2, nPop), texts = taxonNames, col = "black")
     if (time.axis) {
-        Arrow3d2(base = c(2, 2, 1 + dim(collapseMatrix)[2]), 
-            tip = c(2, 2, 1), rad = 0.1, col = time.axis.col, 
+        Arrow3d2(base = c(2, 2, 1 + dim(collapseMatrix)[2]),
+            tip = c(2, 2, 1), rad = 0.1, col = time.axis.col,
             offset = FALSE)
-        text3d(x = 2, y = 2, z = 0.8, texts = "Present day", 
+        text3d(x = 2, y = 2, z = 0.8, texts = "Present day",
             col = time.axis.col, cex = 0.8)
     }
     if (apply.base) {
-        plane.coords <- combn(apply(expand.grid(x = c(-2, 2), 
-            y = c(-2, 2), z = c((1 + dim(collapseMatrix)[2]), 
-                (1.25 + dim(collapseMatrix)[2]))), 1, paste, 
+        plane.coords <- combn(apply(expand.grid(x = c(-1, 1)*base.bounds,
+            y = c(-1, 1)*base.bounds, z = c((1 + dim(collapseMatrix)[2]),
+                (1.25 + dim(collapseMatrix)[2]))), 1, paste,
             collapse = "_"), 4)
         for (plane.element in sequence(dim(plane.coords)[2])) {
-            corners <- matrix(as.numeric(unlist(strsplit(plane.coords[, 
+            corners <- matrix(as.numeric(unlist(strsplit(plane.coords[,
                 plane.element], "_"))), byrow = TRUE, ncol = 3)
             quads3d(x = corners, col = base.color)
         }
@@ -72,89 +72,89 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
         for (i in sequence(dim(collapseMatrix)[1])) {
             if (!is.na(collapseMatrix[i, regime])) {
                 if (collapseMatrix[i, regime] == 0) {
-                  next.terminal.pos[i, ] <- current.terminal.pos[i, 
+                  next.terminal.pos[i, ] <- current.terminal.pos[i,
                     ]
                 }
                 if (collapseMatrix[i, regime] >= 1) {
-                  next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[, 
+                  next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[,
                     regime] >= 1), ])
                 }
-                center <- cbind(rbind(current.terminal.pos[i, 
-                  ], current.terminal.pos[i, ]), z = c(regime, 
+                center <- cbind(rbind(current.terminal.pos[i,
+                  ], current.terminal.pos[i, ]), z = c(regime,
                   regime + 1.2))
-                center <- cbind(seq(from = center[1, 1], to = center[2, 
-                  1], length.out = num.steps), seq(from = center[1, 
-                  2], to = center[2, 2], length.out = num.steps), 
-                  seq(from = center[1, 3], to = center[2, 3], 
+                center <- cbind(seq(from = center[1, 1], to = center[2,
+                  1], length.out = num.steps), seq(from = center[1,
+                  2], to = center[2, 2], length.out = num.steps),
+                  seq(from = center[1, 3], to = center[2, 3],
                     length.out = num.steps))
-                try(shade3d(addNormals(subdivision3d(cylinder3d(center, 
-                  radius = base.radius * n0multiplierParameters[n0multiplierMap[i, 
-                    regime]], sides = 8, twist = 1, closed = -2), 
-                  depth = 2)), col = c("gray", rev(brewer.pal(8, 
-                  "Set1")))[n0multiplierMap[i, regime]]), silent=TRUE) 
+                try(shade3d(addNormals(subdivision3d(cylinder3d(center,
+                  radius = base.radius * n0multiplierParameters[n0multiplierMap[i,
+                    regime]], sides = 8, twist = 1, closed = -2),
+                  depth = 2)), col = c("gray", rev(brewer.pal(8,
+                  "Set1")))[n0multiplierMap[i, regime]]), silent=TRUE)
             }
         }
         if (max(collapseMatrix[, regime], na.rm = TRUE) >= 1) {
-            collapsing.individuals <- which(collapseMatrix[, 
+            collapsing.individuals <- which(collapseMatrix[,
                 regime] >= 1)
             if (length(collapsing.individuals) > 2) {
                 for (collapsing.individuals.index in sequence(length(collapsing.individuals))) {
-                  center <- cbind(rbind(current.terminal.pos[collapsing.individuals[collapsing.individuals.index], 
-                    ], next.terminal.pos[collapsing.individuals[collapsing.individuals.index], 
+                  center <- cbind(rbind(current.terminal.pos[collapsing.individuals[collapsing.individuals.index],
+                    ], next.terminal.pos[collapsing.individuals[collapsing.individuals.index],
                     ]), z = c(regime + 1, regime + 1))
                   print("center")
                   print(center)
                   for (length.out in 2:6) {
-                    try(shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from = center[1, 
-                      1], to = center[2, 1], length.out = length.out), 
-                      seq(from = center[1, 2], to = center[2, 
-                        2], length.out = length.out), seq(from = center[1, 
-                        3], to = center[2, 3], length.out = length.out)), 
-                      radius = base.radius/3, sides = 8, twist = 1, 
+                    try(shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from = center[1,
+                      1], to = center[2, 1], length.out = length.out),
+                      seq(from = center[1, 2], to = center[2,
+                        2], length.out = length.out), seq(from = center[1,
+                        3], to = center[2, 3], length.out = length.out)),
+                      radius = base.radius/3, sides = 8, twist = 1,
                       closed = -2), depth = 2)), col = "gray"), silent=TRUE)
                   }
                 }
             }
             else {
-                center <- cbind(rbind(current.terminal.pos[which(collapseMatrix[, 
-                  regime] >= 1), ], current.terminal.pos[which(collapseMatrix[, 
-                  regime] >= 1), ]), z = c(regime + 1, regime + 
+                center <- cbind(rbind(current.terminal.pos[which(collapseMatrix[,
+                  regime] >= 1), ], current.terminal.pos[which(collapseMatrix[,
+                  regime] >= 1), ]), z = c(regime + 1, regime +
                   1))
                 for (length.out in 2:6) {
-                  try(shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from = center[1, 
-                    1], to = center[2, 1], length.out = length.out), 
-                    seq(from = center[1, 2], to = center[2, 2], 
-                      length.out = length.out), seq(from = center[1, 
-                      3], to = center[2, 3], length.out = length.out)), 
-                    radius = base.radius/3, sides = 8, twist = 1, 
+                  try(shade3d(addNormals(subdivision3d(cylinder3d(cbind(seq(from = center[1,
+                    1], to = center[2, 1], length.out = length.out),
+                    seq(from = center[1, 2], to = center[2, 2],
+                      length.out = length.out), seq(from = center[1,
+                      3], to = center[2, 3], length.out = length.out)),
+                    radius = base.radius/3, sides = 8, twist = 1,
                     closed = -2), depth = 2)), col = "gray"), silent=TRUE) #rarely, for some length.out (5, in the case we found) this throws an error, but otherwise is ok. This variation over length.out is just to deal with RGL creating a chain of sausages rather than the cylinder requested, and so is a hack; the try just makes us robust to another rgl issue.
                 }
             }
         }
-        rgl.viewpoint(userMatrix = matrix(c(-0.112414613366127, 
-            0.471968173980713, -0.874419331550598, 0, 0.993038892745972, 
-            0.0222157146781683, -0.11567322909832, 0, -0.035168319940567, 
-            -0.881335437297821, -0.471180021762848, 0, 0, 0, 
+        rgl.viewpoint(userMatrix = matrix(c(-0.112414613366127,
+            0.471968173980713, -0.874419331550598, 0, 0.993038892745972,
+            0.0222157146781683, -0.11567322909832, 0, -0.035168319940567,
+            -0.881335437297821, -0.471180021762848, 0, 0, 0,
             0, 1), ncol = 4))
-        local.migrationMatrix <- migrationIndividual$migrationArray[, 
+        local.migrationMatrix <- migrationIndividual$migrationArray[,
             , regime]
         if (max(local.migrationMatrix, na.rm = TRUE) > 0) {
             for (from.index in sequence(dim(local.migrationMatrix)[1])) {
                 for (to.index in sequence(dim(local.migrationMatrix)[2])) {
                   if (from.index != to.index) {
-                    if (!is.na(local.migrationMatrix[from.index, 
+                    if (!is.na(local.migrationMatrix[from.index,
                       to.index])) {
-                      if (local.migrationMatrix[from.index, to.index] > 
+                      if (local.migrationMatrix[from.index, to.index] >
                         0) {
                         offset = 1/3
                         if (from.index > to.index) {
                           offset = 2/3
                         }
-                        Arrow3d2(base = c(current.terminal.pos[from.index, 
-                          ], regime + offset), tip = c(current.terminal.pos[to.index, 
-                          ], regime + offset), rad = migrationParameters[local.migrationMatrix[from.index, 
-                          to.index]] * base.radius/3, col = (brewer.pal(8, 
-                          "Set1"))[local.migrationMatrix[from.index, 
+                        Arrow3d2(base = c(current.terminal.pos[from.index,
+                          ], regime + offset), tip = c(current.terminal.pos[to.index,
+                          ], regime + offset), rad = migrationParameters[local.migrationMatrix[from.index,
+                          to.index]] * base.radius/3, col = (brewer.pal(8,
+                          "Set1"))[local.migrationMatrix[from.index,
                           to.index]])
                       }
                     }
@@ -169,7 +169,7 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
 SaveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
 	dir=tempdir()
 	if(!is.null(save.dir)) {
-		try(system(paste("mkdir", save.dir)), silent=TRUE)	
+		try(system(paste("mkdir", save.dir)), silent=TRUE)
 		dir=save.dir
 	}
 	result<-movie3d(spin3d(rpm=total.revolutions/(duration/60)), duration=duration, dir=dir)
@@ -182,7 +182,7 @@ SaveMovie<-function(total.revolutions=1, duration=10, save.dir=NULL) {
 #setwd("~/Desktop/models")
 #for (i in sequence(length(migrationArray))) {
 #	PlotModel(migrationArray[[i]], taxonNames=c("","",""), new.window=FALSE)
-#	rgl.snapshot(paste("model",i,".png", sep=""))	
+#	rgl.snapshot(paste("model",i,".png", sep=""))
 #	saveMovie(save.dir="~/Desktop/models")
 #	system(paste("mv movie.gif movie", i, ".gif", sep=""))
 #	rgl.clear()
@@ -194,9 +194,9 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
         parameterVector <- sequence(length(parameterVector.names))
         names(parameterVector) <- parameterVector.names
     }
-    n0multiplierParameters <- parameterVector[grep("n0multiplier", 
+    n0multiplierParameters <- parameterVector[grep("n0multiplier",
         names(parameterVector))]
-    migrationParameters <- parameterVector[grep("migration", 
+    migrationParameters <- parameterVector[grep("migration",
         names(parameterVector))]
     collapseParameters <- parameterVector[grep("collapse", names(parameterVector))]
     try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters))
@@ -214,35 +214,35 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
     for (i in sequence(nPop - 1)) {
         current.terminal.pos <- rbind(current.terminal.pos, cbind(x = i+1, y = 0))
     }
-    text(x = current.terminal.pos[, 1], y = current.terminal.pos[, 
+    text(x = current.terminal.pos[, 1], y = current.terminal.pos[,
         2]+.2,  labels = taxonNames, col = tip.col, cex=tip.cex, pos=3)
-   
-   
+
+
     for (regime in sequence(dim(collapseMatrix)[2])) {
         next.terminal.pos <- current.terminal.pos * NA
         for (i in sequence(dim(collapseMatrix)[1])) {
             if (!is.na(collapseMatrix[i, regime])) {
                 if (collapseMatrix[i, regime] == 0) {
-                  next.terminal.pos[i, ] <- current.terminal.pos[i, 
+                  next.terminal.pos[i, ] <- current.terminal.pos[i,
                     ]
                 }
                 if (collapseMatrix[i, regime] == 1) {
-                  next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[, 
+                  next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[,
                     regime] == 1), ])
                     lines(x=c(current.terminal.pos[i,1], next.terminal.pos[i,1]), y=-rep(regime, 2), col=tree.col, lwd=tree.lwd, lend=2)
                 }
                 lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime-1, regime), col=tree.col, lwd=tree.lwd, lend=2)
             }
         }
-         local.migrationMatrix <- migrationIndividual$migrationArray[, 
+         local.migrationMatrix <- migrationIndividual$migrationArray[,
             , regime]
         if (max(local.migrationMatrix, na.rm = TRUE) > 0) {
             for (from.index in sequence(dim(local.migrationMatrix)[1])) {
                 for (to.index in sequence(dim(local.migrationMatrix)[2])) {
                   if (from.index != to.index) {
-                    if (!is.na(local.migrationMatrix[from.index, 
+                    if (!is.na(local.migrationMatrix[from.index,
                       to.index])) {
-                      if (local.migrationMatrix[from.index, to.index] > 
+                      if (local.migrationMatrix[from.index, to.index] >
                         0) {
                         offset = .5
                         segment.limits=0.1

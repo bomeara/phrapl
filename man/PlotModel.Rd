@@ -9,7 +9,7 @@ arrows. You can spin this using the cursor.
 }
 \usage{
 PlotModel(migrationIndividual, parameterVector = NULL, taxonNames = NULL,
-time.axis = FALSE, time.axis.col = "black", apply.base = FALSE, base.color =
+time.axis = FALSE, time.axis.col = "black", apply.base = FALSE, base.bounds=2, base.color =
 "black", new.window = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -33,9 +33,12 @@ If you want to have a time axis, enter TRUE.
   \item{time.axis.col}{
 If you want a particular color for the time axis, enter it here.
 }
-  \item{apply.base}{
+\item{apply.base}{
 This will draw a box at the rootward end of the population history. This can be
 convenient for 3D printing.
+}
+\item{base.bounds}{
+This changes the size of the base.
 }
   \item{base.color}{
 What color should the box be, if one is drawn.
