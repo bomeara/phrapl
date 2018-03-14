@@ -4052,12 +4052,13 @@ FilterMigrationByCriterion<-function(gridListCurrent,migrationIndividual,whichMi
 #eight different methods ("exact","asymptotic","agresti-coull","wilson","prop.test","bayes",
 #"logit","cloglog","probit",or "profile"). Any of these can be specified using ciMethod, or "all"
 #will result in all eight being calculated. If ciMethod=NULL, only the gdi will be outputted.
-CalculateGdi<-function(tau,migration.in,migration.out=NULL,nreps=10000,ciMethod="exact") {
+CalculateGdi<-function(tau,migration.in,migration.out=NULL,nreps=10000,ciMethod="exact",
+	msPath=system.file("msdir","ms",package="P2C2M")) {
 	if(is.null(migration.out)) {
 		migration.out<-migration.in
 	}
 	divergence<-c()
-	output<-system(paste("ms 3 ", nreps, " -T -I 2 2 1 -ej ",tau," 2 1 -m 1 2 ",migration.out," -m 2 1 ",migration.in,
+	output<-system(paste(msPath," 3 ", nreps, " -T -I 2 2 1 -ej ",tau," 2 1 -m 1 2 ",migration.out," -m 2 1 ",migration.in,
 		" | grep ';'",sep=""),intern=TRUE)
 	intra.coalescence<-sapply(output,TestForWithinPopCoalescenceThreeSamplesOnly)
 	#Return the proportion of three taxon trees where 1 and 2 coalesce before either coalesces with 3
