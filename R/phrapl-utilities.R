@@ -2964,37 +2964,41 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	#Extract and combine results across models
 	for(rep in 1:length(rdaFiles)){
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
-
+		
 		#Combine results from the rda into dataframe
 		#If a result exists...
 		if(!is.null(result)){
+			continue=TRUE
 			templateRep<-append(templateRep,rep) #Save those rep numbers that yield a result
 			current.results<-result$overall.results[order(result$overall.results$models),] #sort by model number (same order as parameters)
 
  		#If a result is null for this model...
  		}else{
-			#Fill in null results for the null model (i.e., NAs)
-			current.results<-data.frame(matrix(NA,nrow=1,ncol=nonparmColsOriginal))
-			colnames(current.results)<-c("models","AIC","lnL","params.K","params.vector")
-			#First fill in the model info
-			current.results$models<-model
-			current.results$params.K<-KAll(migrationArray[[model]])
-			if(length(grep("n0multiplier",MsIndividualParameters(migrationArray[[model]]))) == 1){ #Toss n0multi, if there's one
-				current.results$params.vector<-paste(MsIndividualParameters(migrationArray[[model]])[-grep("n0multiplier",
-					MsIndividualParameters(migrationArray[[model]]))],collapse=" ")
-			}else{
-				current.results$params.vector<-paste(MsIndividualParameters(migrationArray[[model]]),collapse=" ")
-			}
-			#Then get the parameters
-			param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[model]])
-			parametersNullNames<-param.mappings[which(param.mappings[,2] != "0"),][,1]
-			parametersNull<-data.frame(matrix(NA,nrow=1,ncol=length(parametersNullNames)))
-			colnames(parametersNull)<-parametersNullNames
-			current.results<-cbind(current.results,parametersNull)
+ 		warning(paste("Warning: File",rdaFiles[rep],"contains no results.", sep=" "))
+ 		continue<-FALSE
+ 		
+#			#Fill in null results for the null model (i.e., NAs)
+#			current.results<-data.frame(matrix(NA,nrow=1,ncol=nonparmColsOriginal))
+#			colnames(current.results)<-c("models","AIC","lnL","params.K","params.vector")
+#			#First fill in the model info
+#			current.results$models<-model
+#			current.results$params.K<-KAll(migrationArray[[model]])
+#			if(length(grep("n0multiplier",MsIndividualParameters(migrationArray[[model]]))) == 1){ #Toss n0multi, if there's one
+#				current.results$params.vector<-paste(MsIndividualParameters(migrationArray[[model]])[-grep("n0multiplier",
+#					MsIndividualParameters(migrationArray[[model]]))],collapse=" ")
+#			}else{
+#				current.results$params.vector<-paste(MsIndividualParameters(migrationArray[[model]]),collapse=" ")
+#			}
+#			#Then get the parameters
+#			param.mappings <- MsIndividualParametersConversionToUnambiguous(migrationArray[[model]])
+#			parametersNullNames<-param.mappings[which(param.mappings[,2] != "0"),][,1]
+#			parametersNull<-data.frame(matrix(NA,nrow=1,ncol=length(parametersNullNames)))
+#			colnames(parametersNull)<-parametersNullNames
+#			current.results<-cbind(current.results,parametersNull)
 		}
 
 		#Add time if desired
-		if(addTime.elapsed==TRUE){
+		if(addTime.elapsed==TRUE & continue == T){
 			load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #make sure current model is loaded again
 
 			if(length(current.results[,(nonparmColsOriginal + 1):ncol(current.results)]) == 1){
@@ -3012,16 +3016,18 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 		#Add current.results to totalData
 		#Note that with "merge", exact duplicate rows will not be merged. Thus, I have added a counting row to make each row
 		#unique such that they can be merged. The row is tossed eventually.
-		row.col<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
-		colnames(row.col)<-"row.col"
-		current.results<-cbind(row.col,current.results)
+		if(continue == T){
+			row.col<-data.frame(matrix(row.counter:(row.counter + (nrow(current.results) - 1)),nrow=nrow(current.results),ncol=1))
+			colnames(row.col)<-"row.col"
+			current.results<-cbind(row.col,current.results)
 
-		if(rep == 1){
-			totalData<-rbind(totalData,current.results)
-		}else{
-			totalData<-merge(totalData,current.results,all=TRUE)
+			if(rep == 1){
+				totalData<-rbind(totalData,current.results)
+			}else{
+				totalData<-merge(totalData,current.results,all=TRUE)
+			}
+			row.counter<-nrow(totalData) + 1
 		}
-		row.counter<-nrow(totalData) + 1
 	}
 
 	#Remove undesired parameters
