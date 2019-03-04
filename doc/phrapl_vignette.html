@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -36,7 +36,7 @@ Setting Up and Running PHRAPL
 </center>
 <p></font></p></em></h4>
 <h4 class="date"><em><center>
-<font size="2"><em>Last updated on January 08, 2017</em>
+<font size="2"><em>Last updated on March 04, 2019</em>
 </center>
 <p></font></p></em></h4>
 
@@ -332,11 +332,12 @@ Setting Up and Running PHRAPL
 </div>
 <div id="vii.-saving-compiling-summarizing-and-visualizing-results" class="section level2">
 <h2>VII. Saving, compiling, summarizing, and visualizing results</h2>
-<p>The <code>ConcatenateResults</code> function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want save <code>GridSearch</code> results in a file to access later, e.g.:</p>
+<p>The <code>ConcatenateResults</code> function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want to save <code>GridSearch</code> results in a file to access later, e.g.:</p>
 <p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <pre><code>  save(list=&quot;result&quot;,file=&quot;phraplOutput_models1-3.rda&quot;)  </code></pre>
 <p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
-<p>Then, when concatenating results, you can either specify the names of the files containing the results to be concatenated (by giving a vector of names to the argument <code>rdaFiles</code>) or the directory in which these files are stored (using <code>rdaFilesPath</code>). So, for our toy dataset, type</p>
+<p>IMPORTANT NOTE: The results saved from a GridSearch should literally be named “result”, for that is the object name that the next function discussed (ConcatenateResults) looks for when summarizing GridSearch results from across different runs.</p>
+<p>When concatenating results, you can either specify the names of the files containing the results to be concatenated (by giving a vector of names to the argument <code>rdaFiles</code>) or the directory in which these files are stored (using <code>rdaFilesPath</code>). So, for our toy dataset, type</p>
 <p><font size="4" face="courier" color="FA1704">*****************************************************************</font></p>
 <pre><code>  totalResults&lt;-ConcatenateResults(rdaFiles=&quot;phraplOutput_models1-3.rda&quot;,  
       migrationArray=migrationArray)  </code></pre>
@@ -392,7 +393,7 @@ save(list=&quot;result&quot;,file=&quot;phraplOutput_models1-3_1species.rda&quot
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

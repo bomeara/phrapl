@@ -373,9 +373,11 @@ result<-GridSearch(migrationArray=migrationArray,modelRange=modelRange,popAssign
 
 ###############VII. Saving, compiling, summarizing, and visualizing results
 
-#The `ConcatenateResults` function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want save `GridSearch` results in a file to access later, e.g.:  
+#The `ConcatenateResults` function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want to save `GridSearch` results in a file to access later, e.g.:  
 
-save(list="result",file="phraplOutput_models1-3.rda")  
+save(list="result",file="phraplOutput_models1-3.rda")
+
+#IMPORTANT NOTE: The results saved from a GridSearch should literally be named "result", for that is the object name that the next function discussed (ConcatenateResults) looks for when summarizing GridSearch results from across different runs.
 
 #Then, when concatenating results, you can either specify the names of the files containing the results to be concatenated (by giving a vector of names to the argument `rdaFiles`) or the directory in which these files are stored (using `rdaFilesPath`). So, for our toy dataset, type  
 

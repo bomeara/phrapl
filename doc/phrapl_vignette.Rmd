@@ -1,7 +1,7 @@
 ---
 title: <center>Setting Up and Running PHRAPL</center>
 author: <center><font size="4">*by Nathan Jackson*</center></font>
-date: <center><font size="2">*Last updated on January 08, 2017*</center></font>
+date: <center><font size="2">*Last updated on March 04, 2019*</center></font>
 output: rmarkdown::html_vignette
 smart: false
 vignette: >
@@ -478,7 +478,7 @@ Grid points with an `AIC = NA` signal parameter combinations that did not yield 
 
 ##VII. Saving, compiling, summarizing, and visualizing results
 
-The `ConcatenateResults` function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want save `GridSearch` results in a file to access later, e.g.:  
+The `ConcatenateResults` function can compile results from across separate runs into a single table. If you are analyzing models in separate runs, you will want to save `GridSearch` results in a file to access later, e.g.:  
 
 <font size="4" face="courier" color="FA1704">*****************************************************************</font>
 ```
@@ -486,7 +486,9 @@ The `ConcatenateResults` function can compile results from across separate runs 
 ```
 <font size="4" face="courier" color="FA1704">*****************************************************************</font>
     
-Then, when concatenating results, you can either specify the names of the files containing the results to be concatenated (by giving a vector of names to the argument `rdaFiles`) or the directory in which these files are stored (using `rdaFilesPath`). So, for our toy dataset, type  
+IMPORTANT NOTE: The results saved from a GridSearch should literally be named "result", for that is the object name that the next function discussed (ConcatenateResults) looks for when summarizing GridSearch results from across different runs.
+
+When concatenating results, you can either specify the names of the files containing the results to be concatenated (by giving a vector of names to the argument `rdaFiles`) or the directory in which these files are stored (using `rdaFilesPath`). So, for our toy dataset, type  
 
 <font size="4" face="courier" color="FA1704">*****************************************************************</font>
 ```
