@@ -1,7 +1,7 @@
 ---
 title: <center>Setting Up and Running PHRAPL</center>
 author: <center><font size="4">*by Nathan Jackson*</center></font>
-date: <center><font size="2">*Last updated on March 04, 2019*</center></font>
+date: <center><font size="2">*Last updated on March 08, 2019*</center></font>
 output: rmarkdown::html_vignette
 smart: false
 vignette: >
@@ -18,7 +18,7 @@ The purpose of this vignette is to provide a brief tutorial for using this metho
 This tutorial will assume that the reader already has a basic understanding of how PHRAPL works and the problems it is meant to address. The focus here will rather be on the practical issues surrounding the analysis of a dataset. Thus, prior to analyzing an empirical dataset, users should read the original paper that describes the principles and methodology behind PHRAPL:
 
 ```
-Jackson, ND, AE Morales, BC Carstens, and BC O'Meara. 2017. PHRAPL: Phylogeographic Inference Using Approximate Likelihoods. Systematic Biology (in press).
+Jackson, ND, AE Morales, BC Carstens, and BC O'Meara. 2017. PHRAPL: Phylogeographic Inference Using Approximate Likelihoods. Systematic Biology 66(6):1045-1053.
 ```
 
 This tutorial assumes you are working in a Mac/Linux environment. We have yet to properly test the method using a PC, although we suspect a few (surmountable) issues will arise when the sufficiently adventurous try this out. For more detailed information about any of the tasks discussed below, take a look at the help files within PHRAPL (for a list of these, type `library(help=phrapl)` once the package is installed).
@@ -106,7 +106,7 @@ To plot this tree, type
 
 ###*2. Importing an assignment table*
 
-PHRAPL assumes that the assignment of tips to populations or species is known. Thus these assignments must be specified upfront in the form of a table. This population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., "A", "B", "C"). If there is an outgroup taxon, it MUST be listed as the last population in the table and the first letter in the population name should also come last alphanumerically (e.g., `"Z.outgroup"`). A header row of some sort must also be included.
+PHRAPL assumes that the assignment of tips to populations or species is known. Thus these assignments must be specified upfront in the form of a table. This population assignment table must consist of two columns: the first column lists the individuals in the dataset, whose names must match those at the tips of the trees. Note that not all the individuals listed in the table must exist on every tree (i.e., missing data/unique tip names for each tree are fine). The second column should provide the population or species name to which each individual is assigned (e.g., "A", "B", "C"). If there is an outgroup taxon, it MUST be listed as the last population in the table and the first letter in the population name should also come last alphanumerically (e.g., `"Z.outgroup"`). Also note that PHRAPL assigns population indexes (i.e., 1, 2, 3, etc.) to taxa/populations alphanumerically, such that population 1 corresponds to the population name in your assignment table that comes first in the alphabet, and so forth. This is important to remember when interpreting parameter nomenclature in the output.A header row of some sort must also be included.
 
 You can of course create this table directly in R as a data.frame. If you've created the assignment table as a tab-delimited text file (e.g., "cladeAssignments.txt"), you can import it into R as a data.frame by typing  
 
