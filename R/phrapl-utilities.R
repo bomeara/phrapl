@@ -3029,14 +3029,18 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 			row.counter<-nrow(totalData) + 1
 		}
 	}
-
+	
 	#Remove undesired parameters
 	if(rm.n0==TRUE){
 		if(longNames==TRUE){
-			totalData<-totalData[,!grepl("n0multiplier", colnames(totalData))]
-		}else{
-			totalData<-totalData[,!grepl("n[0123456789]", colnames(totalData))]
-		}
+			if(length(grep("0multiplier", colnames(totalData))) <= 1){
+    			totalData<-totalData[,!grepl("n0multiplier", colnames(totalData))]
+    		}
+    	}else{
+    		if(length(grep("n", colnames(totalData))) <= 1){
+    			totalData<-totalData[,!grepl("n", colnames(totalData))]
+    		}
+    	}
 	}
 
 	#Sort parameter columns into desired order
