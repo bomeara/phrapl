@@ -8,8 +8,9 @@ This uses rgl to create a depiction of a given model, complete with migration
 arrows. You can spin this using the cursor.
 }
 \usage{
-PlotModelfunction(migrationIndividual, parameterVector = NULL,taxonNames = NULL, time.axis = FALSE, time.axis.col ="black", apply.base = FALSE, base.color = "black",
-new.window = TRUE, base.bounds = 2)
+PlotModel(migrationIndividual, parameterVector = NULL,taxonNames = NULL,
+  time.axis = FALSE, time.axis.col ="black", apply.base = FALSE,
+  base.color = "black", new.window = TRUE, base.bounds = 2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

@@ -12,7 +12,8 @@ search.
 \usage{
 GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap=NULL,
 migrationArray, popAssignments, badAIC = 1e+14,
-maxParameterValue = 20, nTrees = 1e5, msPath = system.file("msdir", "ms", package = "P2C2M"),
+maxParameterValue = 20, nTrees = 1e5,
+msPath = system.file("msdir", "ms", package = "P2C2M"),
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
 observedTrees, subsampleWeights.df = NULL, doWeights = TRUE,
 unresolvedTest = TRUE, print.ms.string = FALSE, print.results = TRUE,

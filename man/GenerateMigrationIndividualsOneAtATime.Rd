@@ -80,7 +80,7 @@ in the form of matrices.
 }
 \examples{
 
-# ##Four population Example (with coalescence, growth, and migration parameters)
+# ##Four population example (with coalescence, growth, and migration parameters)
 #
 # #Create list of collapse histories
 # collapse_1<-c(0,0,1,1)
@@ -119,8 +119,8 @@ in the form of matrices.
 # migrationList<-list(migration_1,migration_2,migration_3)
 #
 # #Run function
-# migrationIndividual<-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,growthList=growthList,
-# 	migrationList=migrationList)
+# migrationIndividual<-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList,
+# growthList=growthList, migrationList=migrationList)
 
 
 

@@ -295,7 +295,8 @@ for a model, but this parameter space will always fit the model.
 }
 \examples{
 
-# ##First, generate a migrationIndividual that models a specific coalescence history among four populations
+# ##First, generate a migrationIndividual that models a
+# ##specific coalescence history among four populations
 # collapse_1<-c(0,0,1,1)
 # collapse_2<-c(2,2,0,NA)
 # collapse_3<-c(3,NA,3,NA)
