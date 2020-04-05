@@ -7,11 +7,11 @@ Add an Event To a MigrationArray
 \description{
 This function integrates a non-coalescence demographic event within a model
 or set of models. This can be useful if one wants to posit shifts in a parameter that
-do not correspond to a splitting event (e.g., one would like migration to only occur 
+do not correspond to a splitting event (e.g., one would like migration to only occur
 for a given length of time after a split, but then to cease).
 }
 \usage{
-AddEventToMigrationArray(migrationArray, eventTime, n0multiplierVec = NULL, 
+AddEventToMigrationArray(migrationArray, eventTime, n0multiplierVec = NULL,
 	growthVec = NULL, migrationMat = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -23,46 +23,47 @@ A list of models (or a single model) to which an event should be added
 The relative time period at which the new event should be inserted within the collapseMatrix
 }
   \item{n0multiplierVec}{
-A vector or single value specifying the n0multiplier parameter indices to be invoked during 
+A vector or single value specifying the n0multiplier parameter indices to be invoked during
 the new time interval. If \code{NULL}, no new set of parameter indices are invoked at this time.
 }
   \item{growthVec}{
-A vector or single value specifying the growth parameter indices to be invoked during 
+A vector or single value specifying the growth parameter indices to be invoked during
 the new time interval. If \code{NULL}, no new set of parameter indices are invoked at this time.
 }
   \item{migrationMat}{
-A matrix, vector, or single value specifying the migration parameter indices to be invoked during 
+A matrix, vector, or single value specifying the migration parameter indices to be invoked during
 the new time interval. If \code{NULL}, no new set of parameter indices are invoked at this time.
 }
 }
 \details{
 To use this function, one must specify a model (migrationIndividual) or set of models
-(migrationArray). If a set of models is specified, these models must all contain the 
+(migrationArray). If a set of models is specified, these models must all contain the
 same number of populations and the same number of collapse events (i.e., the collapseMatrix
-compenent within each migrationIndividual must have the same dimensions). 
+compenent within each migrationIndividual must have the same dimensions).
 
-The relative timing of the desired new event must be specified as a single number using 
-eventTime. An eventTime of 1 will place a new event (i.e., column) in the first column 
-position within the collapseMatrix (and the other columns will be shifted to the right). 
+The relative timing of the desired new event must be specified as a single number using
+eventTime. An eventTime of 1 will place a new event (i.e., column) in the first column
+position within the collapseMatrix (and the other columns will be shifted to the right).
 An eventTime of 2 will place the new column in the second position, etc. The eventTime
 cannot exceed the number of events (i.e., columns) within the original collapseMatrix.
-The added column will consist entirely of NAs, indicating that no population coalescence 
+The added column will consist entirely of NAs, indicating that no population coalescence
 can occur at this time.
 
 Finally, one can specify a new set of n0multiplier, growth, and/or migration parameter
 indices to be invoked at the new specified time period using n0muliplierVec, growthVec, or
-migrationMat, respectively. When the default value for these is used (which is \code{NULL}), 
-n0multiplier, growth, and migration matrices within each model are automatically expanded 
+migrationMat, respectively. When the default value for these is used (which is \code{NULL}),
+n0multiplier, growth, and migration matrices within each model are automatically expanded
 by simply copying over parameter indices from the adjacent time period to the new time
-period (i.e., no change is invoked). For n0multiplier and growth, a new column is added; 
-for migration, a new matrix is added. 
+period (i.e., no change is invoked). For n0multiplier and growth, a new column is added;
+for migration, a new matrix is added.
 
 However, one can also specify the parameter indices to be used at this new time, allowing
 a shift in that parameter, without a correponding coalescence event. These indices can be
 specified in one of two ways:
 
-First, one can simply specify a single parameter index which will be implemented for all 
-relevant populations at that time period. For example, if the following collapseMatrix:
+First, one can simply specify a single parameter index which will be
+implemented for all relevant populations at that time period.
+For example, if the following collapseMatrix:
 
 \preformatted{
 $collapseMatrix
@@ -72,10 +73,10 @@ $collapseMatrix
 [3,]    0    2
 }
 
-is expanded to include a shift from non-zero migration among all populations to zero migration 
-at some point prior to the coalescence of populations 1 and 2 (meaning that migration has 
-occurred recently--upon secondary contact--but did not accompany initial divergence), we 
-should set \code{eventTime = 1} and \code{migrationMat = 1}. Assuming that the original model included 
+is expanded to include a shift from non-zero migration among all populations to zero migration
+at some point prior to the coalescence of populations 1 and 2 (meaning that migration has
+occurred recently--upon secondary contact--but did not accompany initial divergence), we
+should set \code{eventTime = 1} and \code{migrationMat = 1}. Assuming that the original model included
 zero migration across all time periods, this will produce the following collpaseMatrix:
 
 \preformatted{$collapseMatrix
@@ -129,10 +130,10 @@ to three matrices:
 [3,]    0   NA   NA
 }
 
-where the new migration matrix was added in the first time period position and was filled with 
+where the new migration matrix was added in the first time period position and was filled with
 zeros, as per the value specified.
 
-This approach works similarly for n0multiplier and growth. For example, if one would like to model 
+This approach works similarly for n0multiplier and growth. For example, if one would like to model
 population growth during the initial stages of divergence, followed by population size stability,
 one should set \code{eventTime = 1} and \code{growthVec = 0} to change this history:
 
@@ -166,10 +167,10 @@ $growthMap
 }
 
 If one wishes to specify more complex histories, in which different populations have different
-indices, one can alternatively specify the entire new vector (for n0multiplier and growth) 
-or matrix (for migration) of parameter indices to be inserted. For example, in the previous example, 
-if one would rather model population size stability upon divergence of populations 1 and 2 followed 
-by recent growth of population 1, but not of populations 2 or 3, one can set \code{eventTime = 1} and 
+indices, one can alternatively specify the entire new vector (for n0multiplier and growth)
+or matrix (for migration) of parameter indices to be inserted. For example, in the previous example,
+if one would rather model population size stability upon divergence of populations 1 and 2 followed
+by recent growth of population 1, but not of populations 2 or 3, one can set \code{eventTime = 1} and
 \code{growthVec = c(1,0,0)} to change the growth history from this:
 
 \preformatted{$growthMap
@@ -189,7 +190,7 @@ to this:
 [3,]    0    0    0
 }
 
-One can also specify a migration matrix using migrationMat. For example, if, one would like to 
+One can also specify a migration matrix using migrationMat. For example, if, one would like to
 insert a new matrix in which the migration rate differs among population pairs, one would specify
 
 \preformatted{migrationMat = t(array(c(
@@ -198,30 +199,30 @@ insert a new matrix in which the migration rate differs among population pairs, 
   2, 3, NA),
 dim=c(3,3)))
 }
-		
+
 If one would rather, this can also be specified simply as a vector (with or without the NAs). For
-example, the above migration matrix could be also specified as either \code{c(NA,1,2,3,NA,3,2,1,NA)} 
-or as \code{c(1,2,3,3,2,1)}, where the vector is read first by column, then by row. Note that the 
-number of values must match the number expected for that time period. For example, if one would like 
-to insert a new migration history at ancestral time period 2, one should remember that there are 
-fewer populations at that time period, and thus the number of values specified must be reduced 
-accordingly. For example, specifying distinct migration parameters from population 1-2 to 3 versus 
+example, the above migration matrix could be also specified as either \code{c(NA,1,2,3,NA,3,2,1,NA)}
+or as \code{c(1,2,3,3,2,1)}, where the vector is read first by column, then by row. Note that the
+number of values must match the number expected for that time period. For example, if one would like
+to insert a new migration history at ancestral time period 2, one should remember that there are
+fewer populations at that time period, and thus the number of values specified must be reduced
+accordingly. For example, specifying distinct migration parameters from population 1-2 to 3 versus
 from population 3 to 1-2 would be specified as either
 
 \preformatted{migrationMat = t(array(c(
   NA, NA, 2,
   NA, NA, NA,
   1,  NA, NA),
-dim=c(3,3))) 
+dim=c(3,3)))
 }
- 			
+
 or as
 
 \preformatted{migrationMat = (1,2)
 }
 
 Specifying two distinct population size parameters for ancestral population 1-2 and population 3 at
-the second time period would be done by setting \code{eventTime = 2} and \code{n0muliplierVec = c(1,2)}, 
+the second time period would be done by setting \code{eventTime = 2} and \code{n0muliplierVec = c(1,2)},
 to convert
 
 \preformatted{$n0multiplierMap
@@ -246,14 +247,14 @@ add multiple non-coalescence time periods by repeatedly running the function on 
 }
 \note{
 When analyzing a migrationArray using \code{\link{GridSearch}} that includes new time periods
-produced by \code{AddEventToMigrationArray}, a time value must be specified using the \code{addedEventTime} 
-argument. \code{addedEventTime} takes either a single value or vector of values, such that there are as 
+produced by \code{AddEventToMigrationArray}, a time value must be specified using the \code{addedEventTime}
+argument. \code{addedEventTime} takes either a single value or vector of values, such that there are as
 many values as added events in the collapseMatrix (sorted from most recent to most ancient).
 Time values can be specified as either a specific time period (in units of 4Ne) or as a relative time
-period. When the latter is desired, the \code{addedEventTimeAsScalar} argument in \code{\link{GridSearch}} 
-must be set to \code{TRUE} (this is the default), which will cause the values specified by 
-\code{addedEventTime} to be treated as scalars, rather than as absolute. Scalar values must be greater than zero 
-and less than one, and will be multiplied by whatever the next collapse time estimate happens to be (which will 
+period. When the latter is desired, the \code{addedEventTimeAsScalar} argument in \code{\link{GridSearch}}
+must be set to \code{TRUE} (this is the default), which will cause the values specified by
+\code{addedEventTime} to be treated as scalars, rather than as absolute. Scalar values must be greater than zero
+and less than one, and will be multiplied by whatever the next collapse time estimate happens to be (which will
 typically vary across models). For example, setting \code{addedEventTimeAsScalar = TRUE} and
 \code{addedEventTime = 0.1} for the following model:
 
@@ -270,26 +271,26 @@ $growthMap
 [3,]    0    0    0
 }
 
-will cause (looking backwards in time) population growth to commence in population 1 after 10\% of the 
+will cause (looking backwards in time) population growth to commence in population 1 after 10\% of the
 branch length leading to coalescence of populations 1 and 2 has been reached.
 
-One final thing to highlight is that the specified timing of these events must fit the modeled chronology of 
-coalescence and non-coalescence events in the collapseMatrix. That is, the timing for an added non-coalescence 
+One final thing to highlight is that the specified timing of these events must fit the modeled chronology of
+coalescence and non-coalescence events in the collapseMatrix. That is, the timing for an added non-coalescence
 event given by \code{addedEventTime} must be later than the collapse event directly preceding the added event
-and must be earlier than the collapse event directly following it. For this reason, it is recommended 
+and must be earlier than the collapse event directly following it. For this reason, it is recommended
 that \code{addedEventTimes} be entered as scalars, as this guarantees that the time will always be
 earlier than the collapse event that follows (but not that the time will occur after the previous collapse
 event). Absolute values can also be used, but remember that in a grid search, different values
-are explored, so many parameter combinations in the grid may not fit the specified event times. However, 
+are explored, so many parameter combinations in the grid may not fit the specified event times. However,
 PHRAPL filters out all parameter combinations in the parameter grid that do not adhere to the specified
-chronology of events in the model. Thus, setting absolute dates may reduce the parameter space explored 
-for a model, but this parameter space will always fit the model. 
+chronology of events in the model. Thus, setting absolute dates may reduce the parameter space explored
+for a model, but this parameter space will always fit the model.
 }
 \author{
   Nathan Jackson
 }
 \references{
-  O'Meara, B.C., N. Jackson, A. Morales-Garcia, and B. Carstens (2014) 
+  O'Meara, B.C., N. Jackson, A. Morales-Garcia, and B. Carstens (2014)
   Phrapl in prep.
 }
 \examples{
@@ -300,12 +301,12 @@ for a model, but this parameter space will always fit the model.
 # collapse_3<-c(3,NA,3,NA)
 # collapseList<-list(collapse_1,collapse_2,collapse_3)
 # migrationIndividual<-GenerateMigrationIndividualsOneAtATime(collapseList=collapseList)
-# 
+#
 # ##Then, add a recent migration (secondary contact) event between sister populations 1 and 2
 # migrationArray<-migrationIndividual
 # eventTime=1
 # migrationMat=c(1,0,0,1,0,0,0,0,0,0,0,0)
-# 
+#
 # migrationArray<-AddEventToMigrationArray(migrationArray=migrationArray,eventTime=eventTime,
 # 	migrationMat=migrationMat)
 

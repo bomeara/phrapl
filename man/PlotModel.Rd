@@ -8,9 +8,8 @@ This uses rgl to create a depiction of a given model, complete with migration
 arrows. You can spin this using the cursor.
 }
 \usage{
-PlotModel(migrationIndividual, parameterVector = NULL, taxonNames = NULL,
-time.axis = FALSE, time.axis.col = "black", apply.base = FALSE, base.bounds=2, base.color =
-"black", new.window = TRUE)
+PlotModelfunction(migrationIndividual, parameterVector = NULL,taxonNames = NULL, time.axis = FALSE, time.axis.col ="black", apply.base = FALSE, base.color = "black",
+new.window = TRUE, base.bounds = 2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,16 +36,17 @@ If you want a particular color for the time axis, enter it here.
 This will draw a box at the rootward end of the population history. This can be
 convenient for 3D printing.
 }
-\item{base.bounds}{
-This changes the size of the base.
-}
-  \item{base.color}{
+\item{base.color}{
 What color should the box be, if one is drawn.
 }
-  \item{new.window}{
+\item{new.window}{
 If FALSE, overwrites the current image if one exists. By default, TRUE, so each
 time you run this function you create another window.
 }
+\item{base.bounds}{
+This changes the size of the base.
+}
+
 }
 \details{
 This requires rgl, which periodically becomes hard to install on certain

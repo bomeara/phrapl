@@ -57,7 +57,7 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
             col = time.axis.col, cex = 0.8)
     }
     if (apply.base) {
-        plane.coords <- combn(apply(expand.grid(x = c(-1, 1)*base.bounds,
+        plane.coords <- utils::combn(apply(expand.grid(x = c(-1, 1)*base.bounds,
             y = c(-1, 1)*base.bounds, z = c((1 + dim(collapseMatrix)[2]),
                 (1.25 + dim(collapseMatrix)[2]))), 1, paste,
             collapse = "_"), 4)
@@ -206,7 +206,7 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
     complete <- migrationIndividual$complete
     n0multiplierMap <- migrationIndividual$n0multiplierMap
     nPop <- sum(!is.na(collapseMatrix[, 1]))
-    plot(x=c(.5,nPop+.5), y=c(0.3,-1*(dim(collapseMatrix)[2]+.5)), type="n", xlab="", ylab="", xaxt="n", yaxt="n", bty="n")
+    graphics::plot(x=c(.5,nPop+.5), y=c(0.3,-1*(dim(collapseMatrix)[2]+.5)), type="n", xlab="", ylab="", xaxt="n", yaxt="n", bty="n")
     current.terminal.pos <- cbind(x = 1, y = 0)
     if (is.null(taxonNames)) {
         taxonNames <- sequence(nPop)
@@ -214,7 +214,7 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
     for (i in sequence(nPop - 1)) {
         current.terminal.pos <- rbind(current.terminal.pos, cbind(x = i+1, y = 0))
     }
-    text(x = current.terminal.pos[, 1], y = current.terminal.pos[,
+    graphics::text(x = current.terminal.pos[, 1], y = current.terminal.pos[,
         2]+.2,  labels = taxonNames, col = tip.col, cex=tip.cex, pos=3)
 
 
@@ -229,9 +229,9 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
                 if (collapseMatrix[i, regime] == 1) {
                   next.terminal.pos[i, ] <- colMeans(current.terminal.pos[which(collapseMatrix[,
                     regime] == 1), ])
-                    lines(x=c(current.terminal.pos[i,1], next.terminal.pos[i,1]), y=-rep(regime, 2), col=tree.col, lwd=tree.lwd, lend=2)
+                    graphics::lines(x=c(current.terminal.pos[i,1], next.terminal.pos[i,1]), y=-rep(regime, 2), col=tree.col, lwd=tree.lwd, lend=2)
                 }
-                lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime-1, regime), col=tree.col, lwd=tree.lwd, lend=2)
+                graphics::lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime-1, regime), col=tree.col, lwd=tree.lwd, lend=2)
             }
         }
          local.migrationMatrix <- migrationIndividual$migrationArray[,
@@ -256,12 +256,12 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
         if(regime == dim(collapseMatrix)[2]) { #let's add a gradient at the root
         	n.alpha.step = 50
 
-        	final.ramp <- colorRampPalette(colors=c(tree.col, "white"))(n.alpha.step)
+        	final.ramp <- grDevices::colorRampPalette(colors=c(tree.col, "white"))(n.alpha.step)
 	        for (i in sequence(dim(collapseMatrix)[1])) {
 	            if (!is.na(collapseMatrix[i, regime])) {
 	            	if(collapseMatrix[i, regime]==0) {
 		            		for (alpha.step in sequence(n.alpha.step)) {
-		                		lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime+0.6*(alpha.step-1)/n.alpha.step, regime+0.6*alpha.step/n.alpha.step), col=final.ramp[alpha.step], lwd=tree.lwd, lend=2)
+		                		graphics::lines(x=rep(current.terminal.pos[i, 1],2), y=-c(regime+0.6*(alpha.step-1)/n.alpha.step, regime+0.6*alpha.step/n.alpha.step), col=final.ramp[alpha.step], lwd=tree.lwd, lend=2)
 		            		}
 	                }
 	            }

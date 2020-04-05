@@ -2,10 +2,10 @@
 SetMaxK<-function(popVector,nTrees=1,taxaPerParam=5,force=FALSE) {
   if (exists("maxK") && !force) {
     print(paste("note: setMaxK called, but maxK already exists, so using the existing one of ",maxK,". To change this behavior, give setMaxK the option force=TRUE",sep=""))
-    return(maxK) 
+    return(maxK)
   }
   else {
-  	maxK<-max(1,floor(sum(popVector)/(nTrees*taxaPerParam))) 
+  	maxK<-max(1,floor(sum(popVector)/(nTrees*taxaPerParam)))
   	return(maxK)
   }
 }
@@ -19,17 +19,17 @@ MsIndividualParameters<-function(migrationIndividual) {
 	parameterList<-c()
 	if (max(collapseMatrix,na.rm=TRUE)>0) {
 		for (i in sequence(KCollapseMatrix(collapseMatrix))) {
-			parameterList<-append(parameterList,paste("collapse_",i,sep="")) 
+			parameterList<-append(parameterList,paste("collapse_",i,sep=""))
 		}
 	}
 	for (i in sequence(max(n0multiplierMap,na.rm=TRUE))) {
-		parameterList<-append(parameterList,paste("n0multiplier_",i,sep="")) 
+		parameterList<-append(parameterList,paste("n0multiplier_",i,sep=""))
 	}
 	for (i in sequence(max(growthMap,na.rm=TRUE))) {
-		parameterList<-append(parameterList,paste("growth_",i,sep="")) 
+		parameterList<-append(parameterList,paste("growth_",i,sep=""))
 	}
 	for (i in sequence(max(migrationArray,na.rm=TRUE))) {
-		parameterList<-append(parameterList,paste("migration_",i,sep="")) 
+		parameterList<-append(parameterList,paste("migration_",i,sep=""))
 	}
 	return(parameterList)
 }
@@ -45,8 +45,8 @@ KPopInterval<-function(popInterval) {
 }
 
 KCollapseMatrix<-function(collapseMatrix) {
-#returns the number of free parameters needed for that interval object. 
-#For example, having everything collapse in one step requires one param (the tMRCA). 
+#returns the number of free parameters needed for that interval object.
+#For example, having everything collapse in one step requires one param (the tMRCA).
 #Having one collapse then a second requires two. Having no collapse requires 0
 	firstTime<-TRUE
 	#Need to toss columns of added events (all NAs), if present
@@ -79,12 +79,12 @@ KGrowthMap<-function(growthMap) {
 }
 
 FractionNonZeroMigration <- function(migrationIndividual) {
-	return(sum(migrationIndividual$migrationArray[!is.na(migrationIndividual$migrationArray)]>0) / sum(!is.na(migrationIndividual$migrationArray)) )	
+	return(sum(migrationIndividual$migrationArray[!is.na(migrationIndividual$migrationArray)]>0) / sum(!is.na(migrationIndividual$migrationArray)) )
 }
 
 NumberPopulationsAtRoot <- function(migrationIndividual) {
 	last.interval <- dim(migrationIndividual$collapseMatrix)[2]
-	number.ones <- length(which(migrationIndividual$collapseMatrix[,last.interval]==1))	
+	number.ones <- length(which(migrationIndividual$collapseMatrix[,last.interval]==1))
 	number.na <- length(which(is.na(migrationIndividual$collapseMatrix[,last.interval])))
 	number.all <- dim(migrationIndividual$collapseMatrix)[1]
 	number.alive <- number.all - number.na
@@ -104,7 +104,7 @@ CreateAssignment<-function(popVector,file="assign.txt") {
 		for(indivIndex in 1:popVector[popIndex]) {
 			indivTotal<-indivTotal+1
 			if(indivTotal==1) {
-				assignFrame<-data.frame(popLabel,indivTotal) 
+				assignFrame<-data.frame(popLabel,indivTotal)
 			}
 			else {
 				assignFrame<-rbind(assignFrame,data.frame(popLabel, indivTotal))
@@ -117,9 +117,9 @@ CreateAssignment<-function(popVector,file="assign.txt") {
 GuessAssignments <- function(observedTrees, popVector) {
 	tips <- observedTrees[[1]]$tip.label
 	# Levenshtein Distance
-	distances  <- adist(tips)
+	distances  <- utils::adist(tips)
 	rownames(distances) <- tips
-	hc <- hclust(as.dist(distances))
+	hc <- stats::hclust(stats::as.dist(distances))
 	groupings <- cutree(hc, k=length(popVector))
 	if(sum(sort(table(groupings))==sort(popVector))!=length(popVector)) {
 		warning("automatic grouping failed")
@@ -138,7 +138,7 @@ GuessAssignments <- function(observedTrees, popVector) {
 		}
 		assignments$popLabel[which(assignments$popLabel==i)]<-alphabet[matching.index]
 		popVector[matching.index]<-0
-		
+
 	}
 	return(assignments)
 }
@@ -152,7 +152,7 @@ CreateAssignment.df<-function(popVector) {
 		for(indivIndex in 1:popVector[popIndex]) {
 			indivTotal<-indivTotal+1
 			if(indivTotal==1) {
-				assignFrame<-data.frame(popLabel,indivTotal) 
+				assignFrame<-data.frame(popLabel,indivTotal)
 			}
 			else {
 				assignFrame<-rbind(assignFrame,data.frame(popLabel, indivTotal))
@@ -169,13 +169,13 @@ ReturnModel<-function(p,migrationArrayMap) {
    prunedResults<-subset(prunedResults, prunedResults$growthMap.number==p[3])
    prunedResults<-subset(prunedResults, prunedResults$migrationArray.number==p[4])
    if(dim(prunedResults)[1]==1) {
-      return(prunedResults$model) 
+      return(prunedResults$model)
    }
    else  {
    	  warning(paste("All these models match", prunedResults$model, "taking first one"))
    	  print(paste("All these models match", prunedResults$model, "taking first one"))
    	  print("Perhaps you sent ReturnModel a model ID rather than a vector?")
-      return(prunedResults$model[1]) 
+      return(prunedResults$model[1])
    }
 }
 
@@ -196,9 +196,9 @@ PassBounds <- function(parameterVector, parameterBounds) {
 			if(collapseParameters[i] > collapseParameters[i+1]){
 				return(FALSE)
 			}
-		}	
+		}
 	}
-	
+
 	#Now sort the parameter vectors in order to keep ratios within bounds
 	n0multiplierParameters<-sort(parameterVector[grep("n0multiplier",names(parameterVector))])
 	growthParameters<-sort(parameterVector[grep("growth",names(parameterVector))])
@@ -257,7 +257,7 @@ PassBounds.addedEvents<-function(parameterVector,migrationIndividual,addedEventT
 
 	#If there are added non-coalescence events, toss nonsensical combinations of collapse sequences and fixed (or scaled) event times
 	if(!is.null(addedEventTime)){
-		
+
 		#First, get the relative position of each event
 		collapseMatrix<-migrationIndividual$collapseMatrix
 		positionNames<-c(1:dim(collapseMatrix)[2])
@@ -272,28 +272,28 @@ PassBounds.addedEvents<-function(parameterVector,migrationIndividual,addedEventT
 					numCollapses<-numCollapses + 1
 				}
 			}
-		}	
+		}
 		#For each event
 		for(numGens in 1:length(positionNames)){
 			#Get the correct event and collapse columns to compare
 			if(names(positionNames)[numGens] == "event"){
-			
+
 				#If there is a collapse directly preceding the non-coalescence event...
 				doPreceding<-FALSE
-				if(numGens > 1){ 
+				if(numGens > 1){
 					if(length(grep("collapse",names(positionNames[numGens - 1]))) > 0){
 						doPreceding<-TRUE #Then must not only worry about the collapse following the event, but also the one preceding it
 					}
 				}
-						
+
 				positionsRemaining<-positionNames[numGens]:length(positionNames)
 				collapseColToCompare<-numCollapses - (length(positionsRemaining[grep("collapse",
 					names(positionNames)[positionsRemaining])]) - 1)
-				
+
 				#Only keep if the collapse time is larger than the preceding event time
 				if(addedEventTimeAsScalar == TRUE){
 					#This should not filter anything unless the scalar is greater than 1
-					if(parameterVector[collapseColToCompare] <= parameterVector[collapseColToCompare] * 
+					if(parameterVector[collapseColToCompare] <= parameterVector[collapseColToCompare] *
 						addedEventTime[eventCount]){
 						return(FALSE)
 					}
@@ -302,7 +302,7 @@ PassBounds.addedEvents<-function(parameterVector,migrationIndividual,addedEventT
 						return(FALSE)
 					}
 				}
-				
+
 				#Only keep if the collapse time is smaller than the following event time
 				if(doPreceding == TRUE){
 					if(addedEventTimeAsScalar == TRUE){
@@ -321,7 +321,7 @@ PassBounds.addedEvents<-function(parameterVector,migrationIndividual,addedEventT
 		}
 	}
 	return(TRUE)
-}	
+}
 
 ScaleParameterVectorByNe <- function(parameterVector, NeScaling=1) { #so if mitochondrial, do 1/4
 #doing each class of parameters separately in case some aren't affected by the scaling
@@ -339,9 +339,9 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir",
 	badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
 	subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid"){
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid", usePhyclust=FALSE){
 	parameterVector<-exp(par)
-	
+
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
 	if(length(parameterVector) < length(MsIndividualParameters(migrationIndividual))){
   		#First, remove n0, so can get names
@@ -353,14 +353,14 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir",
 	}else{
 		names(parameterVector)<-MsIndividualParameters(migrationIndividual)
 	}
-		
+
 	#If using optimization and setCollapseZero is not NULL, then set the relevant values to zero
 	if(!is.null(setCollapseZero)){
 		parameterVector[setCollapseZero]<-0
 	}
-	
+
 	#Weed out values outside of proposed bounds (only if doing numerical optimization)
-	if(numReps > 0){ 
+	if(numReps > 0){
 		if(!is.null(setCollapseZero)){
   			if(!PassBounds(parameterVector[-setCollapseZero], parameterBounds)){
 				return(badAIC)
@@ -378,13 +378,13 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir",
 				return(badAIC)
 		}
 	}
-	
+
  	if(print.results){
  		if(rm.n0){
  			print(parameterVector[-(grep("n0multiplier",names(parameterVector)))])
  		}else{
  			print(parameterVector)
-		} 
+		}
  	}
 
  	#Do tree matching
@@ -394,7 +394,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir",
 		likelihoodVectorCurrent<-PipeMS(migrationIndividual=migrationIndividual,parameterVector=parameterVector,
 		nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,popAssignments=popAssignments,msPath=msPath,comparePath=comparePath,
 		ncores=ncores,currentPopAssign=currentPopAssign,print.ms.string=print.ms.string,debug=debug,unresolvedTest=unresolvedTest,
-		doSNPs=doSNPs,popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar)
+		doSNPs=doSNPs,popScaling=popScaling,addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar, usePhyclust=usePhyclust)
 
  	 	#Apply weights to matches
 		if(!is.null(subsampleWeights.df)) {
@@ -413,21 +413,21 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir",
  	if(length(popAssignments) > 1){
   		lnLValue<-ConvertOutputVectorToLikelihood(outputVector=likelihoodVector,popAssignments=popAssignments,
   			nTrees=nTrees,subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,saveNoExtrap=saveNoExtrap,
-  			summaryFn=summaryFn,nEq=nEq) 
+  			summaryFn=summaryFn,nEq=nEq)
   		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))
   		colnames(AICValue)<-"AIC"
   		if(saveNoExtrap==TRUE){
   			AICValue.noExtrap<-2*(-lnLValue[2] + (KAll(migrationIndividual) - length(setCollapseZero) - 1))
   			colnames(AICValue.noExtrap)<-"AIC.lnL.noExtrap"
-  		}		
+  		}
   	}else{
   		lnLValue<-ConvertOutputVectorToLikelihood.1sub(outputVector=likelihoodVector,
   			popAssignments=popAssignments,subsampleWeightsVec=subsampleWeightsVec,nTrees=nTrees,
   			subsamplesPerGene=subsamplesPerGene,totalPopVector=totalPopVector,summaryFn=summaryFn,
-  			nEq=nEq,optimization=optimization)	
-  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))		
+  			nEq=nEq,optimization=optimization)
+  		AICValue<-2*(-lnLValue[1] + (KAll(migrationIndividual) - length(setCollapseZero)))
 	}
-	
+
 	if(print.results) {
 		parameterVector<-as.data.frame(matrix(nrow=1,ncol=length(parameterVector),parameterVector))
 		resultsVector<-cbind(AICValue,lnLValue[1],parameterVector)
@@ -494,7 +494,7 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 		parmRanges[1,rep]<-min(gridSorted[1:5,(rep + 1)])
 		parmRanges[2,rep]<-max(gridSorted[1:5,(rep + 1)])
 		uniqueParmsVec<-unique(gridSorted[,(rep + 1)])[order(unique(gridSorted[,(rep + 1)]))] #vector of unique parms
-									
+
 		#If the minimum best parameter is not the smallest parameter in the grid, extend the range a bit (to 50% the distance
 		#from the next parameter value). Ditto for the maximum best parameter.
 		if(is.na(uniqueParmsVec[rev(order(uniqueParmsVec[which(uniqueParmsVec < parmRanges[1,rep])]))][1])){
@@ -505,12 +505,12 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 		if(is.na(uniqueParmsVec[which(uniqueParmsVec > parmRanges[2,rep])][1])){
 			parmRangesExtendedTEMP[2,rep]<-parmRanges[2,rep]
 		}else{
-			parmRangesExtendedTEMP[2,rep]<-uniqueParmsVec[which(uniqueParmsVec > parmRanges[2,rep])][1]	
+			parmRangesExtendedTEMP[2,rep]<-uniqueParmsVec[which(uniqueParmsVec > parmRanges[2,rep])][1]
 		}
-									
+
 		#Using the above range extentions, define grid ranges for each parameter
-		parmRangesExtended[1,rep]<-parmRanges[1,rep] - ((parmRanges[1,rep] - parmRangesExtendedTEMP[1,rep]) / 2) 
-		parmRangesExtended[2,rep]<-parmRanges[2,rep] + ((parmRangesExtendedTEMP[2,rep] - parmRanges[2,rep]) / 2) 
+		parmRangesExtended[1,rep]<-parmRanges[1,rep] - ((parmRanges[1,rep] - parmRangesExtendedTEMP[1,rep]) / 2)
+		parmRangesExtended[2,rep]<-parmRanges[2,rep] + ((parmRangesExtendedTEMP[2,rep] - parmRanges[2,rep]) / 2)
 
 		#Now create vectors of new grid values for each parameter
 		#First, define the number of grid points based on the type of parameter
@@ -526,8 +526,8 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 		if(length(grep("migration",colnames(parmRangesExtended)[rep])) != 0){
 			gridSize<-gridSizeVector[4]
 		}
-									
-		#Calculate internal grid values	
+
+		#Calculate internal grid values
 		gridInterval<-(parmRangesExtended[2,rep] - parmRangesExtended[1,rep]) / (gridSizeVector[1] - 1)
 		gridInternalVals<-array()
 		currentValue<-parmRangesExtended[1,rep]
@@ -540,24 +540,24 @@ CreateFineGrid<-function(gridList=NULL,gridSizeVector=c(6,6,6)){
 		fineGrid[[length(fineGrid) + 1]]<-c(parmRangesExtended[1,rep],gridInternalVals,parmRangesExtended[2,rep])
 		names(fineGrid)[length(fineGrid)]<-colnames(parmRangesExtended)[rep]
 		startGrid<-list()
-		startGrid[[1]]<-log(expand.grid(fineGrid))									
+		startGrid[[1]]<-log(expand.grid(fineGrid))
 	}
 	return(fineGrid)
 }
 
 #This takes vectors of parameter values and constructs a grid containing all possible combinations of parameter values, except
-#non-sensical collapse time combinations (e.g., tau's at time 1 which are larger than tau's at time 2), and identical migration 
+#non-sensical collapse time combinations (e.g., tau's at time 1 which are larger than tau's at time 2), and identical migration
 #rates and n0mulipliers are filtered out.
 #Also, if non-coalescence events have been added to the collapseMatrix, nonsensical combinations of fixed event times and
 #collapse times can also be filtered out. For this, need to input the migrationIndividual, the event times (via addedEventTime),
 #and a statement concerning whether these are scalar values (via addedEventTimeAsScalar).
-#This grid is outputted in the form of a list which can be used to obtain AIC values using SearchContinuousModelSpaceNLoptr. 
+#This grid is outputted in the form of a list which can be used to obtain AIC values using SearchContinuousModelSpaceNLoptr.
 CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,startGridWithSetCollapseZero=FALSE){
 	#If the purpose is to re-filter a grid based on added events after adding zero-filled collapse columns...
 	if(startGridWithSetCollapseZero == TRUE){
 		startGrid<-exp(fineGrid)
 		startGrid<-list(startGrid)
-	
+
 	#Otherwise, run as normal
 	}else{
 		startGrid<-list()
@@ -570,10 +570,10 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 			}
 		}
 	}
-	
+
 	#If there are added non-coalescence events, toss nonsensical combinations of collapse sequences and fixed (or scaled) event times
 	if(!is.null(addedEventTime)){
-		
+
 		#First, get the relative position of each event
 		collapseMatrix<-migrationIndividual$collapseMatrix
 		positionNames<-c(1:dim(collapseMatrix)[2])
@@ -588,28 +588,28 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 					numCollapses<-numCollapses + 1
 				}
 			}
-		}	
+		}
 		#For each event
 		for(numGens in 1:length(positionNames)){
 			#Get the correct event and collapse columns to compare
 			if(names(positionNames)[numGens] == "event"){
-			
+
 				#If there is a collapse directly preceding the non-coalescence event...
 				doPreceding<-FALSE
-				if(numGens > 1){ 
+				if(numGens > 1){
 					if(length(grep("collapse",names(positionNames[numGens - 1]))) > 0){
 						doPreceding<-TRUE #Then must not only worry about the collapse following the event, but also the one preceding it
 					}
 				}
-						
+
 				positionsRemaining<-positionNames[numGens]:length(positionNames)
 				collapseColToCompare<-numCollapses - (length(positionsRemaining[grep("collapse",
 					names(positionNames)[positionsRemaining])]) - 1)
-				
+
 				#Only keep if the collapse time is larger than the preceding event time
 				if(addedEventTimeAsScalar == TRUE){
 					#This should not filter anything unless the scalar is greater than 1
-					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] > 
+					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] >
 						startGrid[[1]][,collapseColToCompare] * addedEventTime[eventCount]),]
 				}else{
 					startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,collapseColToCompare] > addedEventTime[eventCount]),]
@@ -617,11 +617,11 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 				if(nrow(startGrid[[1]]) == 0){
 					warning("Error: eventTimes need to be reduced such that they precede the next collapse event")
 				}
-				
+
 				#Only keep if the collapse time is smaller than the following event time
 				if(doPreceding == TRUE){
 					if(addedEventTimeAsScalar == TRUE){
-						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] < 
+						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] <
 							startGrid[[1]][,collapseColToCompare] * addedEventTime[eventCount]),]
 					}else{
 						startGrid[[1]]<-startGrid[[1]][which(startGrid[[1]][,(collapseColToCompare - 1)] < addedEventTime[eventCount]),]
@@ -633,8 +633,8 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 				eventCount<-eventCount + 1
 			}
 		}
-	}			
-	
+	}
+
 	#Toss migration parameters that are equal
 	howManyMigrations<-length(grep("migration",names(startGrid[[1]])))
 	if(howManyMigrations > 1){
@@ -648,7 +648,7 @@ CreateStartGrid<-function(fineGrid,migrationIndividual=NULL,addedEventTime=NULL,
 		#Toss rows with duplicate migration rates (if more than 1 free mig param)
 		startGrid[[1]]<-startGrid[[1]][which(uniqueMigs==TRUE),]
 	}
-	
+
 	#Toss n0multiplier parameters that are equal
 	howManyN0s<-length(grep("n0multiplier",names(startGrid[[1]])))
 	if(howManyN0s > 1){
@@ -708,7 +708,7 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 			startingVectorList<-append(startingVectorList, list(collapseStarts))
 			names(startingVectorList)[nameCount]<-collapses2estimate[i]
 			nameCount<-nameCount + 1
-		} 
+		}
 	}
 
 	#Calculate number of n0 parameters (if just one, subtract it off)
@@ -722,8 +722,8 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 			startingVectorList<-append(startingVectorList, list(n0multiplierStarts))
 			names(startingVectorList)[nameCount]<-grep("n0multiplier",paramNames,value=TRUE)[i]
 			nameCount<-nameCount + 1
-		} 
-	}	
+		}
+	}
 
 	#Calculate number of growth parameters
 	numGrowth <- sum(grepl("growth",paramNames))
@@ -732,9 +732,9 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 			startingVectorList<-append(startingVectorList, list(growthStarts))
 			names(startingVectorList)[nameCount]<-grep("growth",paramNames,value=TRUE)[i]
 			nameCount<-nameCount + 1
-		} 
+		}
 	}
-	
+
 	#Calculate number of migration parameters
 	numMigration <- sum(grepl("migration",paramNames))
 	if (numMigration > 0) {
@@ -742,11 +742,11 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 			startingVectorList<-append(startingVectorList, list(migrationStarts))
 			names(startingVectorList)[nameCount]<-grep("migration",paramNames,value=TRUE)[i]
 			nameCount<-nameCount + 1
-		} 
+		}
 	}
 	startGrid<-CreateStartGrid(startingVectorList)
 	startGrid<-startGrid[[1]] #default grid shouldn't be list (as there is always one grid)
-	
+
 	return(nrow(startGrid))
 }
 
@@ -754,7 +754,7 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath=system.file("msdir","ms",package="P2C2M"),
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
 		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE, popScaling=popScaling,addedEventTime=NULL,
-		addedEventTimeAsScalar=TRUE){
+		addedEventTimeAsScalar=TRUE, usePhyclust=FALSE){
 	stored.wd<-getwd()
 	setwd(tempdir())
 	final.outputVector<-c()
@@ -764,7 +764,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 		msCallInfo<-CreateMSstringSpecific(popAssignments[[currentPopAssign]],migrationIndividual=migrationIndividual,
 			parameterVector=ScaleParameterVectorByNe(parameterVector,unique(popScaling)[scaling.index]),
 			addedEventTime=addedEventTime,addedEventTimeAsScalar=addedEventTimeAsScalar,nTrees=ceiling(nTrees/ncores))
-	
+
 		systemMS<-function(stringname){
 	#		outputVectorMS<-suppressWarnings(system(command="(stringname) & sleep 2 ; kill $!",intern=TRUE))
 	#		http://stackoverflow.com/questions/687948/timeout-a-command-in-bash-without-unnecessary-delay
@@ -777,7 +777,7 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 		}
 
 		if(print.ms.string) {
-			print(msCallInfo) 
+			print(msCallInfo)
 		}
 
 		unresolvedFlag<-"-u"
@@ -790,15 +790,22 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 			snpFlag<-""
 		}
 
-	
+
 		#Simulate trees in MS and do matching in perl
 		outputstringMS<-paste(msPath,sprintf("%i",msCallInfo$nsam),sprintf("%i",msCallInfo$nreps),msCallInfo$opts,
-			" | grep ';' > mstrees.txt", sep=" ") 
-		outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag, snpFlag, paste("-a",assign,sep=""), 
+			" | grep ';' > mstrees.txt", sep=" ")
+		outputstringPerl<-paste("cat mstrees.txt | perl",comparePath,unresolvedFlag, snpFlag, paste("-a",assign,sep=""),
 			paste("-o",observed,sep=""),sep=" ")
 
 		if(ncores==1){
-			outputVectorMS<-systemMS(stringname=outputstringMS)
+			if(usePhyclust) {
+				msOutput <- phyclust::ms(nsam=msCallInfo$nsam, nreps=msCallInfo$nreps, opts=msCallInfo$opts)
+				msOutput <- msOutput[grepl(';', msOutput)]
+				cat(msOutput, file="mstrees.txt", sep="\n")
+				outputVectorMS <- "phyclust"
+			} else {
+				outputVectorMS<-systemMS(stringname=outputstringMS)
+			}
 			outputVectorPerl<-systemPerl(stringname=outputstringPerl)
 			outputVector<-paste(outputVectorMS,outputVectorPerl,sep=" ")
 			#return(outputVector)
@@ -845,7 +852,7 @@ AdjustUsingBeta <- function(numMatches, nTrees, nTips, nEq=100) {
 	#howmanytrees(nTips) = (a + b) / a = (a + nEq - a - 1) / a = (nEq -1) / a
 	a <- (nEq - 1) /  howmanytrees(nTips)
 	b <- nEq - a - 1
-	return( (numMatches + a) / (nTrees + a + b))	
+	return( (numMatches + a) / (nTrees + a + b))
 }
 
 #This function calculates lnL based on number of matches for each subsample. Then the likelihood of the
@@ -854,7 +861,7 @@ AdjustUsingBeta <- function(numMatches, nTrees, nTips, nEq=100) {
 ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,subsamplesPerGene=1,totalPopVector,
 		saveNoExtrap=FALSE,summaryFn="mean", nEq=100){
 	nLoci<-length(outputVector) / length(popAssignments) / subsamplesPerGene #number of loci
-		
+
 	start<-1
 	end<-length(outputVector) / length(popAssignments)
 	for(g in sequence(length(popAssignments))){ #for each subsample size class
@@ -867,7 +874,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 		start<-start + end
 		end<-end + end
 	}
-	
+
 	#Convert to log space
 #	outputVector<-as.numeric(outputVector)/nTrees
 	outputVector<-log(outputVector)
@@ -894,7 +901,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 			}
 		}
 	}
-		
+
 	#Index locations of loci within outputVector
 	treesPerLocus<-subsamplesPerGene * length(popAssignments) #number of trees per locus
 	outputIndex<-array(NA,length(outputVector))
@@ -903,7 +910,7 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 		counter2<-1
 		for(m in sequence(length(outputIndex) / length(popAssignments))){
 			outputIndex[counter1]<-counter2
-			counter1<-counter1+1	
+			counter1<-counter1+1
 			if(m%%subsamplesPerGene==0){
 				counter2<-counter2+1
 			}
@@ -912,8 +919,8 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 
 	#Calculate coefficients for ntaxa-lnL relationship to calculate lnL of full dataset
 	slopes<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))
-	intercepts<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))	
-	#For each locus	
+	intercepts<-data.frame(matrix(NA,nrow=subsamplesPerGene,ncol=nLoci))
+	#For each locus
 	for(i in 1:nLoci){
 		localVector<-outputVector[which(outputIndex==i)]
 		currentSlopes<-data.frame()
@@ -934,17 +941,17 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 		colnames(slopes)[i]<-paste("slopes.L",i,sep="")
 		colnames(intercepts)[i]<-paste("intercepts.L",i,sep="")
 	}
-	
+
 	#Get mean and 95%CI of coefficients
 	meanSlopes<-sapply(slopes,mean,simplify = "array")
-	meanIntercepts<-sapply(intercepts,mean,simplify = "array")	
+	meanIntercepts<-sapply(intercepts,mean,simplify = "array")
 	coeffsOrdered<-sapply(cbind(slopes,intercepts),sort)
 	if(subsamplesPerGene>1){
 		coeffs95Lower<-coeffsOrdered[(round(subsamplesPerGene*0.025) + 1),]
 		coeffs95Upper<-coeffsOrdered[round(subsamplesPerGene*0.975),]
 	}else{
 		coeffs95Lower<-unname(coeffsOrdered)
-		coeffs95Upper<-unname(coeffsOrdered)		
+		coeffs95Upper<-unname(coeffsOrdered)
 	}
 	names(coeffs95Lower)<-paste("L95.",c(names(slopes),names(intercepts)),sep="")
 	names(coeffs95Upper)<-paste("U95.",c(names(slopes),names(intercepts)),sep="")
@@ -972,20 +979,20 @@ ConvertOutputVectorToLikelihood<-function(outputVector,popAssignments,nTrees=1,s
 #and then summing these means across all loci. Prior to taking the mean value, subsamples that yielded zero
 #matches must be assigned a likelihood. To do this, we assume that a single match occurred, calculate the
 #likelihood of a single match (assuming the subsampleWeight of the tree and nTrees), and then apply an lnL penalty (to
-#account for the fact that zero matches were actually observed). This penalty was optimized empirically to produce 
+#account for the fact that zero matches were actually observed). This penalty was optimized empirically to produce
 #likelihood values observed using coal looking at both nTrees = 1e4 and 1e5 (nTrees should rarely smaller or larger
 #than this). Although the proportion of matchless trees in a dataset was also considered when optimizing the penalty,
 #the best penalties excluded this information. The best penalty was -5 and -4 lnL points for 1e4 and 1e5 nTrees,
-#respectively. The penalty applied by default is thus calculated assuming the slope derived from this fact. 
+#respectively. The penalty applied by default is thus calculated assuming the slope derived from this fact.
 
 #In the case where there are no matches across all subsamples and loci, the beta binomial will be used to estimate
-#the lnL when nloptr or genoud optimization are being employed, as these methods require an lnL estimate. When the 
+#the lnL when nloptr or genoud optimization are being employed, as these methods require an lnL estimate. When the
 #grid alone is being used to optimize, these completely matchless datasets can also be assigned an lnL using beta
 #binomial if calculateBetaWithoutOptimization = TRUE; otherwise, lnL will be set to be NA.
 
-#MatchedThreshold gives the proportion of the total loci that must have an estimated lnL (i.e., have some matches) 
+#MatchedThreshold gives the proportion of the total loci that must have an estimated lnL (i.e., have some matches)
 #before lnLs can be estimated based on the min matching value + penalty. The idea here is that if zero-matching is so
-#pervasive, then who's to say the lnL isn't extremely low (e.g., infinity). If the proportion of matching loci falls 
+#pervasive, then who's to say the lnL isn't extremely low (e.g., infinity). If the proportion of matching loci falls
 #below this threshold, then either beta binomial will be used or lnL will be assign NA, as per above.
 ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsampleWeightsVec,nTrees=1,
 	subsamplesPerGene=1,totalPopVector,summaryFn="mean", nEq=100, propMatchedThreshold=0.05,penaltyAtIntercept=5.11,
@@ -1016,20 +1023,20 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsa
 			}
 		}
 	}
-	
-	##Now get the likelihood using the "min possible" method (assuming 1 match minus an empirically derived penalty) 
+
+	##Now get the likelihood using the "min possible" method (assuming 1 match minus an empirically derived penalty)
 	#First, get summary value (e.g., mean) across subsamples
 	outputVector<-as.numeric(outputVector)
-	
+
 	#Calculate log-likelihoods for each locus
 	outputVector<-outputVector/nTrees #get likelihood
 	outputVector<-log(outputVector)
-	
+
 	#Assign likelihood to matchless loci (assume 1 match)
 	zeroMatchers<-grep(-Inf,outputVector) #keep track of the distribution of zero matching trees
 	penaltyConstant<-penaltyAtIntercept - (nTrees * penaltySlope) #calculate penalty based on nTrees
 	outputVector[which(outputVector == -Inf)]<-log(subsampleWeightsVec[which(outputVector == -Inf)] / nTrees) - penaltyConstant
-	
+
 	#Summarize likelihoods across subsamples for each locus
 	summaryVector<-c()
 	localVector<-rep(NA, subsamplesPerGene)
@@ -1050,7 +1057,7 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsa
 			}else{
 				summaryVector<-append(summaryVector,get(summaryFn)(localVector))
 			}
-			
+
 			#Build object that keeps track of which loci were characterized by completely matchless subsamples
 			areThereMatches<-currentCounter %in% zeroMatchers
 			if(sum(areThereMatches) == length(currentCounter)){
@@ -1058,7 +1065,7 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsa
 			}else{
 				matchlessLoci<-append(matchlessLoci,0)
 			}
-			
+
 			#Reset
 			localVector<-rep(NA, subsamplesPerGene)
 			baseIndex<-1
@@ -1066,7 +1073,7 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsa
 			currentCounter<-c()
 		}
 	}
-	
+
 	#Assign likelihood to matchless loci and then sum across loci
  	propMatched<-1 - (sum(matchlessLoci==1) / length(matchlessLoci)) #proportion of loci with matches
  	if(propMatched >= propMatchedThreshold){ #If there are enough matching loci, assign lnL to zero-matching loci
@@ -1081,14 +1088,14 @@ ConvertOutputVectorToLikelihood.1sub<-function(outputVector,popAssignments,subsa
 	return(lnL)
 }
 
-#GetAndBindLabel and GetClades together get a list of all clades in the tree. For the taxa descended from each clade, 
+#GetAndBindLabel and GetClades together get a list of all clades in the tree. For the taxa descended from each clade,
 #sorts alphabetically and then makes them a string. These are slow, and have since been replaced by GetCladesQuickly
 GetClades <- function(phy) {
 	return(simplify2array(sapply(subtrees(phy), GetAndBindLabel)))
 }
 
 #Used with GetClades
-GetAndBindLabel <- function(phy) { 
+GetAndBindLabel <- function(phy) {
 	#note the sorting here
 	return( paste( sort( phy$tip.label ), collapse="_" ) )
 }
@@ -1099,10 +1106,10 @@ GetAndBindLabel <- function(phy) {
 GetCladeNamesFromNewickString <- function(newick.string,assignFrame,convertIndivNumsToPopLetters=FALSE,
 		getOutDegreeOfPolytomies=FALSE) {
 	descendantCounts<-c() #for saving the degree of ploytomies
-	nobrlen.tree <- gsub(pattern=";", replacement="", x=gsub(pattern='\\:\\d+\\.*\\d*', replacement="", 
+	nobrlen.tree <- gsub(pattern=";", replacement="", x=gsub(pattern='\\:\\d+\\.*\\d*', replacement="",
 		x= newick.string, perl=TRUE)) #remove branch lengths
 	clade.names<-rep(NA, sum(grepl("\\(", strsplit(nobrlen.tree,"")[[1]]))) #num of clades=num of parentheses/2
-	
+
 	#Start the culling of clades
 	for(clade.count in sequence(length(clade.names))) {
 		m<-regexpr(pattern="\\([^(^)]+\\)", text=nobrlen.tree, perl=TRUE) #find location of first set of closed parentheses
@@ -1115,7 +1122,7 @@ GetCladeNamesFromNewickString <- function(newick.string,assignFrame,convertIndiv
 				descendantCounts<-append(descendantCounts,length(taxa)) #record the degree
 			}
 		}
-		
+
 		#Convert numbers to letters
 		if(convertIndivNumsToPopLetters){
 			which.untransformed.alleles<-which(grepl("\\d", taxa, perl=TRUE)) #number of untransformed
@@ -1124,17 +1131,17 @@ GetCladeNamesFromNewickString <- function(newick.string,assignFrame,convertIndiv
 				taxa[taxon.index]<-as.character(assignFrame$popLabel[match(taxa[taxon.index],assignFrame$indivTotal)])
 			}
 		}
-		
+
 		clade.name<-paste(sort(taxa),collapse="-")
 		regmatches(x=nobrlen.tree, m)<-clade.name
-		clade.names[clade.count]<-clade.name	
+		clade.names[clade.count]<-clade.name
 	}
 	if(getOutDegreeOfPolytomies){
 		return(list(clade.names,descendantCounts))
 	}else{
 		return(clade.names)
 	}
-}	
+}
 
 GetOutDegreeOfPolytomies <- function(phy) {
 	descendantCounts <- table(phy$edge[,1])
@@ -1161,8 +1168,8 @@ GetScoreOfSingleTree <- function(cladesMS, phyMS, cladesGene, phyGene, polytomyD
 				correction <- correction * howmanytrees(descendantCounts[i], rooted=TRUE, binary=TRUE, labeled=TRUE)
 			}
 			matchCount <- 1 / correction #idea here is that the gene tree could have been resolved at each polytomy multiple ways
-			#only one of these ways would match the given phyMS tree. So we figure out the number of ways to resolve polytomy 1, 
-			#multiply that by the number of ways to resolve polytomy 2, etc. A polytomy with three descendant edges has 3 ways to 
+			#only one of these ways would match the given phyMS tree. So we figure out the number of ways to resolve polytomy 1,
+			#multiply that by the number of ways to resolve polytomy 2, etc. A polytomy with three descendant edges has 3 ways to
 			#resolve it, one with 4 descendant edges has 3 * 5 = 15, etc.
 		}
 	}
@@ -1176,11 +1183,11 @@ SubsampleMSTree<-function(phy,popVectorOrig,popVectorFinal) {
 	minSample<-1
 	maxSample<-0
 	uniquePops<-unique(phy$tip.label)
-	for(population in 1:length(uniquePops)){		
+	for(population in 1:length(uniquePops)){
 		maxSample<-minSample + popVectorOrig[population] - 1
 		sampleSizeDiff<-popVectorOrig[population] - popVectorFinal[population]
 		if(sampleSizeDiff > 0){
-			taxaToDrop<-append(taxaToDrop, 
+			taxaToDrop<-append(taxaToDrop,
 				which(phy$tip.label==uniquePops[population])[c(1:sampleSizeDiff)])
 		}
 		minSample<-maxSample + 1
@@ -1190,7 +1197,7 @@ SubsampleMSTree<-function(phy,popVectorOrig,popVectorFinal) {
 	return(phy)
 }
 
-#Drop tips from newick string. This is not presently working. If we just keep all the 
+#Drop tips from newick string. This is not presently working. If we just keep all the
 #parentheses as is when deleting taxa and just drop labels and commas, this will be easy to get working.
 SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 	#Get taxon labels from tree
@@ -1199,19 +1206,19 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 
 	#Get tree positions for labels to drop
 	uniquePops<-unique(taxonLabels)
-	
+
 	#Split tree into characters and match to old taxon label positions
 	split.tree<-split.tree<-strsplit(phy,"")[[1]]
 	labelPositions<-c()
 	for(i in 1:length(uniquePops)){
 		labelPositions<-append(labelPositions,which(split.tree==uniquePops[i]))
 	}
-	
+
 	#Select positions in the split tree of taxa to drop
 	taxaToDrop<-c()
 	startPos<-1
 	endPos<-popVectorOrig[population]
-	for(population in 1:length(uniquePops)){		
+	for(population in 1:length(uniquePops)){
 		sampleSizeDiff<-popVectorOrig[population] - popVectorFinal[population]
 		if(sampleSizeDiff > 0){
 			currentLabels<-labelPositions[startPos:endPos]
@@ -1221,7 +1228,7 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 		}
 	}
 
-	#Drop one tip at a time (must be fully-resolved)	
+	#Drop one tip at a time (must be fully-resolved)
 	#Toss the label and adjacent commas and opening brackets
 	for(h in 1:length(taxaToDrop)){
 		split.tree[taxaToDrop[h]]<-"drop"
@@ -1239,7 +1246,7 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 		if(split.tree[taxaToDrop[h] + 1] == ","){
 			split.tree[taxaToDrop[h] + 1]<-"drop"
 		}
-		
+
 		#Find and toss the closing bracket
 		if(bracket=="right"){
 			leftCount<- 0 #when leftCount exceeds rightCount, drop parenthesis
@@ -1356,9 +1363,9 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 			split.tree.temp<-split.tree.temp[-(m+2)]
 		}
 		split.tree.cat<-paste(split.tree.temp,collapse="")
-	}	
-	
-	#Get rid of double brackets	
+	}
+
+	#Get rid of double brackets
 	#First get positions of double brackets
 	openBracket<-c()
 	closeBracket<-c()
@@ -1371,12 +1378,12 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 			closeBracket<-append(closeBracket,m + 1)
 		}
 	}
-	
+
 	#For different pairs, if there are as many or more brackets as taxa, toss them
 	end<-FALSE
-	while((length(grep("\\(",split.tree)) >= length(grep("\\w",split.tree)) || 
+	while((length(grep("\\(",split.tree)) >= length(grep("\\w",split.tree)) ||
 			length(grep("\\)",split.tree)) >= length(grep("\\w",split.tree))) &&
-			end==FALSE){	
+			end==FALSE){
 		if(openBracket[length(openBracket)] > closeBracket[1]){
 			substring<-split.tree[openBracket[1]:closeBracket[length(closeBracket)]]
 			if(length(grep("\\(",split.tree)) >= length(grep("\\w",split.tree))){
@@ -1385,14 +1392,14 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 					removed<-TRUE
 				}
 			}
-			
+
 			if(length(grep("\\)",split.tree)) >= length(grep("\\w",split.tree))){
 				if(length(grep("\\)",substring)) >= length(grep("\\w",substring))){
 					substring<-substring[-length(substring)]
 					removed<-TRUE
 				}
 			}
-			if(removed==TRUE){		
+			if(removed==TRUE){
 				split.tree<-split.tree[-c(openBracket[1]:closeBracket[length(closeBracket)])]
 				if(openBracket[1] > 1){
 					split.tree<-c(split.tree[1:openBracket[1] - 1],substring,
@@ -1402,14 +1409,14 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 				}
 				if(length(openBracket) > 1 && length(closeBracket) > 1){
 					openBracket<-openBracket[-1]
-					closeBracket<-closeBracket[-(length(openBracket))]	
+					closeBracket<-closeBracket[-(length(openBracket))]
 				}else{
 					end<-TRUE
 				}
 			}else{
 				end<-TRUE
 			}
-			
+
 		}else{
 			removed<-FALSE
 			substring<-split.tree[openBracket[length(openBracket)]:closeBracket[1]]
@@ -1426,8 +1433,8 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 					reduce<-TRUE
 				}
 			}
-			
-			if(removed==TRUE){	
+
+			if(removed==TRUE){
 				split.tree<-split.tree[-c(openBracket[length(openBracket)]:closeBracket[1])]
 				if(openBracket[length(openBracket)] > 1){
 					split.tree<-c(split.tree[1:openBracket[length(openBracket)] - 1],substring,
@@ -1449,8 +1456,8 @@ SubsampleMSTree.raw<-function(phy,popVectorOrig,popVectorFinal) {
 				end<-TRUE
 			}
 		}
-	}	
+	}
 	split.tree.cat<-paste(split.tree,collapse="")
-	
+
 	return(split.tree.cat)
 }

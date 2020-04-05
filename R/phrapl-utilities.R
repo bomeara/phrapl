@@ -1527,7 +1527,7 @@ outgroup=TRUE,outgroupPrune=TRUE){
 		nIndividualsDesired<-nIndividualsDesired + 1
 	}
 	#Read in and prep the assignment file constructed from all loci
-	assignFrameOriginal<-read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
+	assignFrameOriginal<-utils::read.table(paste(subsamplePath,assignFile,sep=""),header=TRUE) #read in the assignemt file including all individuals
 	assignFrameOriginal<-cbind(assignFrameOriginal,c(1:nrow(assignFrameOriginal)))
 	colnames(assignFrameOriginal)<-c("indiv","popLabel","indivTotal")
 	#Read in tree file
@@ -1990,14 +1990,14 @@ CombineSubsampleLikelihoods<-function(likelihoodVector,nIndividualsDesired,orig.
 	prunedNumberTrees<-howmanytrees(nIndividualsDesired)
 	sumLnL<-sum(likelihoodVector)
 	meanLnL<-mean(likelihoodVector)
-	medianLnL<-median(likelihoodVector)
+	medianLnL<-stats::median(likelihoodVector)
 #prob(big tree)=prob(small tree)*(#small trees / #big trees)
 #ln(prob(big tree) = ln( prob(small tree)*(#small trees / #big trees) )
 #ln(prob(big tree) = ln( prob(small tree) ) + ln (#small trees)  - ln (#big trees)
 	rescaledLikelihoodVector<-likelihoodVector + log(prunedNumberTrees) - log(originalNumberTrees)
 	rescaledSumLnL<-sum(rescaledLikelihoodVector)
 	rescaledMeanLnL<-mean(rescaledLikelihoodVector)
-	rescaledMedianLnL<-median(rescaledLikelihoodVector)
+	rescaledMedianLnL<-stats::median(rescaledLikelihoodVector)
 	return(list(sumLnL,meanLnL,medianLnL,rescaledSumLnL,rescaledMeanLnL,rescaledMedianLnL))
 }
 
@@ -2101,13 +2101,13 @@ RunRaxml <- function(raxmlPath=paste(getwd(),"/",sep=""),raxmlVersion="raxmlHPC"
 		seed.vec <- c(seed.vec,currentSeed)
 		outputFile <- paste(inputFile,".tre",sep="")
 		if(mutationModel=="file"){
-			mutationModelFile <- (read.table(paste(inputPath,"mutationModel.txt",sep="")))
+			mutationModelFile <- (utils::read.table(paste(inputPath,"mutationModel.txt",sep="")))
 			thisMutationModel <- as.character(mutationModelFile[[1]][numb])
 		} else{
 			thisMutationModel <- mutationModel
 		}
 		if(outgroup=="file"){
-			outgroupFile <- (read.table(paste(inputPath,"outgroup.txt",sep="")))
+			outgroupFile <- (utils::read.table(paste(inputPath,"outgroup.txt",sep="")))
 			thisOutgroup <- as.character(outgroupFile[[1]][numb])
 		} else {
 			thisOutgroup <-outgroup
@@ -2147,7 +2147,7 @@ RunRaxml <- function(raxmlPath=paste(getwd(),"/",sep=""),raxmlVersion="raxmlHPC"
 #This takes a path to .tre files and merges all trees into a single file called trees.tre
 MergeTrees <- function(treesPath){
 	filenames <- list.files(treesPath,pattern="*.tre",full.names=FALSE)
-	vecotr <- lapply(paste(treesPath,filenames,sep=""),read.table)
+	vecotr <- lapply(paste(treesPath,filenames,sep=""),utils::read.table)
 	for (treeRep in 1:length(vecotr)){
 		write.table(vecotr[[treeRep]],file=paste(treesPath,"trees.tre",sep=""),append=TRUE,
 			row.names=FALSE,col.names=FALSE,quote=FALSE)
@@ -2964,7 +2964,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 	#Extract and combine results across models
 	for(rep in 1:length(rdaFiles)){
 		load(paste(rdaFilesPath,rdaFiles[rep],sep="")) #Read model objects
-		
+
 		#Combine results from the rda into dataframe
 		#If a result exists...
 		if(!is.null(result)){
@@ -2976,7 +2976,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
  		}else{
  		warning(paste("Warning: File",rdaFiles[rep],"contains no results.", sep=" "))
  		continue<-FALSE
- 		
+
 #			#Fill in null results for the null model (i.e., NAs)
 #			current.results<-data.frame(matrix(NA,nrow=1,ncol=nonparmColsOriginal))
 #			colnames(current.results)<-c("models","AIC","lnL","params.K","params.vector")
@@ -3029,7 +3029,7 @@ ConcatenateResults<-function(rdaFilesPath="./",rdaFiles=NULL, migrationArray, rm
 			row.counter<-nrow(totalData) + 1
 		}
 	}
-	
+
 	#Remove undesired parameters
 	if(rm.n0==TRUE){
 		if(longNames==TRUE){
@@ -3511,7 +3511,7 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
    	if(averageAcrossAllModels == TRUE){
 
 	   #Calculate model averaged parameter estimates (NA's are ignored if present in some models)
-		modelAverages <- data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] *
+		modelAverages <- data.frame(stats::na.pass(totalData[, parmStartCol:ncol(totalData)] *
 			totalData$wAIC))
 		colnames(modelAverages)<-colnames(totalData)[-c(0:(parmStartCol - 1))]
 
@@ -3547,7 +3547,7 @@ CalculateModelAverages<-function(totalData,averageAcrossAllModels=TRUE,parmStart
 
 		#If keeping parameter columns that contain only NAs, convert these model averages to NA...
 		if(keep.na == TRUE){
-			modelAveragesTemp<-data.frame(na.pass(totalData[, parmStartCol:ncol(totalData)] *
+			modelAveragesTemp<-data.frame(stats::na.pass(totalData[, parmStartCol:ncol(totalData)] *
 				totalData$wAIC))
 			na.rm.dataset <- RemoveParameterNAs(modelAveragesTemp)
 			NAcols<-which(colnames(modelAveragesTemp) %in% colnames(na.rm.dataset) == FALSE)
@@ -3708,7 +3708,7 @@ SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramC
 		currentPlotWeights<-plotWeights[which(treatmentVec==utreat[rep10]),paramColVec]
 		currentDescriptors<-plotWeights[which(treatmentVec==utreat[rep10]),1:(paramColVec[1] - 1)]
 
-		currentMedianWeights<-sapply(currentPlotWeights,median,na.rm=TRUE)
+		currentMedianWeights<-sapply(currentPlotWeights,stats::median,na.rm=TRUE)
 		currentMedianWeightsDF<-data.frame(matrix(currentMedianWeights,nrow=1,ncol=length(names(currentMedianWeights))))
 		colnames(currentMedianWeightsDF)<-names(currentMedianWeights)
 		currentMedianWeights<-cbind(currentDescriptors[1,],currentMedianWeightsDF)
@@ -3720,7 +3720,7 @@ SummarizeAveragedModelsAcrossSubsamples<-function(plotWeights=plotWeights,paramC
 		currentMeanWeights<-cbind(currentDescriptors[1,],currentMeanWeightsDF)
 		meanWeights<-rbind(meanWeights,currentMeanWeights)
 
-		currentSdWeights<-sapply(currentPlotWeights,sd,na.rm=TRUE)
+		currentSdWeights<-sapply(currentPlotWeights,stats::sd,na.rm=TRUE)
 		currentSdWeightsDF<-data.frame(matrix(currentSdWeights,nrow=1,ncol=length(names(currentSdWeights))))
 		colnames(currentSdWeightsDF)<-names(currentSdWeights)
 		currentSdWeights<-cbind(currentDescriptors[1,],currentSdWeightsDF)
@@ -3782,7 +3782,7 @@ SummarizeParametersAcrossSubsamples<-function(totalData,treatmentVec=NULL,paramC
 			meanModel<-rbind(meanModel,currentMeanModel)
 
 			#Get sd
-			currentSdModel<-sapply(currentModelAv,sd,na.rm=TRUE)
+			currentSdModel<-sapply(currentModelAv,stats::sd,na.rm=TRUE)
 			currentSdModelDF<-data.frame(matrix(currentSdModel,nrow=1,ncol=length(names(currentSdModel))))
 			colnames(currentSdModelDF)<-names(currentSdModel)
 			currentSdModel<-cbind(currentModel[1,descriptionColVec],elapsedTimeDF,currentSdModelDF)
@@ -4128,11 +4128,12 @@ CompileMS<-function(rand=1){
 }
 
 ReadStructureData <- function(file, pairs=2) {
-	data <- read.delim(file=file, header=FALSE)
+	data <- utils::read.delim(file=file, header=FALSE)
 	sample.names <- as.character(data[,1])
 	populations <- as.character(data[,2])
 	data <- data[,c(-1, -2)]
 	data[data==-9] <- NA
+	snps <- data
 	rownames(data) <- sample.names
 	if(pairs==2) {
 		data.pruned <- matrix(nrow=length(sample.names), ncol=floor(dim(snps)[2]/2))

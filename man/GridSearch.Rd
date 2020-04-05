@@ -12,7 +12,7 @@ search.
 \usage{
 GridSearch(modelRange = c(1:length(migrationArray)), migrationArrayMap=NULL,
 migrationArray, popAssignments, badAIC = 1e+14,
-maxParameterValue = 20, nTrees = 1e5, msPath = "ms",
+maxParameterValue = 20, nTrees = 1e5, msPath = system.file("msdir", "ms", package = "P2C2M"),
 comparePath = system.file("extdata","comparecladespipe.pl", package = "phrapl"),
 observedTrees, subsampleWeights.df = NULL, doWeights = TRUE,
 unresolvedTest = TRUE, print.ms.string = FALSE, print.results = TRUE,
@@ -28,7 +28,7 @@ saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
 dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
 parameter.ambiguous = FALSE, addedEventTime = NULL, addedEventTimeAsScalar = TRUE,
 optimization = "grid", genoudPopSize = 25, numGridStartVals = 25,
-solutionTolerance = 1, skipGrid = FALSE, ...)
+solutionTolerance = 1, skipGrid = FALSE, usePhyclust=FALSE, ...)
 }
 \arguments{
    \item{modelRange}{
@@ -254,6 +254,9 @@ This gives the \code{solution.tolerance} level used by genoud
 If set to \code{TRUE}, the initial grid search is skipped when doing genoud optimization. In this case,
 starting values are determined by randomly selecting values from the grid (the number of which is determined
 by \code{numGridStartVals}).
+}
+\item{usePhyclust}{
+If TRUE, use phyclust's version of ms rather than P2C2M (should be equivalent)
 }
   \item{\dots}{
 Other items to pass to heuristic search functions.
