@@ -111,7 +111,7 @@ CreateAssignment<-function(popVector,file="assign.txt") {
 			}
 		}
 	}
-	write.table(assignFrame,file=file,quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
+	utils::write.table(assignFrame,file=file,quote=FALSE,sep="\t",row.names=FALSE,col.names=FALSE)
 }
 
 GuessAssignments <- function(observedTrees, popVector) {
@@ -120,7 +120,7 @@ GuessAssignments <- function(observedTrees, popVector) {
 	distances  <- utils::adist(tips)
 	rownames(distances) <- tips
 	hc <- stats::hclust(stats::as.dist(distances))
-	groupings <- cutree(hc, k=length(popVector))
+	groupings <- stats::cutree(hc, k=length(popVector))
 	if(sum(sort(table(groupings))==sort(popVector))!=length(popVector)) {
 		warning("automatic grouping failed")
 		return(NA)
@@ -339,7 +339,7 @@ ReturnAIC<-function(par,migrationIndividual,nTrees=1,msPath=system.file("msdir",
 	badAIC=100000000000000,ncores=1,maxParameterValue=20,numReps=0,parameterBounds=list(minCollapseTime=0.1,
 	minCollapseRatio=0,minN0Ratio=0.1,minGrowth=0.1,minGrowthRatio=0.1,minMigrationRate=0.05,minMigrationRatio=0.1),
 	subsamplesPerGene=1,totalPopVector,popAssignments,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
-	setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid", usePhyclust=FALSE){
+	setCollapseZero=NULL,rm.n0=TRUE,popScaling,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid", usePhyclust=TRUE){
 	parameterVector<-exp(par)
 
 	#If using optimization, the n0multiplier_1 is removed (so it is not optimized), so a "1" needs to be inserted
@@ -754,7 +754,7 @@ GetLengthGridList<-function(modelID=1,collapseStarts=NULL,
 PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msPath=system.file("msdir","ms",package="P2C2M"),
 		comparePath=system.file("extdata", "comparecladespipe.pl", package="phrapl"),unresolvedTest=TRUE,subsamplesPerGene,debug=FALSE,
 		print.ms.string=FALSE,ncores=1,currentPopAssign=1, doSNPs=FALSE, popScaling=popScaling,addedEventTime=NULL,
-		addedEventTimeAsScalar=TRUE, usePhyclust=FALSE){
+		addedEventTimeAsScalar=TRUE, usePhyclust=TRUE){
 	stored.wd<-getwd()
 	setwd(tempdir())
 	final.outputVector<-c()

@@ -9,7 +9,7 @@ SearchContinuousModelSpaceNLoptr<-function(p, migrationArrayMap=NULL, migrationA
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
 	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,
-	optimization="grid",usePhyclust=FALSE, ...) {
+	optimization="grid",usePhyclust=TRUE, ...) {
 	if(!is.null(migrationArrayMap)){
 		modelID<-ReturnModel(p,migrationArrayMap)
   	}else{
@@ -285,7 +285,7 @@ SearchContinuousModelSpaceRGenoud<-function(p, migrationArrayMap=NULL, migration
 	growthStarts=c(0.30,0.58,1.11,2.12,4.07,7.81,15.00),migrationStarts=c(0.10,0.22,0.46,1.00,2.15,4.64), gridSave=NULL,
 	gridSaveFile=NULL,subsamplesPerGene=1,totalPopVector,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,nEq=100,
 	setCollapseZero=NULL,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,
-	genoudPopSize=25,numGridStartVals=25,solutionTolerance=1,skipGrid=FALSE,optimization="genoud", usePhyclust=FALSE, ...) {
+	genoudPopSize=25,numGridStartVals=25,solutionTolerance=1,skipGrid=FALSE,optimization="genoud", usePhyclust=TRUE, ...) {
 
 	if(!is.null(migrationArrayMap)){
   		modelID<-ReturnModel(p,migrationArrayMap)
@@ -563,7 +563,7 @@ GridSearch<-function(modelRange=c(1:length(migrationArray)),migrationArrayMap=NU
 		subsamplesPerGene=1,totalPopVector=NULL,summaryFn="mean",saveNoExtrap=FALSE,doSNPs=FALSE,
 		nEq=100,setCollapseZero=NULL,dAIC.cutoff=2,rm.n0=TRUE,popScaling=NULL,checkpointFile=NULL,
 		parameter.ambiguous=FALSE,addedEventTime=NULL,addedEventTimeAsScalar=TRUE,optimization="grid",
-		genoudPopSize=25,numGridStartVals=25,solutionTolerance=1,skipGrid=FALSE,usePhyclust=FALSE, ...){
+		genoudPopSize=25,numGridStartVals=25,solutionTolerance=1,skipGrid=FALSE,usePhyclust=TRUE, ...){
 	#If multiple n0multiplier values exists in the migrationArray, then make rm.n0 FALSE, else, leave it as specified
 	n0Values<-unlist(migrationArray)
 	if(length(unique(n0Values[grep("n0multiplier",names(n0Values))][!is.na(n0Values[grep("n0multiplier",names(n0Values))])])) > 1){

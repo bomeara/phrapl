@@ -4,8 +4,7 @@ PHRAPL (Phylogeography using approximate likelihoods) is a method for phylogeogr
 
 Note that PHRAPL has recently moved from R-forge to Github for development. Moving to Github allows users to install pre-CRAN versions using devtools. To do this, within R, type
 
-````
+```
 install.packages("devtools")
 devtools::install_github("bomeara/phrapl")
-````
-
+```

@@ -29,7 +29,7 @@ saveNoExtrap = FALSE, doSNPs = FALSE, nEq=100, setCollapseZero=NULL,
 dAIC.cutoff=2, rm.n0 = TRUE, popScaling = NULL, checkpointFile = NULL,
 parameter.ambiguous = FALSE, addedEventTime = NULL, addedEventTimeAsScalar = TRUE,
 optimization = "grid", genoudPopSize = 25, numGridStartVals = 25,
-solutionTolerance = 1, skipGrid = FALSE, usePhyclust=FALSE, ...)
+solutionTolerance = 1, skipGrid = FALSE, usePhyclust=TRUE, ...)
 }
 \arguments{
    \item{modelRange}{
