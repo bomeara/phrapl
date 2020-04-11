@@ -166,7 +166,7 @@ Migrationindividual<-function(collapseMatrix,complete=FALSE,n0multiplierMap,grow
 }
 
 CreateMSstringSpecific<-function(popVector,migrationIndividual,parameterVector,addedEventTime=NULL,
-	addedEventTimeAsScalar=TRUE,nTrees=1,createSeed=TRUE){
+	addedEventTimeAsScalar=TRUE,nTrees=1,createSeed=FALSE){
 	collapseMatrix<-migrationIndividual$collapseMatrix
 	complete<-migrationIndividual$complete
 	n0multiplierMap<-migrationIndividual$n0multiplierMap
