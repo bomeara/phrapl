@@ -799,6 +799,9 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 
 		if(ncores==1){
 			if(usePhyclust) {
+				print(nsam=msCallInfo$nsam)
+				print(nreps=msCallInfo$nreps)
+				print(opts=msCallInfo$opts)
 				msOutput <- phyclust::ms(nsam=msCallInfo$nsam, nreps=msCallInfo$nreps, opts=msCallInfo$opts)
 				msOutput <- msOutput[grepl(';', msOutput)]
 				cat(msOutput, file="mstrees.txt", sep="\n")
