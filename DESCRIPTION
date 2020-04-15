@@ -1,9 +1,9 @@
 Package: phrapl
 Version: 0.64
-Date: 2020-04-10
+Date: 2020-04-15
 Title: Phylogeography using Approximate Likelihood
-Author: Brian O'Meara <bomeara@utk.edu>, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
-Maintainer: Brian O'Meara <bomeara@utk.edu>
+Author: Brian O'Meara <omeara.brian@gmail.com>, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
+Maintainer: Brian O'Meara <omeara.brian@gmail.com>
 Imports: ape, binom, diagram, partitions, igraph, optimx, parallel, nloptr, Matrix, numDeriv, rgl, RColorBrewer, rgenoud, stats, utils, graphics, grDevices, phyclust
 Suggests:
     testthat (>= 2.1.0),
