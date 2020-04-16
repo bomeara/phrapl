@@ -7,10 +7,13 @@ Maintainer: Brian O'Meara <omeara.brian@gmail.com>
 Imports: ape, binom, diagram, partitions, igraph, optimx, parallel, nloptr, Matrix, numDeriv, rgl, RColorBrewer, rgenoud, stats, utils, graphics, grDevices, phyclust
 Suggests:
     testthat (>= 2.1.0),
-    animation
+    animation,
+    knitr,
+    rmarkdown
 Description: Fits various phylogeographic models using approximate likelihood.
 Depends: R (>= 3.5.0)
 SystemRequirements: perl
 LazyData: no
 License: GPL (>= 2)
 RoxygenNote: 7.1.0
+VignetteBuilder: knitr
