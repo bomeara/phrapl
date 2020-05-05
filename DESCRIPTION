@@ -9,7 +9,8 @@ Suggests:
     testthat (>= 2.1.0),
     animation,
     knitr,
-    rmarkdown
+    rmarkdown,
+    covr
 Description: Fits various phylogeographic models using approximate likelihood.
 Depends: R (>= 3.5.0)
 SystemRequirements: perl
