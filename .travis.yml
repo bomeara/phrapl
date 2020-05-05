@@ -1,6 +1,5 @@
 # from ropensci
 language: r
-cache: packages
 latex: false
 fortran: false
 env:
