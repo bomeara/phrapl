@@ -28,11 +28,11 @@ PlotModel<-function(migrationIndividual, parameterVector=NULL, taxonNames=NULL, 
     migrationParameters <- parameterVector[grep("migration",
         names(parameterVector))]
     collapseParameters <- parameterVector[grep("collapse", names(parameterVector))]
-    try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters))
+    try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters), silent=TRUE)
     if(length(migrationParameters) > 0){
-         try(migrationParameters <- migrationParameters/max(migrationParameters))
+         try(migrationParameters <- migrationParameters/max(migrationParameters), silent=TRUE)
     }
-    try(collapseParameters <- collapseParameters/min(collapseParameters))
+    try(collapseParameters <- collapseParameters/min(collapseParameters), silent=TRUE)
     num.steps <- 10
     base.radius <- 0.3
     collapseMatrix <- migrationIndividual$collapseMatrix
@@ -199,9 +199,9 @@ PlotModel2D <- function(migrationIndividual, parameterVector=NULL, taxonNames=NU
     migrationParameters <- parameterVector[grep("migration",
         names(parameterVector))]
     collapseParameters <- parameterVector[grep("collapse", names(parameterVector))]
-    try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters))
-    try(migrationParameters <- migrationParameters/max(migrationParameters))
-    try(collapseParameters <- collapseParameters/max(collapseParameters))
+    try(n0multiplierParameters <- n0multiplierParameters/max(n0multiplierParameters), silent=TRUE)
+    try(migrationParameters <- migrationParameters/max(migrationParameters), silent=TRUE)
+    try(collapseParameters <- collapseParameters/max(collapseParameters), silent=TRUE)
     collapseMatrix <- migrationIndividual$collapseMatrix
     complete <- migrationIndividual$complete
     n0multiplierMap <- migrationIndividual$n0multiplierMap
