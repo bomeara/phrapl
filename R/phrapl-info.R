@@ -801,8 +801,11 @@ PipeMS<-function(migrationIndividual,parameterVector,popAssignments,nTrees=1,msP
 			if(usePhyclust) {
 				msOutput <- phyclust::ms(nsam=msCallInfo$nsam, nreps=msCallInfo$nreps, opts=msCallInfo$opts)
 				msOutput <- msOutput[grepl(';', msOutput)]
+				msOutput <- gsub(" ", "", msOutput)
+				msOutput <- gsub("s", "", msOutput)
+
 				cat(msOutput, file="mstrees.txt", sep="\n")
-				outputVectorMS <- "phyclust"
+				outputVectorMS <- ""
 			} else {
 				outputVectorMS<-systemMS(stringname=outputstringMS)
 			}

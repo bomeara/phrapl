@@ -1,9 +1,12 @@
 Package: phrapl
-Version: 0.6.4
-Date: 2020-04-15
+Version: 0.6.5
+Date: 2021-02-05
 Title: Phylogeography using Approximate Likelihood
-Author: Brian O'Meara <omeara.brian@gmail.com>, Bryan Carstens, Nathan Jackson, Ariadna Morales-Garcia
-Maintainer: Brian O'Meara <omeara.brian@gmail.com>
+Authors@R: c(person("Brian", "O'Meara", role = c("aut", "cre"),
+                      email = "omeara.brian@gmail.com"),
+               person("Bryan", "Carstens", role = "aut"),
+               person("Nathan", "Jackson", role = "aut"),
+               person("Ariadna", "Morales-Garcia", role = "aut"))
 Imports: ape, binom, diagram, partitions, igraph, optimx, parallel, nloptr, Matrix, numDeriv, rgl, RColorBrewer, rgenoud, stats, utils, graphics, grDevices, phyclust
 Suggests:
     testthat (>= 2.1.0),
@@ -11,7 +14,7 @@ Suggests:
     knitr,
     rmarkdown,
     covr
-Description: Fits various phylogeographic models using approximate likelihood.
+Description: This creates and compares models for population structure within a species or between several related species, especially for questions in phylogeography. It can also help delimit populations into species. Models used can range from island models (populations exchanging genes through migration) to phylogeny models (populations splitting with no subsequent gene flow) to anything in between, such as subdivision with some gene flow. Input data are gene tree topologies. Models are fit using approximate likelihood: simulating gene tree evolution many times on the various population trees to estimate the likelihood of seeing the observed gene topologies.
 Depends: R (>= 3.5.0)
 SystemRequirements: perl
 LazyData: no
